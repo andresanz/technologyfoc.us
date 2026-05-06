@@ -1,0 +1,59 @@
+<% pageTitle = domain.DomainName; %>
+<%- include('partials/head') %>
+<style>
+.detail-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}
+.detail-card h3{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 1rem}
+.detail-row{display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:.875rem}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:var(--muted)}
+.detail-value{font-weight:500}
+.ns-input{width:100%;font-family:monospace;font-size:.85rem;padding:.3rem .5rem;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--fg)}
+.ns-row{display:flex;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--border)}
+.ns-row:last-child{border-bottom:none}
+</style>
+<div class="page-header">
+  <div>
+    <a href="/domains" style="font-size:.85rem;color:var(--muted);text-decoration:none">← Domains</a>
+    <h1 style="margin-top:.25rem"><%= domain.DomainName %></h1>
+  </div>
+</div>
+<%- include('partials/flash') %>
+<% const expiry = new Date(domain.ExpirationDate || domain.Expiry);
+   const daysLeft = Math.ceil((expiry - Date.now()) / 86400000);
+   const expLabel = expiry.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); %>
+<div class="detail-card">
+  <h3>Registration</h3>
+  <div class="detail-row"><span class="detail-label">Registrar</span><span class="detail-value"><%= domain.RegistrarName || 'Amazon Registrar' %></span></div>
+  <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><%= (domain.StatusList||[]).join(', ')||'—' %></span></div>
+  <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value"><%= domain.CreatedDate ? new Date(domain.CreatedDate).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—' %></span></div>
+  <div class="detail-row"><span class="detail-label">Expires</span><span class="detail-value" style="<%= daysLeft<60?'color:#b45309;font-weight:600':'' %>"><%= expLabel %><%= daysLeft<60?' ('+daysLeft+'d)':'' %></span></div>
+  <div class="detail-row"><span class="detail-label">Auto-Renew</span><span class="detail-value"><%= domain.AutoRenew ? '✓ On' : '— Off' %></span></div>
+  <div class="detail-row"><span class="detail-label">Privacy</span><span class="detail-value"><%= domain.AdminPrivacy ? '✓ On' : '— Off' %></span></div>
+</div>
+<h2 style="font-size:1rem;margin-bottom:.75rem">Nameservers</h2>
+<div class="detail-card">
+  <form method="POST" action="/domains/r53/<%= domain.DomainName %>/nameservers">
+    <div id="ns-list">
+      <% (domain.Nameservers||[]).forEach(ns => { %>
+      <div class="ns-row">
+        <input class="ns-input" type="text" name="nameservers" value="<%= ns.Name %>" />
+        <button type="button" class="btn btn-sm" onclick="this.closest('.ns-row').remove()" style="color:var(--muted)">✕</button>
+      </div>
+      <% }) %>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem">
+      <button type="button" class="btn btn-sm" onclick="addNs()">+ Add</button>
+      <button type="submit" class="btn btn-primary btn-sm">Save nameservers</button>
+    </div>
+  </form>
+</div>
+<script>
+function addNs(){
+  const d=document.createElement('div');
+  d.className='ns-row';
+  d.innerHTML='<input class="ns-input" type="text" name="nameservers" placeholder="ns1.example.com"/><button type="button" class="btn btn-sm" onclick="this.closest(\'.ns-row\').remove()" style="color:var(--muted)">✕</button>';
+  document.getElementById('ns-list').appendChild(d);
+  d.querySelector('input').focus();
+}
+</script>
+<%- include('partials/foot') %>

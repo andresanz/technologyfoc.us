@@ -1,0 +1,20 @@
+[
+  {
+    "label": "Posts",
+    "url": "/posts",
+    "enabled": true,
+    "newTab": false
+  },
+  {
+    "label": "Tags",
+    "url": "/tags",
+    "enabled": true,
+    "newTab": false
+  },
+  {
+    "label": "Gratitude",
+    "url": "/gratitude",
+    "enabled": true,
+    "newTab": false
+  }
+]

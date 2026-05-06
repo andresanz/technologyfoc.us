@@ -1,0 +1,59 @@
+<%
+  pageTitle = 'Posts · ' + site.title;
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <div>
+    <a href="/sites" class="back-link">← Sites</a>
+    <h1>Posts — <span class="muted"><%= site.title %></span></h1>
+  </div>
+  <div style="display:flex;gap:.5rem;">
+    <a href="/posts/<%= site.domain %>/new" class="btn btn-primary">+ Public post</a>
+    <a href="/posts/<%= site.domain %>/new?dir=private-posts" class="btn">+ Private post</a>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<% if (posts.length === 0) { %>
+  <p class="empty">No posts yet. <a href="/posts/<%= site.domain %>/new">Write one →</a></p>
+<% } else { %>
+  <table class="post-table">
+    <thead>
+      <tr><th>Title</th><th>Date</th><th>Tags</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% posts.forEach(function(post) { %>
+        <% const dirParam = post.isPrivate ? '?dir=private-posts' : ''; %>
+        <tr>
+          <td>
+            <a href="/posts/<%= site.domain %>/edit/<%= post.filename %><%= dirParam %>"><%= post.title %></a>
+            <% if (post.isPrivate) { %><span class="badge" style="background:#7c3aed;color:#fff;margin-left:.35rem;">Private</span><% } %>
+          </td>
+          <td class="muted"><%= post.dateStr %></td>
+          <td><% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %></td>
+          <td>
+            <% if (post.draft) { %>
+              <span class="badge badge-draft">Draft</span>
+            <% } else { %>
+              <span class="badge badge-live">Live</span>
+            <% } %>
+          </td>
+          <td class="row-actions">
+            <a href="/posts/<%= site.domain %>/edit/<%= post.filename %><%= dirParam %>" class="btn btn-sm">Edit</a>
+            <% if (!post.isPrivate) { %>
+              <a href="<%= site.url %>/post/<%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
+            <% } else { %>
+              <a href="<%= site.url %>/private/<%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
+            <% } %>
+            <form method="POST" action="/posts/<%= site.domain %>/delete/<%= post.filename %>"
+                  onsubmit="return confirm('Delete <%= post.title.replace(/'/g, "\\'") %>?')">
+              <input type="hidden" name="dir" value="<%= post.isPrivate ? 'private-posts' : 'posts' %>">
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+<%- include('partials/foot') %>

@@ -1,0 +1,99 @@
+<% pageTitle = 'Detail: ' + pagePath + ' · ' + site.title %>
+<%- include('partials/head') %>
+
+<style>
+.detail-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.detail-table th {
+  text-align: left; padding: .45rem .75rem;
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  background: var(--surface2, #f8f8f8);
+}
+.detail-table td { padding: .45rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.detail-table tr:last-child td { border-bottom: none; }
+.detail-table tr:hover td { background: var(--surface2, #f8f8f8); }
+.col-time    { white-space: nowrap; color: var(--muted); font-size: .75rem; width: 130px; }
+.col-ref     { max-width: 240px; }
+.col-country { width: 90px; white-space: nowrap; }
+.col-device  { width: 80px; white-space: nowrap; }
+.col-ua      { max-width: 280px; color: var(--muted); font-size: .72rem; }
+.ref-link    { color: var(--accent); text-decoration: none; }
+.ref-link:hover { text-decoration: underline; }
+.direct      { color: var(--muted); font-style: italic; font-size: .78rem; }
+.ua-text     { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 280px; }
+.device-badge { display: inline-block; font-size: .68rem; padding: .15em .5em; border-radius: 999px; font-weight: 600; }
+.device-mobile  { background: #dbeafe; color: #1d4ed8; }
+.device-tablet  { background: #ede9fe; color: #6d28d9; }
+.device-desktop { background: #dcfce7; color: #15803d; }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/analytics/<%= site.domain %>" class="back-link">← Analytics</a>
+    <h1 style="font-family:var(--mono);font-size:1.1rem"><%= pagePath %></h1>
+    <p class="muted" style="font-size:.82rem;margin-top:.2rem">
+      <%= site.title %> &middot; <%= hits.length %> most recent hits
+    </p>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (hits.length === 0) { %>
+  <div style="padding:2rem;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius)">
+    No hits recorded for this path yet.
+  </div>
+<% } else { %>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+  <table class="detail-table">
+    <thead>
+      <tr><th>Time</th><th>Referrer</th><th>Country</th><th>Device</th><th>User Agent</th></tr>
+    </thead>
+    <tbody>
+      <% hits.forEach(function(h) {
+           const d = new Date(h.ts * 1000);
+           const timeStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+           const flag = h.country ? String.fromCodePoint(...[...h.country.toUpperCase()].map(c => 0x1F1E6 - 65 + c.charCodeAt(0))) : null;
+      %>
+      <tr>
+        <td class="col-time"><%= timeStr %></td>
+        <td class="col-ref">
+          <% if (h.referrer) { %>
+            <a href="<%= h.referrer %>" target="_blank" rel="noopener" class="ref-link"
+               title="<%= h.referrer %>"><%= h.referrer.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,'').slice(0,40) %><%= h.referrer.length > 46 ? '…' : '' %></a>
+          <% } else { %>
+            <span class="direct">direct</span>
+          <% } %>
+        </td>
+        <td class="col-country">
+          <% if (h.country) { %>
+            <span title="<%= h.country %>"><%= flag %> <%= h.country %></span>
+          <% } else { %>
+            <span style="color:var(--border)">—</span>
+          <% } %>
+        </td>
+        <td class="col-device">
+          <% if (h.device) { %>
+            <span class="device-badge device-<%= h.device %>"><%= h.device %></span>
+          <% } else { %>
+            <span style="color:var(--border)">—</span>
+          <% } %>
+        </td>
+        <td class="col-ua">
+          <% if (h.ua) { %>
+            <span class="ua-text" title="<%= h.ua %>"><%= h.ua %></span>
+          <% } else { %>
+            <span style="color:var(--border)">—</span>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+</main>
+</body>
+</html>

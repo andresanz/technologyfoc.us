@@ -1,0 +1,52 @@
+</main>
+<button id="btt" aria-label="Back to top" title="Back to top">&#8593;</button>
+<script>
+(function(){
+  var btn = document.getElementById('btt');
+  window.addEventListener('scroll', function(){ btn.classList.toggle('btt-show', window.scrollY > 400); }, {passive:true});
+  btn.addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+})();
+</script>
+
+<script>
+(function(){
+  // Generic sortable tables — applies to all <table> with <thead> unless data-nosort
+  document.querySelectorAll('table:not([data-nosort])').forEach(table => {
+    const thead = table.querySelector('thead');
+    if (!thead) return;
+    const ths = thead.querySelectorAll('th');
+    let sortCol = -1, sortAsc = true;
+
+    ths.forEach((th, i) => {
+      // Skip columns marked as unsortable or action columns (no text)
+      if (th.dataset.nosort !== undefined || !th.textContent.trim()) return;
+      th.style.cursor = 'pointer';
+      th.style.userSelect = 'none';
+      th.addEventListener('click', () => {
+        if (sortCol === i) sortAsc = !sortAsc;
+        else { sortCol = i; sortAsc = true; }
+        ths.forEach(t => { t.textContent = t.textContent.replace(/ [↑↓]$/, ''); });
+        th.textContent += sortAsc ? ' ↑' : ' ↓';
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        const rows = [...tbody.querySelectorAll('tr')];
+        rows.sort((a, b) => {
+          const ac = a.querySelectorAll('td')[i];
+          const bc = b.querySelectorAll('td')[i];
+          if (!ac || !bc) return 0;
+          const av = ac.dataset.sort || ac.textContent.trim();
+          const bv = bc.dataset.sort || bc.textContent.trim();
+          // Numeric?
+          const an = parseFloat(av.replace(/[^0-9.-]/g,'')), bn = parseFloat(bv.replace(/[^0-9.-]/g,''));
+          const cmp = !isNaN(an) && !isNaN(bn) ? an - bn : av.localeCompare(bv, undefined, {numeric:true});
+          return sortAsc ? cmp : -cmp;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

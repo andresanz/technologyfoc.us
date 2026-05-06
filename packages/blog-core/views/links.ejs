@@ -1,0 +1,33 @@
+<%
+  locals.pageTitle = 'Links';
+  locals.canonical = '/links';
+-%>
+<%- include('layout') %>
+
+<div class="page-header-simple">
+  <h1>Links</h1>
+</div>
+
+<% if (!links || !links.length) { %>
+  <p style="color:var(--muted,#888);font-style:italic;">No links yet.</p>
+<% } else { %>
+  <ul class="links-list">
+    <% links.forEach(function(l) { %>
+      <li class="link-entry">
+        <a href="<%= l.url %>" target="_blank" rel="noopener"><%= l.title || l.url %></a>
+        <% if (l.note) { %><span class="link-note"> — <%= l.note %></span><% } %>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>
+
+<style>
+.page-header-simple { margin-bottom: 2rem; }
+.page-header-simple h1 { margin: 0; }
+.links-list { padding-left: 1.25rem; display: flex; flex-direction: column; gap: .65rem; }
+.link-entry { line-height: 1.5; }
+.link-entry a { font-weight: 500; }
+.link-note { color: var(--muted, #888); font-size: .9rem; }
+</style>
+
+<%- include('layout-end') %>

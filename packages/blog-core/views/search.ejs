@@ -1,0 +1,37 @@
+<%- include('layout') %>
+
+<% if (query) { %>
+  <h1 class="page-title">Search: "<%= query %>"</h1>
+  <% if (results.length === 0) { %>
+    <p class="search-empty">No posts found for "<%= query %>".</p>
+  <% } else { %>
+    <p class="search-count"><%= results.length %> result<%= results.length === 1 ? '' : 's' %></p>
+    <div class="post-list">
+      <% results.forEach(function(post) { %>
+        <article class="post-card">
+          <h2 class="post-title"><a href="/post/<%= post.slug %>"><%= post.title %></a></h2>
+          <div class="post-meta">
+            <time><%= post.dateStr %></time>
+            <% if (post.tags && post.tags.length) { %>
+              <span class="tags">
+                <% post.tags.forEach(function(tag) { %>
+                  <a href="/tag/<%= tag %>" class="tag"><%= tag %></a>
+                <% }) %>
+              </span>
+            <% } %>
+          </div>
+          <% if (post.excerpt) { %><p class="post-excerpt"><%= post.excerpt %></p><% } %>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+<% } else { %>
+  <h1 class="page-title">Search</h1>
+<% } %>
+
+<form class="search-form" action="/search" method="get">
+  <input type="search" name="q" value="<%= query %>" placeholder="Search posts…" autofocus autocomplete="off">
+  <button type="submit">Search</button>
+</form>
+
+<%- include('layout-end') %>

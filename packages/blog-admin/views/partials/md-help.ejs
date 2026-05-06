@@ -1,0 +1,94 @@
+<!-- Markdown help drawer -->
+<div id="mdHelp" style="
+  position:fixed; top:0; right:-420px; width:400px; height:100vh; overflow-y:auto;
+  background:var(--surface); border-left:1px solid var(--border);
+  box-shadow:-4px 0 24px rgba(0,0,0,.12); z-index:900;
+  transition:right .25s ease; padding:0;
+  font-size:.82rem;
+">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1">
+    <strong style="font-size:.9rem">Markdown Reference</strong>
+    <button id="closeMdHelp" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);line-height:1;padding:0">✕</button>
+  </div>
+  <div style="padding:1rem 1.25rem">
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Basics</h4>
+  <table data-nosort style="width:100%;border-collapse:collapse;margin-bottom:1.25rem">
+    <tbody>
+      <tr><td style="padding:.3rem .5rem .3rem 0;white-space:nowrap;font-family:var(--mono);color:var(--accent)"># Heading 1</td><td style="padding:.3rem 0;color:var(--muted)">h1</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">## Heading 2</td><td style="color:var(--muted)">h2</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">**bold**</td><td style="color:var(--muted)"><strong>bold</strong></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">*italic*</td><td style="color:var(--muted)"><em>italic</em></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">~~strikethrough~~</td><td style="color:var(--muted)"><s>strikethrough</s></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">[link](url)</td><td style="color:var(--muted)">hyperlink</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">![alt](url)</td><td style="color:var(--muted)">image</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">&gt; quote</td><td style="color:var(--muted)">blockquote</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">`inline code`</td><td style="color:var(--muted)"><code>inline code</code></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">---</td><td style="color:var(--muted)">horizontal rule</td></tr>
+    </tbody>
+  </table>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Extras</h4>
+  <table data-nosort style="width:100%;border-collapse:collapse;margin-bottom:1.25rem">
+    <tbody>
+      <tr><td style="padding:.3rem .5rem .3rem 0;white-space:nowrap;font-family:var(--mono);color:var(--accent)">{.class #id}</td><td style="padding:.3rem 0;color:var(--muted)">add CSS class/ID to any element</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">==%highlight%==</td><td style="color:var(--muted)"><mark>highlighted text</mark></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">Text[^1]<br>[^1]: Note here.</td><td style="color:var(--muted)">footnote</td></tr>
+    </tbody>
+  </table>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Image Captions</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.4rem;white-space:pre">![photo](url.jpg)
+
+*Caption text here*</div>
+  <p style="color:var(--muted);margin:0 0 .6rem;font-size:.78rem">Italic paragraph right after image → centered caption.</p>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.4rem;white-space:pre">![alt text](url "Caption here")</div>
+  <p style="color:var(--muted);margin:0 0 1.25rem;font-size:.78rem">Or use a title in the image link.</p>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Callout Boxes</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.5rem;white-space:pre">:::tip Optional title
+Your content here.
+:::</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:1.25rem">
+    <div style="border-left:3px solid #3b82f6;background:#eff6ff;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#1d4ed8">note</strong></div>
+    <div style="border-left:3px solid #22c55e;background:#f0fdf4;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#15803d">tip</strong></div>
+    <div style="border-left:3px solid #f59e0b;background:#fffbeb;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#b45309">warning</strong></div>
+    <div style="border-left:3px solid #ef4444;background:#fef2f2;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#b91c1c">danger</strong></div>
+    <div style="border-left:3px solid #06b6d4;background:#ecfeff;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#0e7490">info</strong></div>
+    <div style="border-left:3px solid #8b5cf6;background:#faf5ff;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#6d28d9">quote</strong></div>
+  </div>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Code Blocks</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:1.25rem;white-space:pre">```js
+const x = 42;
+```</div>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Lists</h4>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem">
+    <div>
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem">Unordered</div>
+      <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.5rem .7rem;font-family:var(--mono);color:var(--accent);white-space:pre">- item
+- item
+  - nested</div>
+    </div>
+    <div>
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem">Ordered</div>
+      <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.5rem .7rem;font-family:var(--mono);color:var(--accent);white-space:pre">1. first
+2. second
+3. third</div>
+    </div>
+  </div>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Front Matter</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.5rem;white-space:pre">---
+title: My Post
+date: 2026-04-22
+tags: [photo, travel]
+image: /images/cover.jpg
+draft: true
+---</div>
+  <p style="color:var(--muted);margin:0">Handled via the sidebar fields — you don't need to write this manually.</p>
+
+  </div>
+</div>
+<div id="mdHelpOverlay" style="display:none;position:fixed;inset:0;z-index:899;background:rgba(0,0,0,.3)" ></div>

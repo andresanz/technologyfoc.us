@@ -1,0 +1,64 @@
+<% pageTitle = (isNew ? 'New Template' : 'Edit: ' + tmpl.name) %>
+<%- include('partials/head') %>
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+
+<div class="page-header">
+  <div>
+    <a href="/templates" class="back-link">← Templates</a>
+    <h1><%= isNew ? 'New template' : 'Edit template' %></h1>
+  </div>
+  <div class="header-actions">
+    <button form="tmpl-form" type="submit" class="btn btn-primary">Save</button>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<form id="tmpl-form" method="POST"
+      action="<%= isNew ? '/templates/new' : '/templates/edit/' + tmpl.id %>">
+
+  <div class="edit-layout">
+    <div class="edit-main">
+      <input type="text" name="name" class="title-input" placeholder="Template name"
+             value="<%= tmpl.name %>" required autofocus>
+      <input type="text" name="title" class="title-input" placeholder='Post title (optional) — use {{date}} for today\'s date'
+             value="<%= tmpl.title || '' %>" style="margin-bottom:.5rem">
+      <input type="text" name="image" placeholder="Default cover image URL (optional)"
+             value="<%= tmpl.image || '' %>" style="margin-bottom:.5rem;font-size:.85rem">
+      <textarea name="body" id="tmpl-editor"><%= tmpl.body %></textarea>
+    </div>
+
+    <aside class="edit-sidebar">
+      <section class="card">
+        <h3>About templates</h3>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.6">
+          Templates pre-fill the editor when creating a new post. Use markdown freely —
+          headings, lists, placeholder text, whatever you want to start from.
+        </p>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.6;margin-top:.75rem">
+          The template name appears in the "Use template" dropdown on the new post form.
+        </p>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.6;margin-top:.75rem">
+          Use <code>{{date}}</code> in the title field to insert today's date automatically (e.g. <em>Gratitude — April 19, 2026</em>).
+        </p>
+      </section>
+    </aside>
+  </div>
+</form>
+
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+const easyMDE = new EasyMDE({
+  element:      document.getElementById('tmpl-editor'),
+  spellChecker: false,
+  autosave:     { enabled: false },
+  toolbar: ['bold','italic','heading','|','quote','unordered-list','ordered-list','|','preview','|','guide'],
+});
+document.getElementById('tmpl-form').addEventListener('submit', () => {
+  easyMDE.codemirror.save();
+});
+</script>
+
+</main>
+</body>
+</html>

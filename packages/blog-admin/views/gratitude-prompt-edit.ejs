@@ -1,0 +1,23 @@
+<% pageTitle = 'Edit Prompt' %>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div>
+    <a href="/gratitude-prompts" class="back-link">← Prompts</a>
+    <h1>Edit Prompt</h1>
+  </div>
+  <div class="header-actions">
+    <button form="prompt-form" type="submit" class="btn btn-primary">Save</button>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<form id="prompt-form" method="POST" action="/gratitude-prompts/edit/<%= idx %>">
+  <textarea name="text" rows="4" required
+    style="width:100%;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;box-sizing:border-box;"><%= text %></textarea>
+</form>
+
+</main>
+</body>
+</html>

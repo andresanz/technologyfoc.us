@@ -1,0 +1,6 @@
+{
+  "name": "andresanz-sites",
+  "version": "1.0.0",
+  "private": true,
+  "description": "andresanz monorepo — blog-core, blog-admin, redirect-service, all sites"
+}

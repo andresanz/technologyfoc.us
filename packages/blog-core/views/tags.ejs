@@ -1,0 +1,23 @@
+<%
+  locals.pageTitle = 'Tags';
+  locals.canonical = '/tags';
+-%>
+<%- include('layout') %>
+
+<div class="page-header">
+  <h1>Tags</h1>
+</div>
+
+<% if (tags.length === 0) { %>
+  <p class="empty">No tags yet.</p>
+<% } else { %>
+  <div class="tag-cloud">
+    <% tags.forEach(function(t) { %>
+      <a href="/tag/<%= t.name %>" class="tag-cloud-item">
+        <%= t.name %> <span class="tag-count"><%= t.count %></span>
+      </a>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('layout-end') %>

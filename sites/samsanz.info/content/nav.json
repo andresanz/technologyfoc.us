@@ -1,0 +1,22 @@
+[
+  {
+    "label": "email",
+    "url": "mailto:sanz.andre@gmail.com",
+    "enabled": true
+  },
+  {
+    "label": "phone",
+    "url": "tel:+19146596430",
+    "enabled": true
+  },
+  {
+    "label": "resume",
+    "url": "https://docs.google.com/document/d/14CzfI7PGRZkrvkIR2bEhIhwH1NvhUnWE/edit?usp=sharing&ouid=115116554809636474259&rtpof=true&sd=true",
+    "enabled": true
+  },
+  {
+    "label": "linkedin",
+    "url": "https://www.linkedin.com/in/andresanz/",
+    "enabled": true
+  }
+]

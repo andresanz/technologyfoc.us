@@ -1,0 +1,32 @@
+<%
+  pageTitle = 'Volume Backup ' + date;
+-%>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div>
+    <a href="/server/backups" class="back-link">← Backups</a>
+    <h1>Volume Backup <span class="muted">— <%= date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') %></span></h1>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <% if (!files.length) { %>
+    <p class="empty" style="padding:2rem 1rem">No files found.</p>
+  <% } else { %>
+  <table class="backup-table">
+    <thead><tr><th>File</th><th>Size</th><th>Modified</th></tr></thead>
+    <tbody>
+      <% files.forEach(f => { %>
+      <tr>
+        <td style="font-size:.875rem"><%= f.name %></td>
+        <td style="white-space:nowrap;color:var(--muted)"><%= f.mb %> MB</td>
+        <td style="white-space:nowrap;color:var(--muted)"><%= f.mtime %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<%- include('partials/foot') %>

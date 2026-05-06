@@ -1,0 +1,63 @@
+<%
+  pageTitle = 'New site';
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <div>
+    <a href="/sites" class="back-link">← Sites</a>
+    <h1>Create new site</h1>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<div class="card" style="max-width:600px">
+  <form method="POST" action="/sites/new/create">
+
+    <fieldset>
+      <legend>Site</legend>
+      <label>Domain <span class="required">*</span>
+        <input type="text" name="domain" placeholder="myblog.com" required>
+      </label>
+      <label>Port <span class="required">*</span>
+        <input type="number" name="port" placeholder="3002" min="1024" max="65535" required>
+        <span class="hint">Unique port per site — check existing sites to avoid conflicts</span>
+      </label>
+      <label>Admin email (for SSL cert) <span class="required">*</span>
+        <input type="email" name="email" required>
+      </label>
+      <label>Site title
+        <input type="text" name="title" placeholder="My Blog">
+      </label>
+      <label>Description
+        <input type="text" name="description" placeholder="Short tagline">
+      </label>
+      <label>Author
+        <input type="text" name="author">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>AWS / S3</legend>
+      <p class="hint">Leave blank to use the same credentials as an existing site — you can edit .env later.</p>
+      <label>Access Key ID
+        <input type="text" name="awsKey" autocomplete="off">
+      </label>
+      <label>Secret Access Key
+        <input type="password" name="awsSecret" autocomplete="off">
+      </label>
+      <label>Region
+        <input type="text" name="awsRegion" value="us-east-1">
+      </label>
+      <label>S3 Bucket
+        <input type="text" name="s3Bucket" placeholder="my-blog-images">
+      </label>
+    </fieldset>
+
+    <div class="form-footer">
+      <button type="submit" class="btn btn-primary">Create site</button>
+      <a href="/sites" class="btn">Cancel</a>
+      <span class="hint">DNS must point to this server before SSL can be issued.</span>
+    </div>
+  </form>
+</div>
+<%- include('partials/foot') %>

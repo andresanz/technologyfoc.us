@@ -1,0 +1,169 @@
+<%
+  pageTitle = 'Analytics · ' + site.title;
+-%>
+<%- include('partials/head') %>
+
+<style>
+.analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: .75rem; margin-bottom: 1.75rem; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; }
+.stat-n { font-size: 2rem; font-weight: 700; line-height: 1; }
+.stat-l { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: .3rem; }
+
+.chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.75rem; }
+.chart-bars { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+.chart-bar  { flex: 1; background: var(--accent, #2563eb); border-radius: 2px 2px 0 0; min-height: 2px; opacity: .75; position: relative; cursor: default; }
+.chart-bar:hover { opacity: 1; }
+.chart-bar:hover::after { content: attr(data-tip); position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: #fff; font-size: .68rem; padding: .2em .5em; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+.chart-labels { display: flex; justify-content: space-between; font-size: .65rem; color: var(--muted); margin-top: .35rem; }
+
+.two-col-analytics { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 700px) { .two-col-analytics { grid-template-columns: 1fr; } }
+
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.table-card h3 { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: .75rem 1rem; border-bottom: 1px solid var(--border); }
+.ana-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.ana-table td { padding: .45rem 1rem; border-bottom: 1px solid var(--border); }
+.ana-table tr:last-child td { border-bottom: none; }
+.ana-table td:last-child { text-align: right; color: var(--muted); }
+.bar-bg { background: var(--surface2,#f4f4f5); border-radius: 999px; height: 6px; margin-top: .25rem; overflow: hidden; }
+.bar-fg { background: var(--accent,#2563eb); height: 6px; border-radius: 999px; }
+.days-toggle { display: flex; gap: .4rem; }
+.days-toggle a { padding: .3rem .7rem; border-radius: 6px; font-size: .78rem; border: 1px solid var(--border); color: var(--muted); text-decoration: none; }
+.days-toggle a.active { background: var(--accent,#2563eb); color: #fff; border-color: transparent; }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/sites/<%= site.domain %>" class="back-link">← <%= site.title %></a>
+    <h1>Analytics</h1>
+  </div>
+  <div class="header-actions days-toggle">
+    <a href="?days=7"  class="<%= days==7  ? 'active' : '' %>">7d</a>
+    <a href="?days=30" class="<%= days==30 ? 'active' : '' %>">30d</a>
+    <a href="?days=90" class="<%= days==90 ? 'active' : '' %>">90d</a>
+  </div>
+</div>
+
+<% if (!stats) { %>
+  <p style="color:var(--muted)">No analytics data yet — traffic will appear here once the site receives visitors.</p>
+<% } else { %>
+
+<!-- Stat cards -->
+<div class="analytics-grid">
+  <div class="stat-card">
+    <div class="stat-n"><%= stats.total.toLocaleString() %></div>
+    <div class="stat-l">Page views (<%= days %>d)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-n"><%= stats.today.toLocaleString() %></div>
+    <div class="stat-l">Views today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-n"><%= stats.unique.toLocaleString() %></div>
+    <div class="stat-l">Unique visitors (<%= days %>d)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-n"><%= stats.total > 0 ? (stats.total / days).toFixed(1) : 0 %></div>
+    <div class="stat-l">Avg views/day</div>
+  </div>
+</div>
+
+<!-- Bar chart -->
+<div class="chart-wrap">
+  <div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:.6rem">Daily views — last <%= days %> days</div>
+  <% const maxN = Math.max(...stats.daily.map(d => d.n), 1); %>
+  <div class="chart-bars">
+    <% stats.daily.forEach(function(d) { %>
+    <div class="chart-bar" style="height:<%= Math.max(2, Math.round(d.n / maxN * 80)) %>px" data-tip="<%= d.date %>: <%= d.n %>"></div>
+    <% }) %>
+  </div>
+  <div class="chart-labels">
+    <span><%= stats.daily[0].date %></span>
+    <span><%= stats.daily[Math.floor(stats.daily.length/2)].date %></span>
+    <span><%= stats.daily[stats.daily.length-1].date %></span>
+  </div>
+</div>
+
+<!-- Top pages + referrers -->
+<div class="two-col-analytics">
+  <div class="table-card">
+    <h3>Top pages</h3>
+    <% const maxPV = stats.topPages[0] ? stats.topPages[0].views : 1; %>
+    <table class="ana-table">
+      <% stats.topPages.forEach(function(p) { %>
+      <tr>
+        <td>
+          <a href="<%= site.url %><%= p.path %>" target="_blank" style="color:var(--text)"><%= p.path === '/' ? 'Home' : p.path.replace(/^\/post\//,'') %></a>
+          <a href="/analytics/<%= site.domain %>/detail?path=<%= encodeURIComponent(p.path) %>" style="font-size:.7rem;color:var(--muted);margin-left:.4rem" title="View hit details">detail</a>
+          <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(p.views/maxPV*100) %>%"></div></div>
+        </td>
+        <td><%= p.views.toLocaleString() %></td>
+      </tr>
+      <% }) %>
+      <% if (!stats.topPages.length) { %><tr><td colspan="2" style="color:var(--muted)">No data yet</td></tr><% } %>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <h3>Referrers</h3>
+    <% const maxRV = stats.topRefs[0] ? stats.topRefs[0].views : 1; %>
+    <table class="ana-table">
+      <% stats.topRefs.forEach(function(r) { %>
+      <tr>
+        <td>
+          <span style="color:var(--text)"><%= r.referrer.replace(/^https?:\/\/(www\.)?/,'').slice(0,40) %></span>
+          <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(r.views/maxRV*100) %>%"></div></div>
+        </td>
+        <td><%= r.views.toLocaleString() %></td>
+      </tr>
+      <% }) %>
+      <% if (!stats.topRefs.length) { %><tr><td colspan="2" style="color:var(--muted)">No referrer data</td></tr><% } %>
+    </table>
+  </div>
+</div>
+
+<!-- Country + Device -->
+<% if ((countryStats && countryStats.length) || (deviceStats && deviceStats.length)) { %>
+<div class="two-col-analytics" style="margin-top:1rem">
+  <div class="table-card">
+    <h3>Countries</h3>
+    <% const maxCV = countryStats && countryStats[0] ? countryStats[0].views : 1; %>
+    <table class="ana-table">
+      <% (countryStats || []).forEach(function(c) {
+           const flag = c.country ? String.fromCodePoint(...[...c.country.toUpperCase()].map(ch => 0x1F1E6 - 65 + ch.charCodeAt(0))) : '🌐';
+      %>
+      <tr>
+        <td>
+          <span><%= flag %> <%= c.country || 'Unknown' %></span>
+          <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(c.views/maxCV*100) %>%"></div></div>
+        </td>
+        <td><%= c.views.toLocaleString() %></td>
+      </tr>
+      <% }) %>
+      <% if (!countryStats || !countryStats.length) { %><tr><td colspan="2" style="color:var(--muted)">No country data yet</td></tr><% } %>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <h3>Devices</h3>
+    <% const maxDV = deviceStats && deviceStats[0] ? deviceStats[0].views : 1; %>
+    <% const deviceIcon = { mobile: '📱', tablet: '🖥', desktop: '💻' }; %>
+    <table class="ana-table">
+      <% (deviceStats || []).forEach(function(d) { %>
+      <tr>
+        <td>
+          <span><%= deviceIcon[d.device] || '❓' %> <%= d.device %></span>
+          <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(d.views/maxDV*100) %>%"></div></div>
+        </td>
+        <td><%= d.views.toLocaleString() %></td>
+      </tr>
+      <% }) %>
+      <% if (!deviceStats || !deviceStats.length) { %><tr><td colspan="2" style="color:var(--muted)">No device data yet</td></tr><% } %>
+    </table>
+  </div>
+</div>
+<% } %>
+
+<% } %>
+<%- include('partials/foot') %>

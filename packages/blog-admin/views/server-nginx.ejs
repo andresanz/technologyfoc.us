@@ -1,0 +1,157 @@
+<% pageTitle = 'Nginx' %>
+<%- include('partials/head') %>
+
+<style>
+.nginx-layout { display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; align-items: start; }
+.site-list { display: flex; flex-direction: column; gap: .3rem; }
+.site-item {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .45rem .75rem; border-radius: var(--radius);
+  font-size: .85rem; cursor: pointer; text-decoration: none;
+  color: var(--text); border: 1px solid transparent;
+}
+.site-item:hover { background: var(--surface2, #f4f4f4); }
+.site-item.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.site-item.active .site-dot { background: #fff; }
+.site-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.site-dot.on  { background: var(--success, #16a34a); }
+.site-dot.off { background: var(--muted); }
+.site-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-tag { font-size: .65rem; color: var(--muted); border: 1px solid var(--border); border-radius: 3px; padding: 0 .3rem; white-space: nowrap; }
+.site-item.active .site-tag { color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.4); }
+
+.editor-area { font-family: var(--mono); font-size: .8rem; line-height: 1.6; width: 100%; min-height: 480px; resize: vertical; }
+.test-banner { padding: .6rem 1rem; border-radius: var(--radius); font-size: .82rem; margin-bottom: 1rem; font-family: var(--mono); white-space: pre-wrap; }
+.test-ok   { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.test-fail { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+.log-panel { margin-top: 1rem; }
+.log-tabs { display: flex; gap: .4rem; margin-bottom: .5rem; }
+.log-box { background: #1a1a2e; color: #e2e8f0; font-family: var(--mono); font-size: .75rem; line-height: 1.5; padding: 1rem; border-radius: var(--radius); min-height: 200px; max-height: 360px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/server" class="back-link">← Server</a>
+    <h1>Nginx</h1>
+  </div>
+  <div class="header-actions">
+    <div class="test-result-badge" style="font-size:.8rem;padding:.3rem .7rem;border-radius:var(--radius);background:<%= testOk ? '#dcfce7' : '#fee2e2' %>;color:<%= testOk ? '#15803d' : '#991b1b' %>">
+      <%= testOk ? '✓ Config OK' : '✗ Config error' %>
+    </div>
+    <form method="POST" action="/server/nginx/reload">
+      <button class="btn btn-primary">Reload nginx</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (!testOk) { %>
+<div class="test-banner test-fail"><%= testResult %></div>
+<% } %>
+
+<div class="nginx-layout">
+
+  <!-- Site list -->
+  <div>
+    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:.5rem;">Sites</div>
+    <div class="site-list">
+      <% sites.forEach(function(s) { %>
+      <a href="/server/nginx?site=<%= s.name %>" class="site-item <%= selected === s.name ? 'active' : '' %>">
+        <div class="site-dot <%= s.enabled ? 'on' : 'off' %>"></div>
+        <div class="site-name"><%= s.name %></div>
+        <% if (!s.isSymlink && s.enabled) { %><span class="site-tag">copy</span><% } %>
+        <% if (!s.enabled) { %><span class="site-tag">off</span><% } %>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Editor + logs -->
+  <div>
+    <% if (selected) { %>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;">
+      <div style="font-weight:700;"><%= selected %></div>
+      <div style="display:flex;gap:.5rem;align-items:center;">
+        <% const selSite = sites.find(s => s.name === selected); %>
+        <form method="POST" action="/server/nginx/toggle">
+          <input type="hidden" name="site" value="<%= selected %>">
+          <button class="btn btn-sm <%= selSite && selSite.enabled ? 'btn-danger' : 'btn-primary' %>">
+            <%= selSite && selSite.enabled ? 'Disable' : 'Enable' %>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <form method="POST" action="/server/nginx/save" id="configForm">
+      <input type="hidden" name="site" value="<%= selected %>">
+      <textarea name="config" class="form-input editor-area" spellcheck="false" id="configEditor"><%= config %></textarea>
+      <div style="display:flex;gap:.5rem;margin-top:.6rem;">
+        <button class="btn btn-primary">Save &amp; reload</button>
+        <button type="button" class="btn" id="testBtn">Test only</button>
+      </div>
+    </form>
+
+    <!-- Log viewer -->
+    <div class="log-panel">
+      <div style="font-size:.85rem;font-weight:600;margin-bottom:.5rem;">Logs</div>
+      <div class="log-tabs">
+        <button class="btn btn-sm active-tab" id="tabAccess" onclick="loadLogs('access')">Access</button>
+        <button class="btn btn-sm" id="tabError"  onclick="loadLogs('error')">Error</button>
+        <select id="logLines" class="form-input" style="width:80px;padding:.25rem .5rem;font-size:.8rem;" onchange="loadLogs(currentTab)">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="200">200</option>
+          <option value="500">500</option>
+        </select>
+        <button class="btn btn-sm" onclick="loadLogs(currentTab)">↺</button>
+      </div>
+      <div class="log-box" id="logBox">Select Access or Error to load logs…</div>
+    </div>
+    <% } %>
+  </div>
+
+</div>
+
+<script>
+const SITE = '<%= selected %>';
+let currentTab = 'access';
+
+async function loadLogs(type) {
+  currentTab = type;
+  document.getElementById('tabAccess').classList.toggle('active-tab', type === 'access');
+  document.getElementById('tabError').classList.toggle('active-tab',  type === 'error');
+  const lines = document.getElementById('logLines').value;
+  const box   = document.getElementById('logBox');
+  box.textContent = 'Loading…';
+  try {
+    const d = await fetch(`/server/nginx/logs?site=${SITE}&type=${type}&lines=${lines}`).then(r => r.json());
+    box.textContent = d.logs || '(empty)';
+    box.scrollTop   = box.scrollHeight;
+  } catch(e) { box.textContent = 'Error: ' + e.message; }
+}
+
+document.getElementById('testBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('testBtn');
+  btn.disabled = true; btn.textContent = 'Testing…';
+  try {
+    const fd = new FormData(document.getElementById('configForm'));
+    const r  = await fetch('/server/nginx/test', { method: 'POST', body: new URLSearchParams(fd) });
+    const d  = await r.json();
+    alert(d.ok ? '✓ ' + d.result : '✗ ' + d.result);
+  } catch(e) { alert('Error: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Test only';
+});
+
+// Load access logs on page load
+if (SITE) loadLogs('access');
+</script>
+
+<style>
+.active-tab { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>
+
+</main>
+</body>
+</html>

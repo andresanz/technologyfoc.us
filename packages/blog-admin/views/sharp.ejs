@@ -1,0 +1,181 @@
+<% pageTitle = 'Image Processing' %>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div>
+    <h1>Image Processing</h1>
+    <p class="muted" style="margin-top:.25rem;font-size:.875rem">Sharp compression settings and upload stats.</p>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<%
+function fmt(bytes) {
+  if (!bytes) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(2) + ' MB';
+}
+function pct(a, b) {
+  if (!a || !b) return '—';
+  return Math.round((1 - b/a)*100) + '%';
+}
+%>
+
+<!-- ── Totals ── -->
+<% if (totals && totals.count > 0) { %>
+<div class="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+  <div class="stat-card card">
+    <div class="stat-label">Total uploads</div>
+    <div class="stat-value"><%= totals.count.toLocaleString() %></div>
+  </div>
+  <div class="stat-card card">
+    <div class="stat-label">Original size</div>
+    <div class="stat-value"><%= fmt(totals.total_in) %></div>
+  </div>
+  <div class="stat-card card">
+    <div class="stat-label">After processing</div>
+    <div class="stat-value"><%= fmt(totals.total_out) %></div>
+  </div>
+  <div class="stat-card card">
+    <div class="stat-label">Space saved</div>
+    <div class="stat-value" style="color:var(--success,#16a34a)"><%= fmt(totals.saved) %> (<%= pct(totals.total_in, totals.total_out) %>)</div>
+  </div>
+</div>
+<% } %>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+
+  <!-- ── Global settings ── -->
+  <div>
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:.75rem;">Global defaults</h2>
+    <div class="card" style="padding:1.25rem;">
+      <%
+        const g = config.global || {};
+        const D = { maxWidth:2400, jpegQ:85, webpQ:85, pngEffort:7 };
+        const gv = { ...D, ...g };
+      %>
+      <form method="POST" action="/sharp/settings/global">
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+          <label class="form-label">Max width (px)
+            <input class="form-input" type="number" name="maxWidth" value="<%= gv.maxWidth %>" min="400" max="8000">
+          </label>
+          <label class="form-label">JPEG quality
+            <input class="form-input" type="number" name="jpegQ" value="<%= gv.jpegQ %>" min="1" max="100">
+          </label>
+          <label class="form-label">WebP quality
+            <input class="form-input" type="number" name="webpQ" value="<%= gv.webpQ %>" min="1" max="100">
+          </label>
+          <label class="form-label">PNG effort (1–9)
+            <input class="form-input" type="number" name="pngEffort" value="<%= gv.pngEffort %>" min="1" max="9">
+          </label>
+        </div>
+        <button class="btn btn-primary btn-sm">Save global</button>
+      </form>
+    </div>
+
+    <!-- ── Per-site settings ── -->
+    <h2 style="font-size:1rem;font-weight:700;margin:1.25rem 0 .75rem;">Per-site overrides</h2>
+    <% sites.forEach(function(site) { %>
+    <%
+      const sv = config[site.domain] || {};
+      const hasOverride = Object.keys(sv).length > 0;
+      const eff = { ...gv, ...sv };
+    %>
+    <div class="card" style="padding:1rem 1.25rem;margin-bottom:.75rem;">
+      <details <%= hasOverride ? 'open' : '' %>>
+        <summary style="cursor:pointer;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:.5rem;">
+          <%= site.domain %>
+          <% if (hasOverride) { %><span class="tag">custom</span><% } else { %><span style="font-size:.75rem;color:var(--muted);">using global</span><% } %>
+        </summary>
+        <form method="POST" action="/sharp/settings/<%= site.domain %>" style="margin-top:.75rem;">
+          <label style="display:flex;align-items:center;gap:.4rem;margin-bottom:.6rem;font-size:.85rem;">
+            <input type="checkbox" name="useGlobal" <%= !hasOverride ? 'checked' : '' %> onchange="this.form.querySelectorAll('.site-fields input').forEach(i=>i.disabled=this.checked)">
+            Use global defaults
+          </label>
+          <div class="site-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem;">
+            <label class="form-label" style="font-size:.82rem;">Max width
+              <input class="form-input" type="number" name="maxWidth" value="<%= eff.maxWidth %>" min="400" max="8000" <%= !hasOverride ? 'disabled' : '' %>>
+            </label>
+            <label class="form-label" style="font-size:.82rem;">JPEG quality
+              <input class="form-input" type="number" name="jpegQ" value="<%= eff.jpegQ %>" min="1" max="100" <%= !hasOverride ? 'disabled' : '' %>>
+            </label>
+            <label class="form-label" style="font-size:.82rem;">WebP quality
+              <input class="form-input" type="number" name="webpQ" value="<%= eff.webpQ %>" min="1" max="100" <%= !hasOverride ? 'disabled' : '' %>>
+            </label>
+            <label class="form-label" style="font-size:.82rem;">PNG effort
+              <input class="form-input" type="number" name="pngEffort" value="<%= eff.pngEffort %>" min="1" max="9" <%= !hasOverride ? 'disabled' : '' %>>
+            </label>
+          </div>
+          <button class="btn btn-sm">Save</button>
+        </form>
+      </details>
+    </div>
+    <% }) %>
+  </div>
+
+  <!-- ── Right: per-site stats + recent uploads ── -->
+  <div>
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:.75rem;">Stats by site</h2>
+    <% if (stats.length === 0) { %>
+    <div class="card" style="padding:1.5rem;text-align:center;color:var(--muted);">No uploads processed yet.</div>
+    <% } else { %>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem;">
+      <table class="post-table" style="margin:0;">
+        <thead><tr>
+          <th>Site</th>
+          <th>Uploads</th>
+          <th>Original</th>
+          <th>Output</th>
+          <th>Saved</th>
+        </tr></thead>
+        <tbody>
+          <% stats.forEach(function(s) { %>
+          <tr>
+            <td style="font-size:.82rem;"><code><%= s.domain %></code></td>
+            <td><%= s.count %></td>
+            <td style="font-size:.82rem;color:var(--muted)"><%= fmt(s.total_in) %></td>
+            <td style="font-size:.82rem;"><%= fmt(s.total_out) %></td>
+            <td style="font-size:.82rem;color:var(--success,#16a34a);font-weight:600;"><%= fmt(s.saved) %> (<%= pct(s.total_in, s.total_out) %>)</td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:.75rem;">Recent uploads</h2>
+    <% if (recent.length === 0) { %>
+    <div class="card" style="padding:1.5rem;text-align:center;color:var(--muted);">Nothing yet.</div>
+    <% } else { %>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="post-table" style="margin:0;">
+        <thead><tr>
+          <th>File</th>
+          <th>Site</th>
+          <th>Before</th>
+          <th>After</th>
+          <th>Saved</th>
+        </tr></thead>
+        <tbody>
+          <% recent.forEach(function(r) { %>
+          <tr>
+            <td style="font-size:.78rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= r.filename %>"><%= r.filename %></td>
+            <td style="font-size:.78rem;color:var(--muted)"><%= r.domain %></td>
+            <td style="font-size:.78rem;color:var(--muted)"><%= fmt(r.original_size) %></td>
+            <td style="font-size:.78rem;"><%= fmt(r.processed_size) %></td>
+            <td style="font-size:.78rem;color:var(--success,#16a34a);font-weight:600;"><%= pct(r.original_size, r.processed_size) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+
+</div>
+
+</main>
+</body>
+</html>

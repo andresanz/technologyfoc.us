@@ -1,0 +1,363 @@
+<%
+  pageTitle = 'Logs';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.logs-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+.log-sidebar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .5rem 0;
+  position: sticky;
+  top: 1rem;
+}
+.log-sidebar-section {
+  padding: .35rem .75rem .1rem;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-top: .35rem;
+}
+.log-sidebar a {
+  display: block;
+  padding: .32rem .75rem;
+  font-size: .82rem;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-sidebar a:hover { background: var(--hover,rgba(0,0,0,.05)); }
+.log-sidebar a.active { background: var(--accent); color: #fff; }
+.log-sidebar a .badge {
+  font-size: .65rem;
+  padding: .05rem .3rem;
+  border-radius: 3px;
+  margin-left: .3rem;
+  background: rgba(0,0,0,.12);
+}
+
+.log-main { min-height: 0; }
+.log-toolbar {
+  display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+  margin-bottom: .75rem;
+}
+.log-toolbar select, .log-toolbar input[type=number] {
+  width: auto; min-width: 60px;
+}
+.log-wrap {
+  background: #0d1117; color: #c9d1d9;
+  border-radius: var(--radius);
+  padding: 1rem; font-family: var(--mono); font-size: .75rem;
+  line-height: 1.6; overflow-x: auto; white-space: pre-wrap;
+  word-break: break-all; height: 65vh; overflow-y: auto;
+}
+.log-wrap .lerr  { color: #f85149; }
+.log-wrap .lwarn { color: #e3b341; }
+.log-wrap .lok   { color: #3fb950; }
+.log-empty { color: #555; font-style: italic; }
+
+/* Rotation panel */
+.rot-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.rot-table th, .rot-table td { padding: .35rem .5rem; text-align: left; border-bottom: 1px solid var(--border); }
+.rot-table th { color: var(--muted); font-weight: 600; font-size: .75rem; }
+.rot-table tr:last-child td { border-bottom: none; }
+.rot-compressed { color: var(--muted); font-size: .75rem; }
+textarea.log-conf {
+  font-family: var(--mono); font-size: .8rem;
+  width: 100%; height: 200px;
+  background: #0d1117; color: #c9d1d9;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem; resize: vertical;
+}
+.log-output {
+  background: #0d1117; color: #3fb950;
+  font-family: var(--mono); font-size: .75rem;
+  padding: .6rem .75rem; border-radius: var(--radius);
+  margin-top: .5rem; white-space: pre-wrap; display: none;
+}
+
+@media (max-width: 700px) {
+  .logs-layout { grid-template-columns: 1fr; }
+  .log-sidebar { position: static; }
+}
+</style>
+
+<div class="page-header">
+  <h1>Logs</h1>
+  <div style="display:flex;gap:.5rem;">
+    <button class="btn" id="btnRotation" onclick="showRotation()">Log Rotation</button>
+    <button class="btn btn-primary" id="btnRefresh" onclick="fetchLog()">↺ Refresh</button>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<div class="logs-layout" id="mainLayout">
+  <!-- Sidebar -->
+  <nav class="log-sidebar" id="logSidebar">
+
+    <div class="log-sidebar-section">Nginx — Access</div>
+    <% sites.forEach(function(site) { %>
+      <a data-src="nginx" data-site="<%= site %>" data-type="access"
+         onclick="pick(this)"><%= site %></a>
+    <% }) %>
+
+    <div class="log-sidebar-section">Nginx — Error</div>
+    <% sites.forEach(function(site) { %>
+      <a data-src="nginx" data-site="<%= site %>" data-type="error"
+         onclick="pick(this)"><%= site %> <span class="badge">err</span></a>
+    <% }) %>
+
+    <div class="log-sidebar-section">Services</div>
+    <% services.forEach(function(svc) { %>
+      <a data-src="journal" data-service="<%= svc %>"
+         onclick="pick(this)"><%= svc %></a>
+    <% }) %>
+
+    <div class="log-sidebar-section">System</div>
+    <a data-src="sysfile" data-file="syslog" onclick="pick(this)">syslog</a>
+    <a data-src="sysfile" data-file="auth.log" onclick="pick(this)">auth.log</a>
+    <a data-src="sysfile" data-file="ufw.log" onclick="pick(this)">ufw.log</a>
+    <a data-src="sysfile" data-file="fail2ban.log" onclick="pick(this)">fail2ban.log</a>
+    <a data-src="sysfile" data-file="mail.log" onclick="pick(this)">mail.log</a>
+    <a data-src="sysfile" data-file="letsencrypt/letsencrypt.log" onclick="pick(this)">letsencrypt</a>
+    <a data-src="sysfile" data-file="unattended-upgrades/unattended-upgrades.log" onclick="pick(this)">unattended-upgrades</a>
+    <a data-src="sysfile" data-file="blog-monitor.log" onclick="pick(this)">blog-monitor</a>
+    <a data-src="sysfile" data-file="blog-backup.log" onclick="pick(this)">blog-backup</a>
+  </nav>
+
+  <!-- Main viewer -->
+  <div class="log-main">
+    <div class="log-toolbar">
+      <span id="logTitle" style="font-weight:600;font-size:.9rem;flex:1;">Select a log source →</span>
+      <label style="font-size:.82rem;color:var(--muted);">Lines:</label>
+      <select id="selLines" onchange="fetchLog()">
+        <option value="50">50</option>
+        <option value="100" selected>100</option>
+        <option value="200">200</option>
+        <option value="500">500</option>
+        <option value="1000">1000</option>
+      </select>
+      <label style="font-size:.82rem;color:var(--muted);">Filter:</label>
+      <input type="text" id="filterInput" placeholder="grep…" style="width:120px;"
+             oninput="applyFilter()">
+      <label style="font-size:.82rem;color:var(--muted);">
+        <input type="checkbox" id="chkAutoRefresh" onchange="toggleAutoRefresh()"> Auto
+      </label>
+    </div>
+    <div class="log-wrap" id="logBox"><span class="log-empty">Select a log source from the sidebar.</span></div>
+  </div>
+</div>
+
+<!-- Rotation Panel (hidden by default) -->
+<div id="rotPanel" style="display:none;margin-top:1rem;">
+  <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h2 style="margin:0;font-size:1rem;">Log Rotation</h2>
+      <button class="btn" onclick="hideRotation()">✕ Close</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" id="rotStats">
+      <div>
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.5rem;">/var/log disk usage</div>
+        <div id="rotDisk" style="font-size:1.4rem;font-weight:700;">…</div>
+      </div>
+      <div>
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.5rem;">Journal size</div>
+        <div id="rotJournal" style="font-size:1.4rem;font-weight:700;">…</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
+
+    <!-- File list -->
+    <div class="card" style="padding:1.25rem;">
+      <h3 style="margin:0 0 .75rem;font-size:.9rem;">Nginx log files</h3>
+      <div style="max-height:320px;overflow-y:auto;">
+        <table class="rot-table" id="rotTable">
+          <thead><tr><th>File</th><th>Size</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Logrotate config + actions -->
+    <div class="card" style="padding:1.25rem;">
+      <h3 style="margin:0 0 .75rem;font-size:.9rem;">/etc/logrotate.d/nginx</h3>
+      <textarea class="log-conf" id="rotConf"></textarea>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveRotation()">Save</button>
+        <button class="btn" onclick="forceRotate()">Force Rotate Now</button>
+        <button class="btn btn-danger" onclick="vacuumJournal()" style="margin-left:auto;">
+          Vacuum Journal
+        </button>
+      </div>
+      <div class="log-output" id="rotOutput"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let current = null;
+  let rawLines = [];
+  let autoTimer = null;
+
+  // ── Sidebar pick ────────────────────────────────────────────────────────────
+  window.pick = function(el) {
+    document.querySelectorAll('.log-sidebar a').forEach(a => a.classList.remove('active'));
+    el.classList.add('active');
+
+    current = {
+      src:     el.dataset.src,
+      site:    el.dataset.site,
+      type:    el.dataset.type,
+      service: el.dataset.service,
+      file:    el.dataset.file,
+    };
+
+    // Update title
+    let title = '';
+    if (current.src === 'nginx')   title = current.site + ' · ' + current.type;
+    if (current.src === 'journal') title = current.service + ' (journal)';
+    if (current.src === 'sysfile') title = '/var/log/' + current.file;
+    document.getElementById('logTitle').textContent = title;
+
+    fetchLog();
+  };
+
+  // ── Fetch ────────────────────────────────────────────────────────────────────
+  window.fetchLog = async function() {
+    if (!current) return;
+    const lines = document.getElementById('selLines').value;
+    const params = new URLSearchParams({ source: current.src, lines });
+    if (current.src === 'nginx')   { params.set('site', current.site); params.set('type', current.type); }
+    if (current.src === 'journal') params.set('service', current.service);
+    if (current.src === 'sysfile') params.set('file', current.file);
+
+    const box = document.getElementById('logBox');
+    box.innerHTML = '<span class="log-empty">Loading…</span>';
+    try {
+      const r = await fetch('/logs/fetch?' + params);
+      const d = await r.json();
+      rawLines = d.content.split('\n');
+      applyFilter();
+    } catch(e) {
+      box.innerHTML = '<span class="lerr">Error: ' + e.message + '</span>';
+    }
+  };
+
+  // ── Filter ───────────────────────────────────────────────────────────────────
+  window.applyFilter = function() {
+    const q = document.getElementById('filterInput').value.trim().toLowerCase();
+    const filtered = q ? rawLines.filter(l => l.toLowerCase().includes(q)) : rawLines;
+    renderLines(filtered);
+  };
+
+  function renderLines(lines) {
+    const box = document.getElementById('logBox');
+    const html = lines.map(l => {
+      const lc = l.toLowerCase();
+      const cls = lc.includes('error')||lc.includes('crit')||lc.includes('emerg')||lc.includes(' 5') ? 'lerr'
+                : lc.includes('warn')||lc.includes('notice') ? 'lwarn'
+                : lc.includes('start')||lc.includes('ready')||lc.includes('listen')||lc.includes('active') ? 'lok'
+                : '';
+      const escaped = l.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      return cls ? `<span class="${cls}">${escaped}</span>` : escaped;
+    }).join('\n');
+    box.innerHTML = html || '<span class="log-empty">(empty)</span>';
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // ── Auto-refresh ─────────────────────────────────────────────────────────────
+  window.toggleAutoRefresh = function() {
+    clearInterval(autoTimer);
+    if (document.getElementById('chkAutoRefresh').checked) {
+      autoTimer = setInterval(fetchLog, 5000);
+    }
+  };
+
+  // ── Rotation panel ────────────────────────────────────────────────────────────
+  window.showRotation = async function() {
+    document.getElementById('rotPanel').style.display = 'block';
+    document.getElementById('mainLayout').style.display = 'none';
+    const r = await fetch('/logs/rotation');
+    const d = await r.json();
+
+    document.getElementById('rotDisk').textContent    = d.diskUsed;
+    document.getElementById('rotJournal').textContent = d.journalSize.replace(/^.*?:\s*/,'').trim() || '?';
+    document.getElementById('rotConf').value          = d.config;
+
+    const tbody = document.querySelector('#rotTable tbody');
+    tbody.innerHTML = d.files.map(f =>
+      `<tr>
+        <td>${f.name}${f.compressed ? ' <span class="rot-compressed">[gz]</span>' : ''}</td>
+        <td>${f.size}</td>
+      </tr>`
+    ).join('');
+  };
+
+  window.hideRotation = function() {
+    document.getElementById('rotPanel').style.display = 'none';
+    document.getElementById('mainLayout').style.display = 'grid';
+  };
+
+  window.saveRotation = async function() {
+    const config = document.getElementById('rotConf').value;
+    const r = await fetch('/logs/rotation/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config })
+    });
+    const d = await r.json();
+    showOutput(d.ok ? '✓ Saved\n' + (d.test || '') : '✗ ' + d.error);
+  };
+
+  window.forceRotate = async function() {
+    showOutput('Running logrotate…');
+    const r = await fetch('/logs/rotate', { method: 'POST' });
+    const d = await r.json();
+    showOutput(d.output || '✓ Done');
+  };
+
+  window.vacuumJournal = async function() {
+    const days = prompt('Remove journal entries older than N days:', '30');
+    if (!days) return;
+    showOutput('Running journal vacuum…');
+    const r = await fetch('/logs/journal/vacuum', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: parseInt(days) })
+    });
+    const d = await r.json();
+    showOutput(d.output || '✓ Done');
+    // refresh stats
+    showRotation();
+  };
+
+  function showOutput(txt) {
+    const el = document.getElementById('rotOutput');
+    el.style.display = 'block';
+    el.textContent = txt;
+  }
+
+  // ── fix: route POST bodies as JSON ────────────────────────────────────────────
+  // rotation/save already sends JSON body above; ensure express receives it
+})();
+</script>
+
+<%- include('partials/foot') %>

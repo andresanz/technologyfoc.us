@@ -1,0 +1,71 @@
+<%
+  pageTitle = 'Logs · ' + service;
+-%>
+<%- include('partials/head') %>
+<style>
+.log-controls { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.log-controls select, .log-controls input { width: auto; }
+.log-wrap {
+  background: #0d1117; color: #c9d1d9; border-radius: var(--radius);
+  padding: 1rem; font-family: var(--mono); font-size: .78rem;
+  line-height: 1.6; overflow-x: auto; white-space: pre-wrap;
+  word-break: break-all; max-height: 70vh; overflow-y: auto;
+}
+.log-wrap .err  { color: #f85149; }
+.log-wrap .warn { color: #e3b341; }
+.log-wrap .ok   { color: #3fb950; }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/server" class="back-link">← Server</a>
+    <h1>Logs <span class="muted">— <%= service %></span></h1>
+  </div>
+  <button class="btn" onclick="refresh()">Refresh</button>
+</div>
+
+<div class="log-controls">
+  <select id="svcSelect" onchange="navigate()">
+    <% allServices.forEach(s => { %>
+      <option value="<%= s %>" <%= s === service ? 'selected' : '' %>><%= s %></option>
+    <% }) %>
+  </select>
+  <select id="linesSelect" onchange="navigate()">
+    <% [50,100,200,500].forEach(n => { %>
+      <option value="<%= n %>" <%= n === lines ? 'selected' : '' %>><%= n %> lines</option>
+    <% }) %>
+  </select>
+</div>
+
+<div class="log-wrap" id="logBox"><%= logs
+  .split('\n')
+  .map(l => {
+    const lc = l.toLowerCase();
+    const cls = lc.includes('error')||lc.includes('fail')||lc.includes('crit') ? 'err'
+              : lc.includes('warn') ? 'warn'
+              : lc.includes('start')||lc.includes('ready')||lc.includes('listen') ? 'ok' : '';
+    return cls ? `<span class="${cls}">${l}</span>` : l;
+  })
+  .join('\n')
+%></div>
+
+<script>
+function navigate() {
+  const svc   = document.getElementById('svcSelect').value;
+  const lines = document.getElementById('linesSelect').value;
+  window.location = `/server/logs?service=${svc}&lines=${lines}`;
+}
+async function refresh() {
+  const svc   = document.getElementById('svcSelect').value;
+  const lines = document.getElementById('linesSelect').value;
+  try {
+    const r = await fetch(`/server/logs?service=${svc}&lines=${lines}`, { headers:{ Accept:'application/json' } });
+    const d = await r.json();
+    document.getElementById('logBox').textContent = d.logs;
+  } catch(e) { alert(e.message); }
+}
+// Scroll to bottom on load
+document.getElementById('logBox').scrollTop = 99999;
+</script>
+
+<%- include('partials/foot') %>

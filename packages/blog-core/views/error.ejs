@@ -1,0 +1,12 @@
+<%
+  locals.pageTitle = code + ' Error';
+-%>
+<%- include('layout') %>
+
+<div class="error-page">
+  <h1><%= code %></h1>
+  <p><%= message %></p>
+  <a href="/">← Go home</a>
+</div>
+
+<%- include('layout-end') %>

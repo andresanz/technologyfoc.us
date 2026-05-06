@@ -1,0 +1,313 @@
+<%
+  pageTitle = 'Server';
+  function kb(v) {
+    if (v >= 1024*1024) return (v/1024/1024).toFixed(1)+' GB';
+    if (v >= 1024)      return (v/1024).toFixed(0)+' MB';
+    return v+' KB';
+  }
+  function pct(used, total) { return total ? Math.round(used/total*100) : 0; }
+  function uptime(s) {
+    const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
+    return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+  }
+-%>
+<%- include('partials/head') %>
+
+<style>
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+.metric-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem;
+}
+.metric-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: .4rem; }
+.metric-value { font-size: 1.4rem; font-weight: 700; line-height: 1; margin-bottom: .4rem; }
+.metric-sub   { font-size: .78rem; color: var(--muted); }
+
+.bar-track { height: 4px; background: var(--border); border-radius: 2px; margin-top: .5rem; overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 2px; background: var(--accent); transition: width .5s; }
+.bar-fill.warn  { background: var(--warning); }
+.bar-fill.danger{ background: var(--danger);  }
+
+.svc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .6rem;
+  margin-bottom: 1.5rem;
+}
+.svc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .75rem 1rem;
+  display: flex; align-items: center; gap: .75rem;
+}
+.svc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.svc-dot.active   { background: var(--success); box-shadow: 0 0 0 3px #dcfce7; }
+.svc-dot.inactive { background: var(--muted); }
+.svc-dot.failed   { background: var(--danger); box-shadow: 0 0 0 3px #fee2e2; }
+.svc-info { flex: 1; min-width: 0; }
+.svc-name { font-size: .875rem; font-weight: 600; }
+.svc-status { font-size: .75rem; color: var(--muted); }
+.svc-actions { display: flex; gap: .25rem; }
+
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .75rem; gap: .5rem; flex-wrap: wrap;
+}
+.section-header h2 { font-size: 1rem; }
+
+.quick-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+.health-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3em .8em; border-radius: 999px;
+  font-size: .8rem; font-weight: 600; text-decoration: none;
+  transition: opacity .2s;
+}
+.health-badge::before {
+  content: ''; display: inline-block; width: 7px; height: 7px;
+  border-radius: 50%;
+}
+.health-ok   { background: #dcfce7; color: #15803d; }
+.health-ok::before   { background: #16a34a; }
+.health-warn { background: #fef9c3; color: #92400e; }
+.health-warn::before { background: #d97706; }
+.health-crit { background: #fee2e2; color: #991b1b; }
+.health-crit::before { background: #dc2626; }
+
+@media (max-width: 640px) {
+  .server-header-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .4rem;
+    width: 100%;
+  }
+  .server-header-actions a.btn { text-align: center; }
+  .server-header-actions form { display: flex; }
+  .server-header-actions form .btn { flex: 1; }
+}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Server <a href="/server/health" id="health-badge" style="font-size:.75rem;font-weight:500;vertical-align:middle;margin-left:.5rem;text-decoration:none;">Health</a></h1>
+  </div>
+  <div class="header-actions server-header-actions">
+    <a href="/server/nginx" class="btn">Nginx</a>
+    <a href="/server/bans" class="btn">Bans</a>
+    <a href="/server/logs" class="btn">Logs</a>
+    <a href="/server/backups" class="btn">Backups</a>
+    <form method="POST" action="/server/updates/check">
+      <button class="btn">Check updates</button>
+    </form>
+    <form method="POST" action="/server/nginx/reload">
+      <button class="btn btn-primary">Reload nginx</button>
+    </form>
+    <form method="POST" action="/server/deploy">
+      <button class="btn btn-primary">⬇ Deploy</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<!-- Metrics -->
+<div class="metrics-grid" id="metricsGrid">
+  <%
+    const memPct  = pct(stats.memUsed, stats.memTotal);
+    const diskPct = pct(stats.diskUsed, stats.diskTotal);
+    const loadPct = Math.round(Math.min(stats.load1 / stats.cpus * 100, 100));
+  %>
+  <div class="metric-card">
+    <div class="metric-label">Memory</div>
+    <div class="metric-value" id="m-mem-val"><%= kb(stats.memUsed) %></div>
+    <div class="metric-sub" id="m-mem-sub">of <%= kb(stats.memTotal) %> · <%= memPct %>%</div>
+    <div class="bar-track"><div class="bar-fill <%= memPct>85?'danger':memPct>65?'warn':'' %>" id="m-mem-bar" style="width:<%= memPct %>%"></div></div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Load (1m)</div>
+    <div class="metric-value" id="m-load-val"><%= stats.load1.toFixed(2) %></div>
+    <div class="metric-sub" id="m-load-sub"><%= stats.load5.toFixed(2) %> / <%= stats.load15.toFixed(2) %> · <%= stats.cpus %> CPU</div>
+    <div class="bar-track"><div class="bar-fill <%= loadPct>85?'danger':loadPct>65?'warn':'' %>" id="m-load-bar" style="width:<%= loadPct %>%"></div></div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Disk</div>
+    <div class="metric-value"><%= kb(stats.diskUsed) %></div>
+    <div class="metric-sub">of <%= kb(stats.diskTotal) %> · <%= diskPct %>%</div>
+    <div class="bar-track"><div class="bar-fill <%= diskPct>85?'danger':diskPct>65?'warn':'' %>" style="width:<%= diskPct %>%"></div></div>
+  </div>
+
+  <% const volPct = pct(stats.volDiskUsed, stats.volDiskTotal); %>
+  <div class="metric-card">
+    <div class="metric-label">Volume</div>
+    <div class="metric-value"><%= kb(stats.volDiskUsed) %></div>
+    <div class="metric-sub">of <%= kb(stats.volDiskTotal) %> · <%= volPct %>%</div>
+    <div class="bar-track"><div class="bar-fill <%= volPct>85?'danger':volPct>65?'warn':'' %>" style="width:<%= volPct %>%"></div></div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Swap</div>
+    <div class="metric-value"><%= kb(stats.swapUsed) %></div>
+    <div class="metric-sub">of <%= kb(stats.swapTotal) %></div>
+    <div class="bar-track"><div class="bar-fill" style="width:<%= pct(stats.swapUsed,stats.swapTotal) %>%"></div></div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Uptime</div>
+    <div class="metric-value"><%= uptime(stats.uptimeSec) %></div>
+    <div class="metric-sub" id="m-uptime-sub">since last reboot</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Fail2ban</div>
+    <div class="metric-value"><%= stats.f2bBanned %></div>
+    <div class="metric-sub">IPs currently banned</div>
+    <% if (stats.f2bJails && stats.f2bJails.length) { %>
+    <div style="margin-top:.6rem; display:flex; flex-direction:column; gap:.2rem">
+      <% stats.f2bJails.forEach(j => { %>
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)">
+        <span><%= j.jail %></span>
+        <span><%= j.banned %> banned</span>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Infrastructure services -->
+<div class="section-header">
+  <h2>Infrastructure</h2>
+</div>
+<div class="svc-grid">
+  <% services.forEach(svc => { %>
+  <div class="svc-card">
+    <div class="svc-dot <%= svc.status === 'active' ? 'active' : svc.status === 'failed' ? 'failed' : 'inactive' %>"></div>
+    <div class="svc-info">
+      <div class="svc-name"><%= svc.label %></div>
+      <div class="svc-status"><%= svc.status %></div>
+    </div>
+    <div class="svc-actions">
+      <% if (svc.status === 'active') { %>
+        <form method="POST" action="/server/service/<%= svc.name %>/restart">
+          <button class="btn btn-sm" title="Restart">↺</button>
+        </form>
+        <form method="POST" action="/server/service/<%= svc.name %>/stop">
+          <button class="btn btn-sm btn-danger" title="Stop">■</button>
+        </form>
+      <% } else { %>
+        <form method="POST" action="/server/service/<%= svc.name %>/start">
+          <button class="btn btn-sm btn-primary" title="Start">▶</button>
+        </form>
+      <% } %>
+      <a href="/server/logs?service=<%= svc.name %>" class="btn btn-sm" title="Logs">≡</a>
+    </div>
+  </div>
+  <% }) %>
+</div>
+
+<!-- Blog services -->
+<% if (blogServices.length) { %>
+<div class="section-header" style="margin-top:.5rem">
+  <h2>Blogs</h2>
+</div>
+<div class="svc-grid">
+  <% blogServices.forEach(svc => { %>
+  <div class="svc-card">
+    <div class="svc-dot <%= svc.status === 'active' ? 'active' : svc.status === 'failed' ? 'failed' : 'inactive' %>"></div>
+    <div class="svc-info">
+      <div class="svc-name" style="font-size:.8rem"><%= svc.name.replace('blog-','').replace(/-/g,'.') %></div>
+      <div class="svc-status"><%= svc.status %></div>
+    </div>
+    <div class="svc-actions">
+      <% if (svc.status === 'active') { %>
+        <form method="POST" action="/server/service/<%= svc.name %>/restart">
+          <button class="btn btn-sm" title="Restart">↺</button>
+        </form>
+      <% } else { %>
+        <form method="POST" action="/server/service/<%= svc.name %>/start">
+          <button class="btn btn-sm btn-primary" title="Start">▶</button>
+        </form>
+      <% } %>
+      <a href="/server/logs?service=<%= svc.name %>" class="btn btn-sm" title="Logs">≡</a>
+    </div>
+  </div>
+  <% }) %>
+</div>
+<% } %>
+
+<!-- Node memory limits -->
+<div class="section-header" style="margin-top:.5rem">
+  <h2>Node.js memory limits</h2>
+</div>
+<div class="card" style="padding:.75rem 1rem">
+  <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+    <thead>
+      <tr style="color:var(--muted);font-weight:500">
+        <th style="text-align:left;padding:.35rem .5rem;border-bottom:1px solid var(--border)">Service</th>
+        <th style="text-align:right;padding:.35rem .5rem;border-bottom:1px solid var(--border)">Limit</th>
+        <th style="text-align:right;padding:.35rem .5rem;border-bottom:1px solid var(--border)">RSS now</th>
+      </tr>
+    </thead>
+    <tbody id="nodememTable">
+      <% nodeMemInfo.forEach(n => { %>
+      <tr>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border)"><%= n.name %></td>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border);text-align:right;color:var(--muted)"><%= n.limit %></td>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border);text-align:right"><%= n.rss %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+// Auto-refresh metrics every 10 seconds
+async function refreshMetrics() {
+  try {
+    const d = await (await fetch('/server/stats')).json();
+    const kb = v => v >= 1048576 ? (v/1048576).toFixed(1)+' GB' : v >= 1024 ? (v/1024).toFixed(0)+' MB' : v+' KB';
+    const pct = (u,t) => t ? Math.round(u/t*100) : 0;
+
+    const memPct = pct(d.memUsed, d.memTotal);
+    set('m-mem-val', kb(d.memUsed));
+    set('m-mem-sub', `of ${kb(d.memTotal)} · ${memPct}%`);
+    setBar('m-mem-bar', memPct);
+
+    const loadPct = Math.round(Math.min(d.load1 / d.cpus * 100, 100));
+    set('m-load-val', d.load1.toFixed(2));
+    set('m-load-sub', `${d.load5.toFixed(2)} / ${d.load15.toFixed(2)} · ${d.cpus} CPU`);
+    setBar('m-load-bar', loadPct);
+  } catch {}
+}
+function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function setBar(id, pct) {
+  const el = document.getElementById(id); if (!el) return;
+  el.style.width = pct + '%';
+  el.className = 'bar-fill' + (pct>85?' danger':pct>65?' warn':'');
+}
+setInterval(refreshMetrics, 10000);
+
+// Health badge — poll /server/health every 30s
+async function refreshHealth() {
+  try {
+    const d = await fetch('/server/health', {headers:{Accept:'application/json'}}).then(r=>r.json());
+    const el = document.getElementById('health-badge');
+    if (!el) return;
+    const map = {ok:'health-ok', warning:'health-warn', critical:'health-crit', error:'health-crit'};
+    const labels = {ok:'All healthy', warning:'Warning', critical:'Critical', error:'Error'};
+    el.className = 'health-badge ' + (map[d.overall] || 'health-ok');
+    el.textContent = labels[d.overall] || d.overall;
+    el.title = d.alerts && d.alerts.length ? d.alerts.join(', ') : 'All checks passing';
+  } catch {}
+}
+refreshHealth();
+setInterval(refreshHealth, 30000);
+</script>
+
+<%- include('partials/foot') %>

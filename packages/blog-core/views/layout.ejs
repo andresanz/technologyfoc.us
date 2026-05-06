@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><% if (locals.pageTitle) { %><%= pageTitle %> · <% } %><%= site.title %></title>
+  <meta name="google" content="notranslate">
+  <meta name="description" content="<%= locals.pageDesc || site.description %>">
+  <link rel="canonical" href="<%= site.url %><%= locals.canonical || '' %>">
+  <link rel="alternate" type="application/rss+xml" title="<%= site.title %>" href="<%= site.url %>/feed/rss">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<%- encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#2563eb"/><text x="16" y="23.5" font-family="system-ui,sans-serif" font-size="19" font-weight="700" fill="white" text-anchor="middle">${site.title.charAt(0).toUpperCase()}</text></svg>`) %>">
+  <link rel="stylesheet" href="/css/style.css?v=<%= cssVer %>">
+  <link rel="stylesheet" href="/css/highlight.css?v=<%= cssVer %>">
+  <link rel="stylesheet" href="/css/custom.css?v=<%= cssVer %>">
+  <% if (site.gaId) { %>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= site.gaId %>"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','<%= site.gaId %>');</script>
+  <% } %>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="/" class="site-title"><%= site.title %></a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav id="siteNav">
+        <% if (locals.navLoaded) { %>
+          <% (locals.nav || []).forEach(function(item) { %><a href="<%= item.url %>"<%= item.newTab ? ' target="_blank" rel="noopener"' : '' %>><%= item.label %></a><% }) %>
+          <% if (site.search) { %><a href="/search" aria-label="Search">Search</a><% } %>
+        <% } else { %>
+          <a href="<%= locals.postsPath || '/' %>">Posts</a>
+          <% if (locals.pages) { pages.forEach(function(p) { %>
+            <a href="/<%= p.slug %>"><%= p.title %></a>
+          <% }) } %>
+          <a href="/tags">Tags</a>
+          <a href="/feed/rss">RSS</a>
+          <% if (site.search) { %><a href="/search" aria-label="Search">Search</a><% } %>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+  <script>
+    document.getElementById('navToggle').addEventListener('click', function() {
+      this.classList.toggle('open');
+      document.getElementById('siteNav').classList.toggle('open');
+    });
+  </script>
+
+  <!-- Admin edit bar (only shown when _admin_edit cookie is set) -->
+  <div id="adminEditBar" style="display:none;position:fixed;bottom:1rem;right:1rem;z-index:9999;display:none;align-items:center;gap:.5rem;background:#1a1a1a;color:#fff;padding:.45rem .75rem;border-radius:6px;font-size:.8rem;font-family:system-ui,sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.3)">
+    <a id="adminEditLink" href="#" style="color:#60a5fa;text-decoration:none;font-weight:500">✏ Edit</a>
+    <span style="opacity:.4">|</span>
+    <a href="/_admin/edit?on=0&back=<%= encodeURIComponent(locals.canonical || '/') %>" style="color:#9ca3af;text-decoration:none">Exit edit mode</a>
+  </div>
+  <script>
+  (function() {
+    if (document.cookie.split(';').some(c => c.trim() === '_admin_edit=1')) {
+      var bar  = document.getElementById('adminEditBar');
+      var link = document.getElementById('adminEditLink');
+      var path = window.location.pathname;
+      var editPath;
+      if (path === '/' || path === '') {
+        // Homepage: try /home/edit (works if a home page exists), else go to admin site
+        editPath = '/home/edit';
+      } else if (path.startsWith('/post/')) {
+        editPath = path.replace(/\/$/, '') + '/edit';
+      } else {
+        editPath = path.replace(/\/$/, '') + '/edit';
+      }
+      link.href = editPath;
+      bar.style.display = 'flex';
+    }
+  })();
+  </script>
+
+  <main class="container">

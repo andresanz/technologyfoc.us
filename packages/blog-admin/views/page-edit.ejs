@@ -1,0 +1,276 @@
+<%
+  pageTitle = (isNew ? 'New page' : 'Edit: ' + page.title) + ' · ' + site.title;
+  const action = isNew
+    ? '/pages/' + site.domain + '/new'
+    : '/pages/' + site.domain + '/edit/' + page.filename;
+-%>
+<%- include('partials/head') %>
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+
+<div class="page-header">
+  <div>
+    <a href="/pages/<%= site.domain %>" class="back-link">← Pages</a>
+    <h1><%= isNew ? 'New page' : 'Edit page' %> <span class="muted">— <%= site.title %></span></h1>
+  </div>
+  <div class="header-actions">
+    <% if (!isNew) { %>
+      <a href="<%= site.url %>/<%= page.slug %>" target="_blank" class="btn">View live ↗</a>
+    <% } %>
+    <button form="page-form" type="submit" class="btn btn-primary">Save page</button>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<form id="page-form" method="POST" action="<%= action %>">
+  <div class="edit-layout">
+
+    <div class="edit-main">
+      <input type="text" name="title" placeholder="Page title" value="<%= page.title %>"
+             class="title-input" required autofocus>
+      <textarea name="body" id="editor"><%= page.body %></textarea>
+    </div>
+
+    <aside class="edit-sidebar">
+      <section class="card">
+        <h3>Settings</h3>
+
+        <label>Slug
+          <input type="text" name="slug" value="<%= page.slug %>" placeholder="auto-generated">
+          <span class="hint">URL: <%= site.url %>/<em>slug</em></span>
+        </label>
+
+        <label>Nav order
+          <input type="number" name="order" value="<%= page.order || '' %>" placeholder="1, 2, 3…" min="1">
+          <span class="hint">Lower number = appears earlier in nav</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="nav" value="1" <%= page.nav !== false ? 'checked' : '' %>>
+          Show in navigation
+        </label>
+
+        <label class="checkbox-label" style="margin-top:.75rem">
+          <input type="checkbox" name="draft" value="1" <%= page.draft ? 'checked' : '' %>>
+          Save as draft
+        </label>
+      </section>
+
+      <section class="card">
+        <h3>Upload image</h3>
+        <div class="upload-drop" id="uploadDrop">
+          <p>Drop here or tap a button below</p>
+        </div>
+        <div class="upload-actions">
+          <label class="btn" style="cursor:pointer; margin-bottom:0">
+            📷 Camera
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+          </label>
+          <label class="btn" style="cursor:pointer; margin-bottom:0">
+            🖼 Library
+            <input type="file" id="fileInput" accept="image/*" style="display:none" multiple>
+          </label>
+        </div>
+        <div id="uploadProgress" style="margin-top:.5rem; font-size:.85rem; color:var(--muted)"></div>
+        <div id="uploadedUrls"></div>
+      </section>
+
+      <section class="card" style="padding:0;overflow:hidden">
+        <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:space-between">
+          Quick Reference
+          <button type="button" id="qrEditBtn" style="background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:0">Edit notes</button>
+        </div>
+        <div style="max-height:420px;overflow-y:auto;padding:.75rem 1rem;display:flex;flex-direction:column;gap:1.1rem;font-size:.78rem">
+
+          <div>
+            <div class="qr-label">Video embed</div>
+            <code class="qr-code">[video src="…/video.mp4"]</code>
+            <table data-nosort class="qr-table">
+              <tr><td class="qr-attr">src="…"</td><td class="qr-desc">URL <em>(required)</em></td></tr>
+              <tr><td class="qr-attr">poster="…"</td><td class="qr-desc">thumbnail</td></tr>
+              <tr><td class="qr-attr">loop</td><td class="qr-desc">loop continuously</td></tr>
+              <tr><td class="qr-attr">autoplay</td><td class="qr-desc">autoplay muted</td></tr>
+            </table>
+          </div>
+
+          <div>
+            <div class="qr-label">Callout boxes</div>
+            <code class="qr-code" style="white-space:pre">:::tip Title
+Your content here.
+:::</code>
+            <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem">
+              <span style="border-left:3px solid #3b82f6;background:#eff6ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#1d4ed8">note</span>
+              <span style="border-left:3px solid #22c55e;background:#f0fdf4;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#15803d">tip</span>
+              <span style="border-left:3px solid #f59e0b;background:#fffbeb;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b45309">warning</span>
+              <span style="border-left:3px solid #ef4444;background:#fef2f2;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b91c1c">danger</span>
+              <span style="border-left:3px solid #06b6d4;background:#ecfeff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#0e7490">info</span>
+              <span style="border-left:3px solid #8b5cf6;background:#faf5ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#6d28d9">quote</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="qr-label">Image captions</div>
+            <code class="qr-code" style="white-space:pre">![photo](url.jpg)
+
+*Caption text here*</code>
+            <div style="color:var(--muted);margin-top:.35rem">Italic line right after image → caption</div>
+            <code class="qr-code" style="margin-top:.35rem">![alt](url.jpg "Caption here")</code>
+            <div style="color:var(--muted);margin-top:.25rem">Or use title in the image link</div>
+          </div>
+
+          <div id="qrNotesDisplay">
+            <div class="qr-label">Notes</div>
+            <div id="qrNotesText" style="color:var(--muted);white-space:pre-wrap;font-size:.78rem;min-height:1.5rem">Loading…</div>
+          </div>
+          <div id="qrNotesEdit" style="display:none">
+            <div class="qr-label">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(one per line, plain text)</span></div>
+            <textarea id="qrNotesInput" style="width:100%;min-height:80px;font-size:.78rem;padding:.4rem .5rem;border:1px solid var(--border);border-radius:4px;resize:vertical;font-family:var(--mono,monospace)"></textarea>
+            <div style="display:flex;gap:.5rem;margin-top:.4rem">
+              <button type="button" id="qrSaveBtn" class="btn btn-sm btn-primary">Save</button>
+              <button type="button" id="qrCancelBtn" class="btn btn-sm">Cancel</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </aside>
+  </div>
+</form>
+
+<style>
+.qr-label { font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.35rem; }
+.qr-code  { display:block;font-family:var(--mono,monospace);font-size:.75rem;background:var(--surface2,#f4f4f5);border-radius:4px;padding:.35rem .55rem;color:var(--accent);word-break:break-all; }
+.qr-table { width:100%;border-collapse:collapse;margin-top:.4rem; }
+.qr-attr  { padding:.15rem .5rem .15rem 0;font-family:var(--mono,monospace);color:var(--accent);white-space:nowrap;font-size:.75rem; }
+.qr-desc  { color:var(--muted);font-size:.75rem; }
+</style>
+
+<%- include('partials/md-help') %>
+
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+// ── Markdown help drawer ────────────────────────────────────────────────────
+const mdHelp        = document.getElementById('mdHelp');
+const mdHelpOverlay = document.getElementById('mdHelpOverlay');
+function openMdHelp()  { mdHelp.style.right = '0'; mdHelpOverlay.style.display = 'block'; }
+function closeMdHelp() { mdHelp.style.right = '-420px'; mdHelpOverlay.style.display = 'none'; }
+document.getElementById('closeMdHelp').addEventListener('click', closeMdHelp);
+mdHelpOverlay.addEventListener('click', closeMdHelp);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMdHelp(); });
+
+const isMobile = window.innerWidth < 768;
+const easyMDE = new EasyMDE({
+  element:      document.getElementById('editor'),
+  spellChecker: false,
+  autosave:     { enabled: false },
+  toolbar: isMobile
+    ? ['bold','italic','|','unordered-list','ordered-list','|','link','|','preview',
+       { name:'help', action: openMdHelp, className:'fa fa-question-circle', title:'Markdown help' }]
+    : ['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
+       'link','image','|','preview','side-by-side','fullscreen','|',
+       { name:'help', action: openMdHelp, className:'fa fa-question-circle', title:'Markdown help' }],
+  uploadImage: true,
+  imageUploadFunction(file, onSuccess, onError) {
+    uploadFile(file).then(url => onSuccess(url)).catch(e => onError(e.message));
+  },
+});
+
+
+// Sync editor to textarea before submit
+document.getElementById('page-form').addEventListener('submit', () => {
+  easyMDE.codemirror.save();
+});
+
+// Auto-slug from title
+const titleInput = document.querySelector('.title-input');
+const slugInput  = document.querySelector('[name=slug]');
+let slugEdited = slugInput.value !== '';
+titleInput.addEventListener('input', () => {
+  if (!slugEdited) slugInput.value = slugify(titleInput.value);
+});
+slugInput.addEventListener('input', () => { slugEdited = true; });
+function slugify(s) {
+  return s.toLowerCase().replace(/[^\w\s-]/g,'').replace(/[\s_]+/g,'-').replace(/^-+|-+$/g,'');
+}
+
+// Image upload
+async function uploadFile(file) {
+  const fd = new FormData();
+  fd.append('images', file);
+  const r = await fetch('/media/<%= site.domain %>/upload', { method:'POST', body: fd });
+  if (!r.ok) throw new Error(await r.text());
+  const data = await r.json();
+  return data.files[0].url;
+}
+
+const dropZone    = document.getElementById('uploadDrop');
+const fileInput   = document.getElementById('fileInput');
+const cameraInput = document.getElementById('cameraInput');
+const progressEl  = document.getElementById('uploadProgress');
+const urlsEl      = document.getElementById('uploadedUrls');
+
+async function handleFiles(files) {
+  for (const file of [...files]) {
+    progressEl.textContent = `Uploading ${file.name}…`;
+    try {
+      const url = await uploadFile(file);
+      progressEl.textContent = '';
+      const row = document.createElement('div');
+      row.className = 'uploaded-url';
+      row.innerHTML = `<img src="${url}" class="thumb">
+        <div class="uploaded-url-body">
+          <input readonly value="${url}" onclick="this.select()">
+          <button type="button" class="btn btn-sm btn-primary" onclick="insertImage('${url}','${file.name}')">Insert</button>
+        </div>`;
+      urlsEl.prepend(row);
+    } catch(e) {
+      progressEl.textContent = 'Upload failed: ' + e.message;
+    }
+  }
+}
+
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+cameraInput.addEventListener('change', e => handleFiles(e.target.files));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files);
+});
+
+function insertImage(url, name) {
+  easyMDE.codemirror.replaceSelection(`![${name}](${url})`);
+  easyMDE.codemirror.focus();
+}
+
+// ── Quick reference notes ────────────────────────────────────────────────────
+(async function initQrNotes() {
+  const display   = document.getElementById('qrNotesDisplay');
+  const editBlock = document.getElementById('qrNotesEdit');
+  const textEl    = document.getElementById('qrNotesText');
+  const input     = document.getElementById('qrNotesInput');
+  const editBtn   = document.getElementById('qrEditBtn');
+  const saveBtn   = document.getElementById('qrSaveBtn');
+  const cancelBtn = document.getElementById('qrCancelBtn');
+  let saved = '';
+  try { const r = await fetch('/quickref'); saved = await r.text(); } catch {}
+  textEl.textContent = saved.trim() || '—';
+  input.value = saved;
+  editBtn.addEventListener('click', () => {
+    display.style.display = 'none'; editBlock.style.display = 'block';
+    input.focus(); editBtn.textContent = '';
+  });
+  cancelBtn.addEventListener('click', () => {
+    input.value = saved; editBlock.style.display = 'none';
+    display.style.display = ''; editBtn.textContent = 'Edit notes';
+  });
+  saveBtn.addEventListener('click', async () => {
+    saveBtn.textContent = 'Saving…';
+    try {
+      await fetch('/quickref', { method:'POST', headers:{'Content-Type':'text/plain'}, body:input.value });
+      saved = input.value; textEl.textContent = saved.trim() || '—';
+    } catch {}
+    editBlock.style.display = 'none'; display.style.display = '';
+    editBtn.textContent = 'Edit notes'; saveBtn.textContent = 'Save';
+  });
+})();
+</script>
+<%- include('partials/foot') %>

@@ -1,0 +1,54 @@
+<%
+  pageTitle = 'Backup · ' + label;
+-%>
+<%- include('partials/head') %>
+
+<style>
+.file-table { width:100%; border-collapse:collapse; font-size:.875rem; }
+.file-table th { text-align:left; padding:.5rem .75rem; color:var(--muted); font-size:.78rem; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; white-space:nowrap; }
+.file-table th:hover { color:var(--text); }
+.file-table th:last-child { cursor:default; }
+.file-table td { padding:.55rem .75rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+.file-table tr:hover td { background:var(--surface2); }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/volume" class="back-link">← Volume</a>
+    <h1 style="font-size:1.1rem;margin-top:.25rem">
+      <span class="muted">Backup /</span> <%= label %>
+    </h1>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <% if (!items.length) { %>
+    <p style="padding:1.5rem;color:var(--muted)">Empty folder.</p>
+  <% } else { %>
+  <table class="file-table">
+    <thead><tr><th>Name</th><th>Size</th><th>Modified</th><th data-nosort></th></tr></thead>
+    <tbody>
+      <% items.forEach(item => { %>
+      <tr>
+        <td>
+          <% if (item.isDir) { %>
+            📁 <%= item.name %>
+          <% } else { %>
+            📄 <%= item.name %>
+          <% } %>
+        </td>
+        <td style="color:var(--muted);white-space:nowrap" data-sort="<%= item.bytes %>"><%= item.fmt %></td>
+        <td style="color:var(--muted);font-size:.78rem;white-space:nowrap"><%= item.modified %></td>
+        <td style="text-align:right;white-space:nowrap">
+          <% if (!item.isDir) { %>
+            <a href="/volume/backup/<%= date %>/download/<%= encodeURIComponent(item.name) %>" class="btn btn-sm">↓ Download</a>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<%- include('partials/foot') %>

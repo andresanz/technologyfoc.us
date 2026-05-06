@@ -1,0 +1,186 @@
+'use strict';
+
+const express    = require('express');
+const { spawn, execSync } = require('child_process');
+const fs         = require('fs');
+const router     = express.Router();
+
+const BUCKET      = process.env.BACKUP_BUCKET || 'andresanz-com-server02';
+const MAC_BUCKET  = 'sanz';
+const MAC_PREFIX  = 'MacbookAir/Backups/';
+const STATUS_LOG = '/var/log/blog-backup-status.log';
+const FLAG_FILE  = '/tmp/blog-backup-running';
+
+function awsEnv() {
+  return {
+    ...process.env,
+    AWS_ACCESS_KEY_ID:     process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    AWS_DEFAULT_REGION:    process.env.AWS_REGION || 'us-east-1',
+  };
+}
+
+function run(cmd) {
+  return execSync(cmd, { timeout: 30000, env: awsEnv() }).toString().trim();
+}
+
+const VOL_BACKUP_DIR = '/mnt/volume01/server02.technologyfoc.us/backups';
+const VOL_BACKUP_LOG = '/var/log/backup.log';
+
+function listLocalBackups() {
+  try {
+    const folders = fs.readdirSync(VOL_BACKUP_DIR)
+      .filter(f => /^\d{8}$/.test(f)).sort().reverse();
+    return folders.map(date => {
+      const folderPath = `${VOL_BACKUP_DIR}/${date}`;
+      let files = [], kb = 0;
+      try {
+        files = fs.readdirSync(folderPath);
+        kb = parseInt(execSync(`du -sk ${folderPath}`, { timeout: 10000 }).toString().split('\t')[0]) || 0;
+      } catch {}
+      return { date, files: files.length, mb: (kb / 1024).toFixed(1) };
+    });
+  } catch { return []; }
+}
+
+function listMacBackups() {
+  try {
+    const out = run(
+      `aws s3api list-objects-v2 --bucket ${MAC_BUCKET} --prefix "${MAC_PREFIX}" --delimiter "/" ` +
+      `--query 'CommonPrefixes[].Prefix' --output text`
+    );
+    if (!out || out === 'None') return [];
+    return out.split('\t').filter(Boolean).reverse()
+      .map(prefix => {
+        const name = prefix.replace(MAC_PREFIX, '').replace(/\/$/, '');
+        const m = name.match(/^(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})$/);
+        if (!m) return null;
+        return { key: prefix, name, modified: m[1] + ' ' + m[2].replace(/-/g, ':') };
+      })
+      .filter(Boolean);
+  } catch { return []; }
+}
+
+function listBackups() {
+  try {
+    const out = run(
+      `aws s3api list-objects-v2 --bucket ${BUCKET} --prefix backups/ ` +
+      `--query 'sort_by(Contents, &LastModified)[].[Key,Size,LastModified]' --output text`
+    );
+    if (!out) return [];
+    return out.split('\n').filter(Boolean).reverse().map(line => {
+      const [key, size, modified] = line.split('\t');
+      const name = key.replace('backups/', '');
+      const mb   = (parseInt(size) / 1024 / 1024).toFixed(1);
+      return { key, name, mb, modified: new Date(modified).toLocaleString() };
+    });
+  } catch { return []; }
+}
+
+function lastStatus() {
+  try {
+    const lines = fs.readFileSync(STATUS_LOG, 'utf8').trim().split('\n');
+    return lines[lines.length - 1] || null;
+  } catch { return null; }
+}
+
+function isRunning() {
+  return fs.existsSync(FLAG_FILE);
+}
+
+// GET /server/backups
+router.get('/', (req, res) => {
+  const backups      = listBackups();
+  const localBackups = listLocalBackups();
+  const macBackups   = listMacBackups();
+  const last         = lastStatus();
+  const running      = isRunning();
+  res.render('server-backups', { backups, localBackups, macBackups, last, bucket: BUCKET, running, flash: req.flash() });
+});
+
+// POST /server/backups/run — trigger manual backup (fire and forget)
+router.post('/run', (req, res) => {
+  if (isRunning()) {
+    req.flash('error', 'Backup is already running');
+    return res.redirect('/server/backups');
+  }
+
+  const env = { ...awsEnv(), PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' };
+  const child = spawn('/usr/local/bin/blog-backup.sh', [], {
+    detached: true,
+    stdio:    'ignore',
+    env,
+  });
+  child.unref();
+
+  res.redirect('/server/backups');
+});
+
+// GET /server/backups/download?key=... — presigned download URL for a server backup
+router.get('/download', (req, res) => {
+  const { key } = req.query;
+  if (!key || !key.startsWith('backups/')) return res.status(400).send('Invalid key');
+  try {
+    const url = run(`aws s3 presign "s3://${BUCKET}/${key}" --expires-in 300`);
+    res.redirect(url);
+  } catch (e) { res.status(500).send(e.message); }
+});
+
+// GET /server/backups/local/:date — list files in a volume backup folder
+router.get('/local/:date', (req, res) => {
+  const date = req.params.date;
+  if (!/^\d{8}$/.test(date)) return res.status(400).send('Invalid date');
+  const dir = `${VOL_BACKUP_DIR}/${date}`;
+  try {
+    const files = fs.readdirSync(dir).map(f => {
+      const stat = fs.statSync(`${dir}/${f}`);
+      return { name: f, mb: (stat.size / 1048576).toFixed(1), mtime: stat.mtime.toLocaleDateString() };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+    res.render('backup-local', { date, files });
+  } catch (e) { res.status(500).send(e.message); }
+});
+
+// GET /server/backups/status — poll running state + last status line
+router.get('/status', (req, res) => {
+  res.json({
+    running: isRunning(),
+    last:    lastStatus(),
+  });
+});
+
+// GET /server/backups/log — last 50 lines
+router.get('/log', (req, res) => {
+  const src = req.query.src === 'local' ? VOL_BACKUP_LOG : '/var/log/blog-backup.log';
+  let log = '';
+  try { log = execSync(`tail -50 ${src} 2>/dev/null`).toString(); }
+  catch { log = '(no log yet)'; }
+  res.json({ log });
+});
+
+// POST /server/backups/delete — delete a server backup
+router.post('/delete', (req, res) => {
+  const { key } = req.body;
+  if (!key || !key.startsWith('backups/')) return res.status(400).send('Invalid key');
+  try {
+    run(`aws s3 rm s3://${BUCKET}/${key}`);
+    req.flash('success', `Deleted ${key}`);
+  } catch (e) {
+    req.flash('error', e.message);
+  }
+  res.redirect('/server/backups');
+});
+
+// POST /server/backups/mac/delete — delete a Mac backup
+router.post('/mac/delete', (req, res) => {
+  const { key } = req.body;
+  if (!key) return res.status(400).send('Invalid key');
+  try {
+    run(`aws s3 rm "s3://${MAC_BUCKET}/${key}" --recursive`);
+    req.flash('success', `Deleted ${key}`);
+  } catch (e) {
+    req.flash('error', e.message);
+  }
+  res.redirect('/server/backups');
+});
+
+module.exports = router;

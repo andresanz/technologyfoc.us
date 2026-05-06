@@ -1,0 +1,43 @@
+<%
+  pageTitle = 'Commit ' + hash + ' · ' + site.title;
+-%>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div>
+    <a href="/sites/<%= site.domain %>/history" class="back-link">← History</a>
+    <h1>Commit <code style="font-size:1rem"><%= hash %></code></h1>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<div class="two-col">
+  <section class="card">
+    <h2>Files changed</h2>
+    <% if (!files.length) { %>
+      <p class="muted">No content files in this commit.</p>
+    <% } else { %>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
+        <% files.forEach(function(f) { %>
+          <li style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+            <code style="font-size:.8rem;color:var(--muted);word-break:break-all"><%= f %></code>
+            <% if (f.startsWith('content/')) { %>
+              <form method="POST" action="/sites/<%= site.domain %>/history/<%= hash %>/restore"
+                    onsubmit="return confirm('Restore <%= f %> to this version? Current version will be overwritten.')">
+                <input type="hidden" name="file" value="<%= f %>">
+                <button class="btn btn-sm btn-danger">Restore</button>
+              </form>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="card logs-card">
+    <h2>Diff summary</h2>
+    <pre class="log-output"><%= detail %></pre>
+  </section>
+</div>
+
+<%- include('partials/foot') %>

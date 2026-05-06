@@ -1,0 +1,270 @@
+<%
+  pageTitle = 'Media · ' + site.title;
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <div>
+    <a href="/sites" class="back-link">← Sites</a>
+    <h1>Media — <span class="muted"><%= site.title %></span></h1>
+  </div>
+  <div class="header-actions">
+    <a href="/posts/<%= site.domain %>" class="btn">Posts</a>
+    <button class="btn" id="bustCacheBtn" title="Force-reload all images">↺ Bust cache</button>
+    <button class="btn" id="openVideoUploadBtn">Upload video</button>
+    <button class="btn btn-primary" id="openUploadBtn">Upload images</button>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<% if (typeof s3Error !== 'undefined' && s3Error) { %>
+  <div class="alert alert-error">S3 error: <%= s3Error %> — check AWS credentials in site .env</div>
+<% } %>
+
+<!-- Image upload panel -->
+<div id="uploadPanel" class="card" style="display:none; margin-bottom:1.5rem">
+  <h3>Upload images to S3</h3>
+  <div class="upload-drop-lg" id="dropZone">
+    <p>Drop images here or <label for="fileInput" class="btn-link">browse files</label></p>
+    <p class="hint">JPEG, PNG, GIF, WebP, AVIF, SVG — max 20 MB each</p>
+    <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+  </div>
+  <div id="uploadResults"></div>
+</div>
+
+<!-- Video upload panel -->
+<div id="videoPanel" class="card" style="display:none; margin-bottom:1.5rem">
+  <h3>Upload video to S3</h3>
+  <div class="upload-drop-lg" id="videoDropZone">
+    <p>Drop video here or <label for="videoInput" class="btn-link">browse files</label></p>
+    <p class="hint">MP4, WebM, MOV — max 500 MB</p>
+    <input type="file" id="videoInput" accept="video/*" style="display:none">
+  </div>
+  <div id="videoResults"></div>
+
+  <div class="shortcode-help">
+    <div class="shortcode-help-title">Video shortcode</div>
+    <div class="shortcode-rows">
+      <div class="shortcode-row">
+        <code>[video src="https://…/video.mp4"]</code>
+        <span class="sc-desc">basic embed</span>
+      </div>
+      <div class="shortcode-row">
+        <code>[video src="…" poster="…/thumb.jpg"]</code>
+        <span class="sc-desc">with thumbnail</span>
+      </div>
+      <div class="shortcode-row">
+        <code>[video src="…" autoplay loop]</code>
+        <span class="sc-desc">silent looping (good for GIF-style clips)</span>
+      </div>
+    </div>
+    <div class="shortcode-attrs">
+      <span class="attr-label">Attributes:</span>
+      <span class="attr-chip" title="URL of the video file — required"><code>src</code> required</span>
+      <span class="attr-chip" title="URL of poster/thumbnail image shown before play"><code>poster</code></span>
+      <span class="attr-chip" title="Loop the video continuously"><code>loop</code></span>
+      <span class="attr-chip" title="Start playing automatically (muted)"><code>autoplay</code></span>
+    </div>
+  </div>
+</div>
+
+<style>
+.shortcode-help { margin-top:1.25rem; padding:1rem; background:var(--surface2,#f8f8f8); border-radius:6px; border:1px solid var(--border); font-size:.82rem; }
+.shortcode-help-title { font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:.6rem; }
+.shortcode-rows { display:flex; flex-direction:column; gap:.4rem; margin-bottom:.75rem; }
+.shortcode-row { display:flex; align-items:baseline; gap:.75rem; }
+.shortcode-row code { background:var(--surface,#fff); border:1px solid var(--border); border-radius:4px; padding:.15rem .4rem; font-size:.8rem; white-space:nowrap; flex-shrink:0; }
+.sc-desc { color:var(--muted); font-size:.78rem; }
+.shortcode-attrs { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
+.attr-label { color:var(--muted); font-size:.75rem; font-weight:600; margin-right:.2rem; }
+.attr-chip { background:var(--surface,#fff); border:1px solid var(--border); border-radius:3px; padding:.1rem .4rem; font-size:.75rem; cursor:default; }
+.attr-chip code { background:none; border:none; padding:0; font-size:.75rem; }
+</style>
+
+<!-- Media grid -->
+<% if (objects.length === 0 && !s3Error) { %>
+  <p class="empty">No images uploaded yet. Hit "Upload images" to add some.</p>
+<% } else { %>
+  <div class="media-grid" id="mediaGrid">
+    <% objects.forEach(function(obj) { %>
+      <div class="media-item" data-key="<%= obj.key %>">
+        <div class="media-thumb">
+          <img src="<%= obj.url %>" loading="lazy" alt="<%= obj.key %>">
+        </div>
+        <div class="media-info">
+          <div class="media-name" title="<%= obj.key %>"><%= obj.key.split('/').pop() %></div>
+          <div class="media-meta"><%= obj.sizeStr %> · <%= obj.dateStr %></div>
+          <div class="media-actions">
+            <button class="btn btn-sm copy-btn" data-url="<%= obj.url %>">Copy URL</button>
+            <button class="btn btn-sm btn-danger delete-btn" data-key="<%= obj.key %>">Delete</button>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <% if (nextToken) { %>
+    <div style="text-align:center; margin-top:2rem">
+      <a href="?next=<%= nextToken %>" class="btn">Load more</a>
+    </div>
+  <% } %>
+<% } %>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+const DOMAIN = '<%= site.domain %>';
+
+// ── Upload ──────────────────────────────────────────────────────────────────
+document.getElementById('openUploadBtn').addEventListener('click', () => {
+  const panel = document.getElementById('uploadPanel');
+  const vPanel = document.getElementById('videoPanel');
+  vPanel.style.display = 'none';
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('openVideoUploadBtn').addEventListener('click', () => {
+  const panel  = document.getElementById('uploadPanel');
+  const vPanel = document.getElementById('videoPanel');
+  panel.style.display = 'none';
+  vPanel.style.display = vPanel.style.display === 'none' ? 'block' : 'none';
+});
+
+// Video drop zone
+const videoDropZone = document.getElementById('videoDropZone');
+const videoInput    = document.getElementById('videoInput');
+const videoResults  = document.getElementById('videoResults');
+videoDropZone.addEventListener('click', () => videoInput.click());
+videoDropZone.addEventListener('dragover', e => { e.preventDefault(); videoDropZone.classList.add('drag-over'); });
+videoDropZone.addEventListener('dragleave', () => videoDropZone.classList.remove('drag-over'));
+videoDropZone.addEventListener('drop', e => { e.preventDefault(); videoDropZone.classList.remove('drag-over'); handleVideoFiles(e.dataTransfer.files); });
+videoInput.addEventListener('change', e => handleVideoFiles(e.target.files));
+
+async function handleVideoFiles(files) {
+  const fd = new FormData();
+  [...files].forEach(f => fd.append('images', f));
+  videoResults.innerHTML = '<p>Uploading… this may take a moment for large files.</p>';
+  try {
+    const r    = await fetch(`/media/${DOMAIN}/upload`, { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      videoResults.innerHTML = '<p class="error">Upload failed: ' + (data.error || r.statusText) + '</p>';
+      return;
+    }
+    videoResults.innerHTML = '';
+    (data.files || []).forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'uploaded-row';
+      row.innerHTML = `<span>🎬 ${f.key.split('/').pop()}</span> <input readonly value="${f.url}" onclick="this.select()">`;
+      videoResults.appendChild(row);
+    });
+    toast('Uploaded ' + (data.files || []).length + ' video(s)');
+  } catch(e) {
+    videoResults.innerHTML = '<p class="error">Upload failed: ' + e.message + '</p>';
+  }
+}
+
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const results   = document.getElementById('uploadResults');
+const grid      = document.getElementById('mediaGrid');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+async function handleFiles(files) {
+  const fd = new FormData();
+  [...files].forEach(f => fd.append('images', f));
+  results.innerHTML = '<p>Uploading…</p>';
+  try {
+    const r    = await fetch(`/media/${DOMAIN}/upload`, { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      results.innerHTML = '<p class="error">Upload failed: ' + (data.error || r.statusText) + '</p>';
+      return;
+    }
+    results.innerHTML = '';
+    (data.files || []).forEach(f => {
+      addToGrid(f);
+      const row = document.createElement('div');
+      row.className = 'uploaded-row';
+      row.innerHTML = `<img src="${f.url}" class="thumb"> <input readonly value="${f.url}" onclick="this.select()">`;
+      results.appendChild(row);
+    });
+    toast('Uploaded ' + (data.files || []).length + ' file(s)');
+  } catch(e) {
+    results.innerHTML = '<p class="error">Upload failed: ' + e.message + '</p>';
+  }
+}
+
+function addToGrid(file) {
+  if (!grid) return;
+  const el = document.createElement('div');
+  el.className = 'media-item';
+  el.dataset.key = file.key;
+  el.innerHTML = `
+    <div class="media-thumb"><img src="${file.url}" loading="lazy"></div>
+    <div class="media-info">
+      <div class="media-name">${file.key.split('/').pop()}</div>
+      <div class="media-actions">
+        <button class="btn btn-sm copy-btn" data-url="${file.url}">Copy URL</button>
+        <button class="btn btn-sm btn-danger delete-btn" data-key="${file.key}">Delete</button>
+      </div>
+    </div>`;
+  grid.prepend(el);
+}
+
+// ── Copy URL ────────────────────────────────────────────────────────────────
+document.addEventListener('click', async e => {
+  if (!e.target.matches('.copy-btn')) return;
+  await navigator.clipboard.writeText(e.target.dataset.url);
+  toast('URL copied!');
+});
+
+// ── Delete ──────────────────────────────────────────────────────────────────
+document.addEventListener('click', async e => {
+  if (!e.target.matches('.delete-btn')) return;
+  const key  = e.target.dataset.key;
+  const name = key.split('/').pop();
+  if (!confirm(`Delete ${name}?`)) return;
+  try {
+    const r = await fetch(`/media/${DOMAIN}/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    e.target.closest('.media-item').remove();
+    toast('Deleted');
+  } catch(err) {
+    toast('Delete failed: ' + err.message, true);
+  }
+});
+
+// ── JSON endpoint for modal in post editor ───────────────────────────────────
+if (new URLSearchParams(location.search).has('json')) {
+  // serve raw objects list — handled server-side, this is just a hint
+}
+
+// ── Cache bust ───────────────────────────────────────────────────────────────
+document.getElementById('bustCacheBtn').addEventListener('click', () => {
+  const ts = Date.now();
+  document.querySelectorAll('.media-thumb img').forEach(img => {
+    const base = img.src.split('?')[0];
+    img.src = base + '?cb=' + ts;
+  });
+  toast('Cache busted — images reloading');
+});
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (err ? ' toast-error' : '');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+</script>
+<%- include('partials/foot') %>

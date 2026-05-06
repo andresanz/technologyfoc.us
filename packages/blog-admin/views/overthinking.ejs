@@ -1,0 +1,40 @@
+<% pageTitle = 'Overthinking Reminder' %>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div>
+    <a href="/gratitude-prompts" class="back-link">← Gratitude Prompts</a>
+    <h1>Overthinking Reminder</h1>
+    <p class="muted" style="margin-top:.25rem;font-size:.875rem">Sent 4× daily via Telegram between 9am–9pm.</p>
+  </div>
+  <div class="header-actions">
+    <button form="overthinking-form" type="submit" class="btn btn-primary">Save</button>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<form id="overthinking-form" method="POST" action="/overthinking">
+  <label style="display:block;margin-bottom:1.25rem;">
+    <span style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.4rem;">Message</span>
+    <textarea name="message" rows="3" required
+      style="width:100%;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;box-sizing:border-box;"><%= config.message %></textarea>
+  </label>
+
+  <label style="display:block;margin-bottom:1.25rem;">
+    <span style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.4rem;">Image URL <span style="font-weight:400;color:var(--muted)">(optional — leave blank for text-only)</span></span>
+    <input type="url" name="imageUrl" value="<%= config.imageUrl %>" placeholder="https://…"
+      style="width:100%;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;box-sizing:border-box;">
+  </label>
+
+  <% if (config.imageUrl) { %>
+  <div style="margin-bottom:1.25rem;">
+    <img src="<%= config.imageUrl %>" alt="Preview"
+      style="max-width:320px;max-height:240px;border-radius:var(--radius);border:1px solid var(--border);">
+  </div>
+  <% } %>
+</form>
+
+</main>
+</body>
+</html>

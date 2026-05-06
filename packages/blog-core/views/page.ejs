@@ -1,0 +1,14 @@
+<%
+  locals.pageTitle = page.slug === 'home' ? null : page.title;
+  locals.canonical = page.slug === 'home' ? '/' : '/' + page.slug;
+-%>
+<%- include('layout') %>
+
+<article class="post<%= page.slug === 'home' ? ' home-page' : '' %>">
+
+  <div class="post-body">
+    <%- page.html %>
+  </div>
+</article>
+
+<%- include('layout-end') %>

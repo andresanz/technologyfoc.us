@@ -1,0 +1,26 @@
+/* randomcategory.com custom styles */
+
+.post-header h1,
+.post-card h2 {
+  font-size: 1.25rem;
+  margin-top: 0px;
+
+}
+
+/* Background */
+:root {
+  /*  --bg: cornsilk; */
+}
+
+.post-body h1 {
+  margin-top: 0px;
+}
+
+
+.post-body {
+  margin-top: 0px;
+}
+
+.post-card-body {
+  /* background-color: #f0f7f0; */
+}

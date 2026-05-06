@@ -1,0 +1,679 @@
+<%
+  pageTitle = (isNew ? 'New post' : 'Edit: ' + post.title) + ' · ' + site.title;
+  const dirSuffix = isPrivate ? '?dir=private-posts' : '';
+  const action = isNew
+    ? '/posts/' + site.domain + '/new'
+    : '/posts/' + site.domain + '/edit/' + post.filename + dirSuffix;
+-%>
+<%- include('partials/head') %>
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+
+<div class="page-header">
+  <div>
+    <a href="/posts/<%= site.domain %>" class="back-link">← Posts</a>
+    <h1><%= isNew ? 'New post' : 'Edit post' %> <span class="muted">— <%= site.title %></span></h1>
+  </div>
+  <div class="header-actions">
+    <% if (!isNew) { %>
+      <a href="<%= site.url %><%= isPrivate ? '/private/' : '/post/' %><%= post.slug %>" target="_blank" class="btn">View live ↗</a>
+    <% } %>
+    <button form="post-form" type="submit" class="btn btn-primary">Save post</button>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<form id="post-form" method="POST" action="<%= action %>">
+  <div class="edit-layout">
+
+    <!-- Main: title + body -->
+    <div class="edit-main">
+      <% if (typeof sites !== 'undefined') { %>
+      <div class="template-picker">
+        <select onchange="window.location='/write?site='+this.value">
+          <% sites.forEach(s => { %><option value="<%= s.domain %>" <%= s.domain === site.domain ? 'selected' : '' %>><%= s.title %></option><% }) %>
+        </select>
+      </div>
+      <% } %>
+      <input type="text" name="title" placeholder="Post title" value="<%= post.title %>"
+             class="title-input" required autofocus>
+<% if (isNew && typeof templates !== 'undefined' && templates.length > 0) { %>
+      <div class="template-picker">
+        <select id="templateSelect">
+          <option value="">— no template —</option>
+          <% templates.forEach(function(t) { %>
+          <option value="<%= t.id %>"><%= t.name %></option>
+          <% }); %>
+        </select>
+      </div>
+      <% } %>
+      <textarea name="body" id="editor"><%= post.body %></textarea>
+    </div>
+
+    <!-- Sidebar: meta fields -->
+    <aside class="edit-sidebar">
+      <section class="card">
+        <h3>Metadata</h3>
+
+        <label>Slug
+          <input type="text" name="slug" value="<%= post.slug %>" placeholder="auto-generated">
+        </label>
+
+        <label>Date
+          <input type="date" name="date" value="<%= post.date %>">
+        </label>
+
+        <label>Tags
+          <input type="text" name="tags" id="tagsInput" value="<%= post.tags %>" placeholder="tech, tutorial" autocomplete="off">
+        </label>
+        <% if (allTags && allTags.length) { %>
+        <div class="tag-picker" id="tagPicker">
+          <% allTags.forEach(function(t) { %>
+            <button type="button" class="tag-chip" data-tag="<%= t %>"><%= t %></button>
+          <% }) %>
+        </div>
+        <% } %>
+
+        <label>Excerpt
+          <textarea name="excerpt" rows="3" placeholder="Short description for post list…"><%= post.excerpt %></textarea>
+        </label>
+
+        <label>Cover image
+          <div class="image-input-row">
+            <input type="text" name="image" id="imageUrl" value="<%= post.image %>" placeholder="/images/…">
+            <button type="button" class="btn btn-sm" id="openMediaBtn">Browse</button>
+            <button type="button" class="btn btn-sm" id="useFirstImageBtn" title="Use first image from post body">↑ First</button>
+            <button type="button" class="btn btn-sm" id="clearCoverBtn" title="Clear cover image" style="<%= post.image ? '' : 'display:none' %>">✕</button>
+          </div>
+          <img id="coverPreview" src="<%= post.image || '' %>" alt="cover"
+               class="cover-preview" style="<%= post.image ? '' : 'display:none' %>">
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="draft" value="1" <%= post.draft ? 'checked' : '' %>>
+          Save as draft
+        </label>
+
+        <div style="margin-top:1rem;">
+          <div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem;">Visibility</div>
+          <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+            <label id="visTogglePub" style="flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:<%= !isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= !isPrivate ? '#fff' : 'var(--text)' %>;">
+              <input type="radio" name="visibility" value="public" style="display:none;position:absolute;pointer-events:none;" <%= !isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePriv').style.cssText='flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:var(--surface);color:var(--text)';this.parentElement.style.background='var(--accent,#2563eb)';this.parentElement.style.color='#fff';">
+              Public
+            </label>
+            <label id="visTogglePriv" style="flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:<%= isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= isPrivate ? '#fff' : 'var(--text)' %>;">
+              <input type="radio" name="visibility" value="private" style="display:none;position:absolute;pointer-events:none;" <%= isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePub').style.cssText='flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:var(--surface);color:var(--text)';this.parentElement.style.background='var(--accent,#2563eb)';this.parentElement.style.color='#fff';">
+              Private
+            </label>
+          </div>
+        </div>
+        <input type="hidden" name="originalVisibility" value="<%= isPrivate ? 'private' : 'public' %>">
+      </section>
+
+      <section class="card">
+        <h3>Upload image</h3>
+        <div class="upload-drop" id="uploadDrop">
+          <p>Drop here or tap a button below</p>
+        </div>
+        <div class="upload-actions">
+          <label class="btn" style="cursor:pointer; margin-bottom:0">
+            📷 Camera
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+          </label>
+          <label class="btn" style="cursor:pointer; margin-bottom:0">
+            🖼 Library
+            <input type="file" id="fileInput" accept="image/*" style="display:none" multiple>
+          </label>
+        </div>
+        <div id="uploadProgress" style="margin-top:.5rem; font-size:.85rem; color:var(--muted)"></div>
+        <div id="uploadedUrls"></div>
+      </section>
+
+      <section class="card" style="padding:0;overflow:hidden">
+        <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:space-between">
+          Quick Reference
+          <button type="button" id="qrEditBtn" style="background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:0">Edit notes</button>
+        </div>
+        <div class="qr-scroll" style="max-height:420px;overflow-y:scroll;padding:.75rem 1rem;display:flex;flex-direction:column;gap:1.1rem;font-size:.78rem">
+
+          <!-- Video -->
+          <div>
+            <div class="qr-label">Video embed</div>
+            <code class="qr-code">[video src="…/video.mp4"]</code>
+            <table data-nosort class="qr-table">
+              <tr><td class="qr-attr">src="…"</td><td class="qr-desc">URL <em>(required)</em></td></tr>
+              <tr><td class="qr-attr">poster="…"</td><td class="qr-desc">thumbnail</td></tr>
+              <tr><td class="qr-attr">loop</td><td class="qr-desc">loop continuously</td></tr>
+              <tr><td class="qr-attr">autoplay</td><td class="qr-desc">autoplay muted</td></tr>
+            </table>
+          </div>
+
+          <!-- Callouts -->
+          <div>
+            <div class="qr-label">Callout boxes</div>
+            <code class="qr-code" style="white-space:pre">:::tip Title
+Your content here.
+:::</code>
+            <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem">
+              <span style="border-left:3px solid #3b82f6;background:#eff6ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#1d4ed8">note</span>
+              <span style="border-left:3px solid #22c55e;background:#f0fdf4;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#15803d">tip</span>
+              <span style="border-left:3px solid #f59e0b;background:#fffbeb;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b45309">warning</span>
+              <span style="border-left:3px solid #ef4444;background:#fef2f2;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b91c1c">danger</span>
+              <span style="border-left:3px solid #06b6d4;background:#ecfeff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#0e7490">info</span>
+              <span style="border-left:3px solid #8b5cf6;background:#faf5ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#6d28d9">quote</span>
+            </div>
+          </div>
+
+          <!-- Image captions -->
+          <div>
+            <div class="qr-label">Image captions</div>
+            <code class="qr-code" style="white-space:pre">![photo](url.jpg)
+
+*Caption text here*</code>
+            <div style="color:var(--muted);margin-top:.35rem">Italic line right after image → caption</div>
+            <code class="qr-code" style="margin-top:.35rem">![alt](url.jpg "Caption here")</code>
+            <div style="color:var(--muted);margin-top:.25rem">Or use title in the image link</div>
+          </div>
+
+          <!-- Custom notes -->
+          <div id="qrNotesDisplay">
+            <div class="qr-label">Notes</div>
+            <div id="qrNotesText" style="color:var(--muted);white-space:pre-wrap;font-size:.78rem;min-height:1.5rem">Loading…</div>
+          </div>
+          <div id="qrNotesEdit" style="display:none">
+            <div class="qr-label">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(one per line, plain text)</span></div>
+            <textarea id="qrNotesInput" style="width:100%;min-height:80px;font-size:.78rem;padding:.4rem .5rem;border:1px solid var(--border);border-radius:4px;resize:vertical;font-family:var(--mono,monospace)"></textarea>
+            <div style="display:flex;gap:.5rem;margin-top:.4rem">
+              <button type="button" id="qrSaveBtn" class="btn btn-sm btn-primary">Save</button>
+              <button type="button" id="qrCancelBtn" class="btn btn-sm">Cancel</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </aside>
+  </div>
+</form>
+
+<style>
+.qr-scroll::-webkit-scrollbar { width: 6px; }
+.qr-scroll::-webkit-scrollbar-track { background: transparent; }
+.qr-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.qr-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+.qr-label { font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.35rem; }
+.qr-code  { display:block;font-family:var(--mono,monospace);font-size:.75rem;background:var(--surface2,#f4f4f5);border-radius:4px;padding:.35rem .55rem;color:var(--accent);word-break:break-all; }
+.qr-table { width:100%;border-collapse:collapse;margin-top:.4rem; }
+.qr-attr  { padding:.15rem .5rem .15rem 0;font-family:var(--mono,monospace);color:var(--accent);white-space:nowrap;font-size:.75rem; }
+.qr-desc  { color:var(--muted);font-size:.75rem; }
+</style>
+
+<!-- Markdown help drawer -->
+<div id="mdHelp" style="
+  position:fixed; top:0; right:-420px; width:400px; height:100vh; overflow-y:auto;
+  background:var(--surface); border-left:1px solid var(--border);
+  box-shadow:-4px 0 24px rgba(0,0,0,.12); z-index:900;
+  transition:right .25s ease; padding:0;
+  font-size:.82rem;
+">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1">
+    <strong style="font-size:.9rem">Markdown Reference</strong>
+    <button id="closeMdHelp" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);line-height:1;padding:0">✕</button>
+  </div>
+  <div style="padding:1rem 1.25rem">
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Basics</h4>
+  <table data-nosort style="width:100%;border-collapse:collapse;margin-bottom:1.25rem">
+    <tbody>
+      <tr><td style="padding:.3rem .5rem .3rem 0;white-space:nowrap;font-family:var(--mono);color:var(--accent)"># Heading 1</td><td style="padding:.3rem 0;color:var(--muted)">h1</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">## Heading 2</td><td style="color:var(--muted)">h2</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">**bold**</td><td style="color:var(--muted)"><strong>bold</strong></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">*italic*</td><td style="color:var(--muted)"><em>italic</em></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">~~strikethrough~~</td><td style="color:var(--muted)"><s>strikethrough</s></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">[link](url)</td><td style="color:var(--muted)">hyperlink</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">![alt](url)</td><td style="color:var(--muted)">image</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">&gt; quote</td><td style="color:var(--muted)">blockquote</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">`inline code`</td><td style="color:var(--muted)"><code>inline code</code></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">---</td><td style="color:var(--muted)">horizontal rule</td></tr>
+    </tbody>
+  </table>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Extras</h4>
+  <table data-nosort style="width:100%;border-collapse:collapse;margin-bottom:1.25rem">
+    <tbody>
+      <tr><td style="padding:.3rem .5rem .3rem 0;white-space:nowrap;font-family:var(--mono);color:var(--accent)">{.class #id}</td><td style="padding:.3rem 0;color:var(--muted)">add CSS class/ID to any element</td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">==%highlight%==</td><td style="color:var(--muted)"><mark>highlighted text</mark></td></tr>
+      <tr><td style="padding:.3rem .5rem .3rem 0;font-family:var(--mono);color:var(--accent)">Text[^1]<br>[^1]: Note here.</td><td style="color:var(--muted)">footnote</td></tr>
+    </tbody>
+  </table>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Image Captions</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.4rem;white-space:pre">![photo](url.jpg)
+
+*Caption text here*</div>
+  <p style="color:var(--muted);margin:0 0 .6rem;font-size:.78rem">Italic paragraph right after image → centered caption.</p>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.4rem;white-space:pre">![alt text](url "Caption here")</div>
+  <p style="color:var(--muted);margin:0 0 1.25rem;font-size:.78rem">Or use a title in the image link.</p>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Callout Boxes</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.5rem;white-space:pre">:::tip Optional title
+Your content here.
+:::</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:1.25rem">
+    <div style="border-left:3px solid #3b82f6;background:#eff6ff;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#1d4ed8">note</strong></div>
+    <div style="border-left:3px solid #22c55e;background:#f0fdf4;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#15803d">tip</strong></div>
+    <div style="border-left:3px solid #f59e0b;background:#fffbeb;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#b45309">warning</strong></div>
+    <div style="border-left:3px solid #ef4444;background:#fef2f2;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#b91c1c">danger</strong></div>
+    <div style="border-left:3px solid #06b6d4;background:#ecfeff;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#0e7490">info</strong></div>
+    <div style="border-left:3px solid #8b5cf6;background:#faf5ff;padding:.35rem .6rem;border-radius:0 4px 4px 0;font-size:.78rem"><strong style="color:#6d28d9">quote</strong></div>
+  </div>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Video Embed</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.5rem;font-size:.8rem;white-space:nowrap;overflow:auto">[video src="https://…/video.mp4"]</div>
+  <table data-nosort style="width:100%;border-collapse:collapse;margin-bottom:.5rem">
+    <tbody>
+      <tr><td style="padding:.2rem .5rem .2rem 0;white-space:nowrap;font-family:var(--mono);color:var(--accent);font-size:.78rem">src="…"</td><td style="padding:.2rem 0;color:var(--muted);font-size:.78rem">URL of the video file <em>(required)</em></td></tr>
+      <tr><td style="padding:.2rem .5rem .2rem 0;font-family:var(--mono);color:var(--accent);font-size:.78rem">poster="…"</td><td style="color:var(--muted);font-size:.78rem">Thumbnail shown before play</td></tr>
+      <tr><td style="padding:.2rem .5rem .2rem 0;font-family:var(--mono);color:var(--accent);font-size:.78rem">loop</td><td style="color:var(--muted);font-size:.78rem">Loop continuously</td></tr>
+      <tr><td style="padding:.2rem .5rem .2rem 0;font-family:var(--mono);color:var(--accent);font-size:.78rem">autoplay</td><td style="color:var(--muted);font-size:.78rem">Autoplay muted — good for GIF-style clips</td></tr>
+    </tbody>
+  </table>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:1.25rem;font-size:.75rem;white-space:nowrap;overflow:auto">[video src="…/clip.mp4" poster="…/thumb.jpg" autoplay loop]</div>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Code Blocks</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:1.25rem;white-space:pre">```js
+const x = 42;
+```</div>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Lists</h4>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem">
+    <div>
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem">Unordered</div>
+      <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.5rem .7rem;font-family:var(--mono);color:var(--accent);white-space:pre">- item
+- item
+  - nested</div>
+    </div>
+    <div>
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem">Ordered</div>
+      <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.5rem .7rem;font-family:var(--mono);color:var(--accent);white-space:pre">1. first
+2. second
+3. third</div>
+    </div>
+  </div>
+
+  <h4 style="margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Front Matter</h4>
+  <div style="background:var(--surface2,#f4f4f5);border-radius:6px;padding:.6rem .8rem;font-family:var(--mono);color:var(--accent);margin-bottom:.5rem;white-space:pre">---
+title: My Post
+date: 2026-04-22
+tags: [photo, travel]
+image: /images/cover.jpg
+draft: true
+---</div>
+  <p style="color:var(--muted);margin:0">Handled via the sidebar fields — you don't need to write this manually.</p>
+
+  </div>
+</div>
+<div id="mdHelpOverlay" style="display:none;position:fixed;inset:0;z-index:899;background:rgba(0,0,0,.3)" ></div>
+
+<!-- Media picker modal -->
+<div id="mediaModal" class="modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Pick from S3</h3>
+      <button id="closeModal" class="btn-link">✕</button>
+    </div>
+    <div id="mediaGrid" class="media-grid-mini">Loading…</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+// ── Markdown help drawer ────────────────────────────────────────────────────
+const mdHelp        = document.getElementById('mdHelp');
+const mdHelpOverlay = document.getElementById('mdHelpOverlay');
+function openMdHelp()  { mdHelp.style.right = '0'; mdHelpOverlay.style.display = 'block'; }
+function closeMdHelp() { mdHelp.style.right = '-420px'; mdHelpOverlay.style.display = 'none'; }
+document.getElementById('closeMdHelp').addEventListener('click', closeMdHelp);
+mdHelpOverlay.addEventListener('click', closeMdHelp);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMdHelp(); });
+
+// ── EasyMDE editor ──────────────────────────────────────────────────────────
+const isMobile = window.innerWidth < 768;
+const easyMDE = new EasyMDE({
+  element:      document.getElementById('editor'),
+  spellChecker: false,
+  autosave:     { enabled: false },
+  toolbar: isMobile
+    ? ['bold','italic','|','unordered-list','ordered-list','|','link','|','preview',
+       { name:'help', action: openMdHelp, className:'fa fa-question-circle', title:'Markdown help' }]
+    : ['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
+       'link','image','|','preview','side-by-side','fullscreen','|',
+       { name:'help', action: openMdHelp, className:'fa fa-question-circle', title:'Markdown help' }],
+  uploadImage: true,
+  imageUploadFunction(file, onSuccess, onError) {
+    uploadFile(file).then(url => onSuccess(url)).catch(e => onError(e.message));
+  },
+});
+
+// Sync editor to textarea before submit
+document.getElementById('post-form').addEventListener('submit', () => {
+  easyMDE.codemirror.save();
+});
+
+// Template picker
+<% if (isNew && typeof templates !== 'undefined' && templates.length > 0) { %>
+const TEMPLATES = <%- JSON.stringify(templates) %>;
+const templateSelect = document.getElementById('templateSelect');
+if (templateSelect) {
+  function formatTemplateDate() {
+    return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+  function applyTemplate(t) {
+    if (!t) { easyMDE.value(''); return; }
+    easyMDE.value(t.body || '');
+    if (t.body) easyMDE.codemirror.refresh();
+    if (t.title) {
+      const titleField = document.querySelector('.title-input');
+      if (titleField && !titleField.value) {
+        titleField.value = t.title.replace(/\{\{date\}\}/g, formatTemplateDate());
+        titleField.dispatchEvent(new Event('input')); // trigger slug generation
+      }
+    }
+    if (t.image) {
+      const imageField = document.getElementById('imageUrl');
+      if (imageField && !imageField.value) imageField.value = t.image;
+    }
+  }
+  templateSelect.addEventListener('change', () => {
+    const t = TEMPLATES.find(t => t.id === templateSelect.value);
+    applyTemplate(t || null);
+  });
+}
+<% } %>
+
+// ── Auto-generate slug from title ──────────────────────────────────────────
+const titleInput = document.querySelector('.title-input');
+const slugInput  = document.querySelector('[name=slug]');
+let slugEdited = slugInput.value !== '';
+titleInput.addEventListener('input', () => {
+  if (!slugEdited) slugInput.value = slugify(titleInput.value);
+});
+slugInput.addEventListener('input', () => { slugEdited = true; });
+function slugify(s) {
+  return s.toLowerCase().replace(/[^\w\s-]/g,'').replace(/[\s_]+/g,'-').replace(/^-+|-+$/g,'');
+}
+
+// ── Image upload ────────────────────────────────────────────────────────────
+async function uploadFile(file) {
+  const fd = new FormData();
+  fd.append('images', file);
+  const r = await fetch('/media/<%= site.domain %>/upload', { method:'POST', body: fd });
+  if (!r.ok) throw new Error(await r.text());
+  const data = await r.json();
+  return data.files[0].url;
+}
+
+const dropZone    = document.getElementById('uploadDrop');
+const fileInput   = document.getElementById('fileInput');
+const cameraInput = document.getElementById('cameraInput');
+const progressEl  = document.getElementById('uploadProgress');
+const urlsEl      = document.getElementById('uploadedUrls');
+
+function insertImage(url, name) {
+  const cm = easyMDE.codemirror;
+  cm.focus();
+  const cursor = cm.getCursor();
+  const line   = cm.getLine(cursor.line) || '';
+  const before = line.trim().length ? '\n\n' : '';
+  cm.replaceSelection(`${before}![${name}](${url})\n\n`);
+}
+
+function makeUploadRow(url, name) {
+  const row   = document.createElement('div');
+  row.className = 'uploaded-url';
+  const img   = document.createElement('img');
+  img.src = url; img.className = 'thumb';
+  img.style.cursor = 'pointer';
+  img.title = 'Click to insert';
+  img.addEventListener('click', () => insertImage(url, name));
+  const body  = document.createElement('div');
+  body.className = 'uploaded-url-body';
+  const btnInsert = document.createElement('button');
+  btnInsert.type = 'button'; btnInsert.className = 'btn btn-sm btn-primary';
+  btnInsert.textContent = 'Insert';
+  btnInsert.addEventListener('click', () => insertImage(url, name));
+  const btnCover = document.createElement('button');
+  btnCover.type = 'button'; btnCover.className = 'btn btn-sm';
+  btnCover.textContent = '⊙ Cover';
+  btnCover.title = 'Set as cover image';
+  btnCover.addEventListener('click', () => { setCoverImage(url); btnCover.textContent = '✓ Cover'; setTimeout(() => btnCover.textContent = '⊙ Cover', 2000); });
+  body.append(btnInsert, btnCover);
+  row.append(img, body);
+  return row;
+}
+
+async function handleFiles(files) {
+  const fileArr = [...files];
+  if (!fileArr.length) return;
+
+  const total     = fileArr.length;
+  let done        = 0;
+  let failCount   = 0;
+  const succeeded = [];
+
+  progressEl.textContent = `Uploading 0 / ${total}…`;
+
+  // Upload in batches of 3 to avoid overwhelming the server
+  const BATCH = 3;
+  for (let i = 0; i < fileArr.length; i += BATCH) {
+    const batch = fileArr.slice(i, i + BATCH);
+    const results = await Promise.allSettled(
+      batch.map(async f => ({ url: await uploadFile(f), name: f.name }))
+    );
+    for (const r of results) {
+      if (r.status === 'fulfilled') succeeded.push(r.value);
+      else failCount++;
+      done++;
+    }
+    progressEl.textContent = done < total
+      ? `Uploading ${done} / ${total}…`
+      : (failCount ? `Done — ${failCount} failed` : '');
+  }
+
+  // "Insert all" button for multiple images
+  if (succeeded.length > 1) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin:.5rem 0';
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'btn btn-primary btn-sm';
+    allBtn.textContent = `Insert all ${succeeded.length} images`;
+    allBtn.addEventListener('click', () => succeeded.forEach(({url, name}) => insertImage(url, name)));
+    wrap.append(allBtn);
+    urlsEl.prepend(wrap);
+  }
+
+  // Individual rows (newest first)
+  for (const {url, name} of succeeded) {
+    urlsEl.prepend(makeUploadRow(url, name));
+  }
+}
+
+fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
+cameraInput.addEventListener('change', e => { handleFiles(e.target.files); cameraInput.value = ''; });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+// ── Media modal ─────────────────────────────────────────────────────────────
+document.getElementById('openMediaBtn').addEventListener('click', async () => {
+  const modal = document.getElementById('mediaModal');
+  const grid  = document.getElementById('mediaGrid');
+  modal.style.display = 'flex';
+  grid.innerHTML = 'Loading…';
+  try {
+    const r = await fetch('/media/<%= site.domain %>?json=1');
+    const data = await r.json();
+    if (!data.objects.length) { grid.innerHTML = '<p>No images in S3 yet.</p>'; return; }
+    grid.innerHTML = '';
+    data.objects.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'mini-thumb';
+      div.innerHTML = `<img src="${o.url}" loading="lazy"><span>${o.key.split('/').pop()}</span>
+        <div class="mini-thumb-actions">
+          <button type="button" class="btn btn-sm btn-primary" onclick="insertImageFromBrowser('${o.url}','${o.key.split('/').pop()}')">Insert</button>
+          <button type="button" class="btn btn-sm" onclick="setCoverImage('${o.url}');document.getElementById('mediaModal').style.display='none'">Cover</button>
+        </div>`;
+      grid.appendChild(div);
+    });
+  } catch(e) {
+    grid.innerHTML = '<p>Failed to load: ' + e.message + '</p>';
+  }
+});
+
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('mediaModal').style.display = 'none';
+});
+
+function insertImageFromBrowser(url, name) {
+  insertImage(url, name);
+  document.getElementById('mediaModal').style.display = 'none';
+}
+
+// ── Cover image management ───────────────────────────────────────────────────
+const coverInput   = document.getElementById('imageUrl');
+const coverPreview = document.getElementById('coverPreview');
+const clearCoverBtn = document.getElementById('clearCoverBtn');
+
+function setCoverImage(url) {
+  coverInput.value = url;
+  updateCoverPreview(url);
+}
+
+function updateCoverPreview(url) {
+  if (url) {
+    coverPreview.src = url;
+    coverPreview.style.display = '';
+    clearCoverBtn.style.display = '';
+  } else {
+    coverPreview.src = '';
+    coverPreview.style.display = 'none';
+    clearCoverBtn.style.display = 'none';
+  }
+}
+
+coverInput.addEventListener('input', () => updateCoverPreview(coverInput.value.trim()));
+
+clearCoverBtn.addEventListener('click', () => setCoverImage(''));
+
+// "Use first image" — scan editor for first image markdown or HTML img
+document.getElementById('useFirstImageBtn').addEventListener('click', () => {
+  const content = easyMDE.value();
+  const mdMatch = content.match(/!\[.*?\]\(([^)\s"]+)/);
+  if (mdMatch) { setCoverImage(mdMatch[1]); return; }
+  const htmlMatch = content.match(/<img[^>]+src=["']([^"']+)/);
+  if (htmlMatch) { setCoverImage(htmlMatch[1]); return; }
+  alert('No images found in post body.');
+});
+
+// Auto-populate cover on load if empty
+(function autoPopulateCover() {
+  if (coverInput.value.trim()) return; // already set
+  // Wait for EasyMDE to be ready, then check
+  setTimeout(() => {
+    const content = easyMDE.value();
+    const mdMatch = content.match(/!\[.*?\]\(([^)\s"]+)/);
+    if (mdMatch) setCoverImage(mdMatch[1]);
+  }, 300);
+})();
+
+// ── Quick reference notes ────────────────────────────────────────────────────
+(async function initQrNotes() {
+  const display   = document.getElementById('qrNotesDisplay');
+  const editBlock = document.getElementById('qrNotesEdit');
+  const textEl    = document.getElementById('qrNotesText');
+  const input     = document.getElementById('qrNotesInput');
+  const editBtn   = document.getElementById('qrEditBtn');
+  const saveBtn   = document.getElementById('qrSaveBtn');
+  const cancelBtn = document.getElementById('qrCancelBtn');
+
+  let saved = '';
+  try {
+    const r = await fetch('/quickref');
+    saved = await r.text();
+  } catch {}
+  textEl.textContent = saved.trim() || '—';
+  input.value = saved;
+
+  editBtn.addEventListener('click', () => {
+    display.style.display = 'none';
+    editBlock.style.display = 'block';
+    input.focus();
+    editBtn.textContent = '';
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    input.value = saved;
+    editBlock.style.display = 'none';
+    display.style.display = '';
+    editBtn.textContent = 'Edit notes';
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    saveBtn.textContent = 'Saving…';
+    try {
+      await fetch('/quickref', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: input.value });
+      saved = input.value;
+      textEl.textContent = saved.trim() || '—';
+    } catch {}
+    editBlock.style.display = 'none';
+    display.style.display = '';
+    editBtn.textContent = 'Edit notes';
+    saveBtn.textContent = 'Save';
+  });
+})();
+</script>
+<%- include('partials/foot') %>
+<script>
+(function() {
+  const input  = document.getElementById("tagsInput");
+  const picker = document.getElementById("tagPicker");
+  if (!input || !picker) return;
+
+  function getTags() {
+    return input.value.split(",").map(t => t.trim()).filter(Boolean);
+  }
+
+  function setTags(tags) {
+    input.value = tags.map(t => t.toLowerCase()).join(", ");
+  }
+
+  function syncChips() {
+    const active = new Set(getTags());
+    picker.querySelectorAll(".tag-chip").forEach(chip => {
+      chip.classList.toggle("active", active.has(chip.dataset.tag));
+    });
+  }
+
+  picker.addEventListener("click", function(e) {
+    const chip = e.target.closest(".tag-chip");
+    if (!chip) return;
+    const tag  = chip.dataset.tag.toLowerCase();
+    const tags = getTags();
+    const idx  = tags.indexOf(tag);
+    if (idx === -1) tags.push(tag); else tags.splice(idx, 1);
+    setTags(tags);
+    syncChips();
+  });
+
+  input.addEventListener("input", function() {
+    const pos = input.selectionStart;
+    input.value = input.value.toLowerCase();
+    input.setSelectionRange(pos, pos);
+    syncChips();
+  });
+  syncChips();
+})();
+</script>

@@ -1,0 +1,55 @@
+<%
+  locals.pageTitle = 'Private';
+  locals.canonical = '/private';
+-%>
+<%- include('layout') %>
+
+<div class="page-header">
+  <h1>Private</h1>
+  <p class="site-desc" style="font-size:.85rem;color:var(--muted,#888);">
+    <a href="/private/logout" style="color:var(--muted,#888);">Log out</a>
+  </p>
+</div>
+
+<% if (homeHtml) { %>
+  <div class="page-content" style="margin-bottom:2rem;"><%- homeHtml %></div>
+<% } %>
+
+<div class="post-list">
+  <% if (posts.length === 0) { %>
+    <p class="empty">No private posts yet.</p>
+  <% } else { %>
+    <% posts.forEach(function(post) { %>
+      <article class="post-card">
+        <% if (post.coverImage) { %>
+          <a href="/private/<%= post.slug %>" class="post-cover">
+            <img src="<%= post.coverImage %>" alt="<%= post.title %>">
+          </a>
+        <% } %>
+        <div class="post-card-body">
+          <div class="post-meta">
+            <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
+          </div>
+          <h2><a href="/private/<%= post.slug %>"><%= post.title %></a></h2>
+          <% var ex = post.excerpt || ''; var truncated = ex.length > 140 ? ex.slice(0, 137) + '…' : ex; %>
+          <% if (truncated) { %><p class="excerpt"><%= truncated %></p><% } %>
+          <a href="/private/<%= post.slug %>" class="read-more">Read more →</a>
+        </div>
+      </article>
+    <% }) %>
+  <% } %>
+</div>
+
+<% if (totalPages > 1) { %>
+  <nav class="pagination">
+    <% if (page > 1) { %>
+      <a href="?page=<%= page - 1 %>" class="prev">← Newer</a>
+    <% } else { %><span></span><% } %>
+    <span>Page <%= page %> of <%= totalPages %></span>
+    <% if (page < totalPages) { %>
+      <a href="?page=<%= page + 1 %>" class="next">Older →</a>
+    <% } else { %><span></span><% } %>
+  </nav>
+<% } %>
+
+<%- include('layout-end') %>

@@ -1,0 +1,105 @@
+<%
+  pageTitle = 'GitHub';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.gh-table { width:100%; border-collapse:collapse; font-size:.875rem; }
+.gh-table th { text-align:left; padding:.55rem .75rem; color:var(--muted); font-size:.78rem; font-weight:500; border-bottom:1px solid var(--border); white-space:nowrap; }
+.gh-table td { padding:.7rem .75rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+.gh-table tr:hover td { background:var(--surface2); }
+.badge { display:inline-block; padding:.15rem .5rem; border-radius:3px; font-size:.72rem; font-weight:600; white-space:nowrap; }
+.badge-ok    { background:#d1fae5; color:#065f46; }
+.badge-warn  { background:#fef3c7; color:#92400e; }
+.badge-error { background:#fee2e2; color:#991b1b; }
+.gh-commit { font-size:.78rem; display:flex; gap:.5rem; align-items:baseline; line-height:1.5; }
+.gh-commit code { font-size:.7rem; color:var(--muted); opacity:.65; min-width:3.8rem; flex-shrink:0; }
+.gh-commit .cmsg { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:280px; }
+.gh-commit .ctime { color:var(--muted); white-space:nowrap; flex-shrink:0; }
+
+@media (max-width: 640px) {
+  .gh-table, .gh-table tbody, .gh-table tr, .gh-table td { display: block; }
+  .gh-table thead { display: none; }
+  .gh-table tr {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: .75rem; padding: .85rem 1rem;
+  }
+  .gh-table td { border: none; padding: .15rem 0; }
+  .gh-table td:first-child { font-weight: 700; font-size: .95rem; padding-bottom: .4rem; }
+  .gh-table td:last-child { padding-top: .6rem; }
+  .gh-table td:last-child form,
+  .gh-table td:last-child .btn { width: 100%; }
+  .gh-commit .cmsg { max-width: none; white-space: normal; overflow: visible; text-overflow: unset; }
+}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>GitHub</h1>
+    <p class="muted">All repos · updated on page load</p>
+  </div>
+  <div class="header-actions">
+    <form method="POST" action="/github/push">
+      <button class="btn btn-primary">↑ Push all</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <table class="gh-table" data-nosort>
+    <thead>
+      <tr>
+        <th>Repo</th>
+        <th>Status</th>
+        <th>Last push</th>
+        <th>Recent commits</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% repos.forEach(repo => { %>
+      <tr>
+        <td>
+          <a href="https://github.com/andresanz/<%= repo.name %>" target="_blank" style="font-family:monospace;font-size:.85rem;font-weight:600;color:var(--text);text-decoration:none">
+            <%= repo.name %> ↗
+          </a>
+          <% if (repo.branch && repo.branch !== 'master') { %>
+            <span style="font-family:monospace;font-size:.7rem;background:var(--surface2);padding:.1rem .35rem;border-radius:3px;color:var(--muted);margin-left:.35rem"><%= repo.branch %></span>
+          <% } %>
+        </td>
+        <td>
+          <% if (repo.error) { %>
+            <span class="badge badge-error">error</span>
+          <% } else if (repo.dirty) { %>
+            <span class="badge badge-warn"><%= repo.pending %> unsaved</span>
+          <% } else { %>
+            <span class="badge badge-ok">clean</span>
+          <% } %>
+          <% if (repo.ahead > 0) { %>
+            <span class="badge badge-warn" style="margin-left:.25rem"><%= repo.ahead %> unpushed</span>
+          <% } %>
+        </td>
+        <td style="color:var(--muted);font-size:.8rem;white-space:nowrap"><%= repo.lastPush || '—' %></td>
+        <td>
+          <% (repo.commits || []).slice(0,3).forEach((c, i) => { %>
+            <div class="gh-commit" style="<%= i > 0 ? 'opacity:.5' : '' %>">
+              <code><%= c.hash %></code>
+              <span class="cmsg"><%= c.msg %></span>
+              <span class="ctime"><%= c.time %></span>
+            </div>
+          <% }) %>
+        </td>
+        <td style="text-align:right">
+          <form method="POST" action="/github/push/<%= encodeURIComponent(repo.name) %>">
+            <button class="btn btn-sm">Push</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('partials/foot') %>

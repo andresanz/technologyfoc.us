@@ -1,0 +1,63 @@
+<%
+  pageTitle = 'Settings · ' + site.title;
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <div>
+    <a href="/sites/<%= site.domain %>" class="back-link">← <%= site.title %></a>
+    <h1>Settings <span class="muted">— <%= site.title %></span></h1>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<form method="POST" action="/sites/<%= site.domain %>/settings" style="max-width:640px">
+
+  <fieldset>
+    <legend>Site</legend>
+    <label>Title
+      <input type="text" name="title" value="<%= site.title %>" required>
+    </label>
+    <label>Description
+      <input type="text" name="description" value="<%= site.description %>">
+    </label>
+    <label>Author
+      <input type="text" name="author" value="<%= site.author %>">
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" name="hideAuthor" value="true" <%= site.hideAuthor ? 'checked' : '' %>>
+      Hide author name in footer
+    </label>
+    <label>Google Analytics ID
+      <input type="text" name="gaId" value="<%= site.gaId || '' %>" placeholder="G-XXXXXXXXXX" autocomplete="off">
+      <span class="hint">Leave blank to disable</span>
+    </label>
+    <label>Site URL
+      <input type="text" name="siteUrl" value="<%= site.url %>" placeholder="https://example.com">
+      <span class="hint">Must match your domain — used for canonical URLs and RSS</span>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>AWS / S3</legend>
+    <label>Access Key ID
+      <input type="text" name="awsKey" value="<%= site.awsKey %>" autocomplete="off">
+    </label>
+    <label>Secret Access Key
+      <input type="password" name="awsSecret" value="<%= site.awsSecret %>" autocomplete="off">
+      <span class="hint">Leave blank to keep existing value — or paste new key to update</span>
+    </label>
+    <label>Region
+      <input type="text" name="awsRegion" value="<%= site.awsRegion || 'us-east-1' %>">
+    </label>
+    <label>S3 Bucket
+      <input type="text" name="s3Bucket" value="<%= site.s3Bucket %>" placeholder="my-blog-images">
+    </label>
+  </fieldset>
+
+  <div class="form-footer">
+    <button type="submit" class="btn btn-primary">Save &amp; restart</button>
+    <a href="/sites/<%= site.domain %>" class="btn">Cancel</a>
+    <span class="hint">Service will restart automatically to pick up changes.</span>
+  </div>
+</form>
+<%- include('partials/foot') %>

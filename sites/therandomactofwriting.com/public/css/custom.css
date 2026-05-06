@@ -1,0 +1,10 @@
+/* therandomactofwriting.com custom styles */
+
+/* Background */
+:root {
+  --bg: cornsilk;
+}
+
+.post-card-body {
+  background-color: #f0f7f0;
+}

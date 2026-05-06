@@ -1,0 +1,35 @@
+/* 914.io custom styles */
+
+/* Center home page content */
+article.home-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+}
+article.home-page .post-body {
+  text-align: center;
+}
+
+/* Hide footer */
+.site-footer { display: none; }
+
+/* Email button */
+article.home-page .post-body a[href^="mailto"] {
+  display: inline-block;
+  padding: .6em 1.4em;
+  border: 1.5px solid currentColor;
+  border-radius: 6px;
+  font-size: 1rem;
+  letter-spacing: .01em;
+  text-decoration: none;
+  transition: background .15s, color .15s;
+}
+article.home-page .post-body a[href^="mailto"]:hover {
+  background: var(--text);
+  color: var(--bg);
+  opacity: .7;
+}
+
+/* Background */
+:root { --bg: cornsilk; }

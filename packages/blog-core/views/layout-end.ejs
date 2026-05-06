@@ -1,0 +1,66 @@
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <nav class="footer-nav">
+        <% if (locals.navLoaded) { %>
+          <% (locals.nav || []).forEach(function(item) { %><a href="<%= item.url %>"><%= item.label %></a><% }) %>
+        <% } else { %>
+          <a href="<%= locals.postsPath || '/' %>">Posts</a>
+          <% if (locals.pages) { pages.forEach(function(p) { %><a href="/<%= p.slug %>"><%= p.title %></a><% }) } %>
+          <a href="/tags">Tags</a>
+          <a href="/feed/rss">RSS</a>
+        <% } %>
+      </nav>
+      <% if (!site.hideAuthor && site.author) { %><p class="footer-copy"><%= site.author %></p><% } %>
+    </div>
+  </footer>
+<!-- Lightbox -->
+<div id="lb" role="dialog" aria-modal="true" aria-label="Image viewer" style="display:none">
+  <button id="lb-close" aria-label="Close">&times;</button>
+  <figure id="lb-figure" style="margin:0;display:flex;flex-direction:column;align-items:center;max-width:90vw">
+    <img id="lb-img" src="" alt="">
+    <figcaption id="lb-cap" style="color:rgba(255,255,255,.65);font-size:.82rem;font-style:italic;margin-top:.6rem;text-align:center;max-width:60ch"></figcaption>
+  </figure>
+</div>
+<script>
+(function(){
+  var lb    = document.getElementById('lb');
+  var lbImg = document.getElementById('lb-img');
+  var lbCap = document.getElementById('lb-cap');
+
+  function open(src, alt) {
+    lbImg.src = src; lbImg.alt = alt || '';
+    lbCap.textContent = alt || '';
+    lbCap.style.display = alt ? '' : 'none';
+    lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lb.style.display = 'none';
+    lbImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  // Wire up post images — cover, body, figures (skip ones inside <a>)
+  document.querySelectorAll('.post-body img, .post-cover-full, .lb-img').forEach(function(img) {
+    if (img.closest('a')) return;
+    img.style.cursor = 'zoom-in';
+    img.addEventListener('click', function(){ open(img.src, img.alt); });
+  });
+
+  document.getElementById('lb-close').addEventListener('click', close);
+  lb.addEventListener('click', function(e){ if (e.target === lb) close(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+})();
+</script>
+<button id="btt" aria-label="Back to top" title="Back to top">&#8593;</button>
+<script>
+(function(){
+  var btn = document.getElementById('btt');
+  window.addEventListener('scroll', function(){ btn.classList.toggle('btt-show', window.scrollY > 400); }, {passive:true});
+  btn.addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+})();
+</script>
+</body>
+</html>

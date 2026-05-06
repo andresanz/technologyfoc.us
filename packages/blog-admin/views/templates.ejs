@@ -1,0 +1,61 @@
+<% pageTitle = 'Post Templates' %>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div>
+    <h1>Post Templates</h1>
+    <p class="muted" style="margin-top:.25rem;font-size:.875rem">Reusable starting points for new posts.</p>
+  </div>
+  <div class="header-actions">
+    <a href="/templates/new" class="btn btn-primary">+ New template</a>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (templates.length === 0) { %>
+<div style="padding:2rem;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius)">
+  No templates yet. <a href="/templates/new">Create one →</a>
+</div>
+<% } else { %>
+<div class="templates-grid" id="sortableTemplates">
+  <% templates.forEach(function(t) { %>
+  <div class="tmpl-card" data-id="<%= t.id %>">
+    <div class="tmpl-drag-handle" title="Drag to reorder">⠿</div>
+    <div class="tmpl-name"><%= t.name %></div>
+    <pre class="tmpl-preview"><%= t.body.slice(0, 180) %><%= t.body.length > 180 ? '…' : '' %></pre>
+    <div class="tmpl-actions">
+      <a href="/templates/edit/<%= t.id %>" class="btn btn-sm">Edit</a>
+      <form method="POST" action="/templates/delete/<%= t.id %>" style="display:inline"
+            onsubmit="return confirm('Delete template «<%= t.name %>»?')">
+        <button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </div>
+  </div>
+  <% }) %>
+</div>
+<% } %>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1/Sortable.min.js"></script>
+<script>
+(function () {
+  const el = document.getElementById('sortableTemplates');
+  if (!el) return;
+  Sortable.create(el, {
+    handle: '.tmpl-drag-handle',
+    animation: 150,
+    onEnd: function () {
+      const ids = Array.from(el.querySelectorAll('.tmpl-card')).map(c => c.dataset.id);
+      fetch('/templates/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
+    }
+  });
+})();
+</script>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<%
+  pageTitle = 'Bans · Server';
+  function actionLabel(a) {
+    if (a === 'ban')     return 'Ban';
+    if (a === 'unban')   return 'Unban';
+    if (a === 'restore') return 'Restore';
+    return a;
+  }
+  function actionClass(a) {
+    if (a === 'ban')     return 'ev-ban';
+    if (a === 'unban')   return 'ev-unban';
+    if (a === 'restore') return 'ev-restore';
+    return '';
+  }
+-%>
+<%- include('partials/head') %>
+
+<style>
+.jails-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: .6rem; margin-bottom: 1.5rem;
+}
+.jail-card {
+  height: 220px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .85rem 1rem;
+}
+.jail-name   { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: .4rem; }
+.jail-counts { display: flex; gap: 1.25rem; margin-bottom: .6rem; }
+.jail-stat   { text-align: center; }
+.jail-stat-n { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.jail-stat-l { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.jail-stat-n.red  { color: var(--danger); }
+.jail-stat-n.muted { color: var(--muted); }
+
+.ip-chips { display: flex; flex-wrap: wrap; gap: .3rem; overflow-y: scroll; flex: 1; min-height: 0; align-content: flex-start; padding-right: .2rem; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.ip-chips::-webkit-scrollbar { width: 5px; }
+.ip-chips::-webkit-scrollbar-track { background: transparent; }
+.ip-chips::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.ip-chip  {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px;
+  padding: .15em .5em; font-size: .73rem; font-family: var(--mono);
+  color: #991b1b;
+}
+.ip-chip button {
+  background: none; border: none; cursor: pointer;
+  color: #991b1b; opacity: .6; font-size: .8rem; padding: 0; line-height: 1;
+}
+.ip-chip button:hover { opacity: 1; }
+
+.section-title {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); margin: 1.5rem 0 .6rem;
+}
+
+.event-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.event-table th {
+  text-align: left; padding: .45rem .75rem;
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.event-table td { padding: .45rem .75rem; border-bottom: 1px solid var(--border); }
+.event-table tr:last-child td { border-bottom: none; }
+.ev-ban     { color: var(--danger); font-weight: 600; }
+.ev-unban   { color: var(--success); font-weight: 600; }
+.ev-restore { color: var(--warning); font-weight: 600; }
+.ts-cell    { color: var(--muted); white-space: nowrap; font-size: .75rem; }
+.ip-cell    { font-family: var(--mono); }
+.jail-pill  {
+  display: inline-block; padding: .1em .5em; border-radius: 4px;
+  background: var(--surface2, #f4f4f5); font-size: .72rem;
+  color: var(--muted); border: 1px solid var(--border);
+}
+
+.ban-form { display: flex; gap: .5rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.5rem; }
+.ban-form input, .ban-form select { padding: .4rem .6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font-size: .875rem; }
+.ban-form input { width: 180px; font-family: var(--mono); }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/server" class="back-link">← Server</a>
+    <h1>Bans</h1>
+  </div>
+  <div class="header-actions">
+    <a href="/server/logs?service=fail2ban" class="btn">Raw log</a>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<!-- Manual ban form -->
+<form method="POST" action="/server/bans/ban" class="ban-form">
+  <div>
+    <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:.25rem">IP to ban</label>
+    <input type="text" name="ip" placeholder="1.2.3.4" required pattern="[\d.:a-fA-F]+">
+  </div>
+  <div>
+    <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:.25rem">Jail</label>
+    <select name="jail">
+      <% jails.forEach(j => { %><option value="<%= j.jail %>"><%= j.jail %></option><% }) %>
+    </select>
+  </div>
+  <button class="btn btn-danger">Ban IP</button>
+</form>
+
+<!-- Jail cards -->
+<div class="section-title">Active jails</div>
+<div class="jails-grid">
+  <% jails.forEach(function(j) { %>
+  <div class="jail-card">
+    <div class="jail-name"><%= j.jail %></div>
+    <div class="jail-counts">
+      <div class="jail-stat">
+        <div class="jail-stat-n <%= j.banned > 0 ? 'red' : 'muted' %>"><%= j.banned %></div>
+        <div class="jail-stat-l">Banned</div>
+      </div>
+      <div class="jail-stat">
+        <div class="jail-stat-n muted"><%= j.total %></div>
+        <div class="jail-stat-l">Total</div>
+      </div>
+      <div class="jail-stat">
+        <div class="jail-stat-n muted"><%= j.failed %></div>
+        <div class="jail-stat-l">Failed</div>
+      </div>
+    </div>
+    <% if (j.ips.length > 0) { %>
+    <div class="ip-chips">
+      <% j.ips.forEach(function(ip) { %>
+      <form method="POST" action="/server/bans/unban" style="display:inline">
+        <input type="hidden" name="jail" value="<%= j.jail %>">
+        <input type="hidden" name="ip" value="<%= ip %>">
+        <button type="submit" class="ip-chip" title="Click to unban">
+          <%= ip %> <span>✕</span>
+        </button>
+      </form>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div style="font-size:.75rem;color:var(--muted)">No IPs banned</div>
+    <% } %>
+  </div>
+  <% }) %>
+</div>
+
+<!-- Event log -->
+<div class="section-title" style="display:flex;align-items:center;gap:.75rem">
+  Recent events
+  <span id="live-dot" style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block;animation:pulse 2s infinite"></span>
+</div>
+<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
+
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:2rem">
+  <table class="event-table" id="evTable" data-nosort>
+    <thead><tr><th>Time</th><th>Action</th><th>IP</th><th>Jail</th></tr></thead>
+    <tbody id="evBody">
+      <% events.forEach(function(e) { %>
+      <tr>
+        <td class="ts-cell"><%= e.ts %></td>
+        <td class="<%= actionClass(e.action) %>"><%= actionLabel(e.action) %></td>
+        <td class="ip-cell"><%= e.ip %></td>
+        <td><span class="jail-pill"><%= e.jail %></span></td>
+      </tr>
+      <% }) %>
+      <% if (!events.length) { %><tr><td colspan="4" style="color:var(--muted);padding:1rem">No events yet</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const ACTION_CLASS = {ban:'ev-ban', unban:'ev-unban', restore:'ev-restore'};
+const ACTION_LABEL = {ban:'Ban', unban:'Unban', restore:'Restore'};
+let lastTs = '<%= events[0] ? events[0].ts : "" %>';
+
+async function pollEvents() {
+  try {
+    const data = await fetch('/server/bans/events').then(r => r.json());
+    if (!data.length || data[0].ts === lastTs) return;
+    lastTs = data[0].ts;
+    const tbody = document.getElementById('evBody');
+    tbody.innerHTML = data.map(e => `
+      <tr>
+        <td class="ts-cell">${e.ts}</td>
+        <td class="${ACTION_CLASS[e.action]||''}">${ACTION_LABEL[e.action]||e.action}</td>
+        <td class="ip-cell">${e.ip}</td>
+        <td><span class="jail-pill">${e.jail}</span></td>
+      </tr>`).join('');
+  } catch {}
+}
+setInterval(pollEvents, 10000);
+</script>
+
+</main>
+</body>
+</html>

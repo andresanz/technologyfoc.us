@@ -1,0 +1,238 @@
+<%
+  pageTitle = 'Backups · Server';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.backup-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.backup-table th { text-align: left; padding: .6rem .75rem; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+.backup-table td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.backup-table tr:hover td { background: var(--surface2); }
+.status-ok   { color: var(--success); font-weight: 600; }
+.status-fail { color: var(--danger);  font-weight: 600; }
+.log-box { background: #0d1117; color: #c9d1d9; border-radius: var(--radius); padding: 1rem; font-family: var(--mono); font-size: .75rem; line-height: 1.6; max-height: 340px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 1rem; display: none; }
+.spinner-inline { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,.15); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: .4rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/server" class="back-link">← Server</a>
+    <h1>Backups</h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="toggleLog()">View log</button>
+    <form method="POST" action="/server/backups/run" id="backupForm" onsubmit="startBackup()">
+      <button class="btn btn-primary" id="backupBtn">
+        <% if (running) { %><span class="spinner-inline"></span>Running…<% } else { %>Back up now<% } %>
+      </button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (running) { %>
+<div class="alert alert-info" id="runningBanner">
+  <span class="spinner-inline"></span> Backup running — page will refresh when done…
+</div>
+<% } %>
+
+<!-- Status strip -->
+<div class="card" style="margin-bottom:1rem; padding:.75rem 1rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap">
+  <div>
+    <span style="font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em">Last backup</span><br>
+    <% if (last) {
+         const ok = last.includes(' OK');
+         const parts = last.split(' ');
+    %>
+      <span class="<%= ok ? 'status-ok' : 'status-fail' %>"><%= ok ? '✓' : '✗' %></span>
+      <%= parts[0] %> &nbsp;·&nbsp; <%= parts[1] %>
+    <% } else { %>
+      <span style="color:var(--muted)">Never run</span>
+    <% } %>
+  </div>
+  <div style="margin-left:auto; font-size:.8rem; color:var(--muted)">
+    Bucket: <code><%= bucket %></code> &nbsp;·&nbsp; Retains last 30
+  </div>
+</div>
+
+<!-- Backup list -->
+<div class="card" style="padding:0; overflow:hidden">
+  <% if (backups.length === 0) { %>
+    <p class="empty" style="padding:2rem 1rem">No backups yet. Click "Back up now" to create the first one.</p>
+  <% } else { %>
+  <table class="backup-table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Size</th>
+        <th>S3 key</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% backups.forEach((b) => { %>
+      <tr>
+        <td><%= b.modified %></td>
+        <td><%= b.mb %> MB</td>
+        <td style="font-size:.78rem"><a href="/server/backups/download?key=<%= encodeURIComponent(b.key) %>"><%= b.name %></a></td>
+        <td>
+          <form method="POST" action="/server/backups/delete" style="display:inline"
+                onsubmit="return confirm('Delete this backup?')">
+            <input type="hidden" name="key" value="<%= b.key %>">
+            <button class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<!-- Log viewer -->
+<div class="log-box" id="logBox">Loading…</div>
+
+<!-- Local volume backups -->
+<div class="section-header" style="margin-top:2rem">
+  <h2>Volume Backups <span style="font-size:.75rem;font-weight:400;color:var(--muted)">/mnt/volume01</span></h2>
+  <button class="btn" onclick="toggleLocalLog()">View log</button>
+</div>
+<div class="card" style="padding:0; overflow:hidden">
+  <% if (!localBackups || localBackups.length === 0) { %>
+    <p class="empty" style="padding:2rem 1rem">No local backups yet — cron runs at 2am and 2pm.</p>
+  <% } else { %>
+  <table class="backup-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Files</th>
+        <th>Size</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% localBackups.forEach(b => { %>
+      <tr>
+        <td><a href="/server/backups/local/<%= b.date %>"><%= b.date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') %></a></td>
+        <td style="color:var(--muted)"><%= b.files %></td>
+        <td><%= b.mb %> MB</td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<div class="log-box" id="localLogBox">Loading…</div>
+
+<!-- Mac backups -->
+<div class="section-header" style="margin-top:2rem">
+  <h2>Mac Backups <span style="font-size:.75rem;font-weight:400;color:var(--muted)">sanz / MacbookAir/Backups · runs daily at 2am</span></h2>
+</div>
+<div class="card" style="padding:0;overflow:hidden">
+  <% if (!macBackups || macBackups.length === 0) { %>
+    <p class="empty" style="padding:2rem 1rem">No Mac backups found in S3.</p>
+  <% } else { %>
+  <%
+    const latestMac = macBackups[0];
+    const latestDate = latestMac ? new Date(latestMac.modified) : null;
+    const daysSince = latestDate ? Math.floor((Date.now() - latestDate) / 86400000) : null;
+  %>
+  <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+    <div>
+      <span style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Last backup</span><br>
+      <span class="<%= daysSince !== null && daysSince > 7 ? 'status-fail' : 'status-ok' %>">
+        <%= latestMac ? latestMac.modified : '—' %>
+      </span>
+      <% if (daysSince !== null && daysSince > 7) { %>
+        <span style="color:var(--danger);font-size:.8rem;margin-left:.5rem">(<%= daysSince %> days ago)</span>
+      <% } %>
+    </div>
+    <div style="margin-left:auto;font-size:.8rem;color:var(--muted)"><%= macBackups.length %> backup<%= macBackups.length !== 1 ? 's' : '' %></div>
+  </div>
+  <table class="backup-table">
+    <thead><tr><th>File</th><th>Size</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+      <% macBackups.forEach(b => { %>
+      <tr>
+        <td style="font-size:.78rem;word-break:break-all"><a href="/mac/snapshot/<%= encodeURIComponent(b.name) %>"><%= b.name %></a></td>
+        <td style="white-space:nowrap"><%= b.mb ? b.mb + ' MB' : '—' %></td>
+        <td style="font-size:.78rem;color:var(--muted);white-space:nowrap"><%= b.modified %></td>
+        <td>
+          <form method="POST" action="/server/backups/mac/delete" style="display:inline"
+                onsubmit="return confirm('Delete <%= b.name %>?')">
+            <input type="hidden" name="key" value="<%= b.key %>">
+            <button class="btn btn-sm btn-danger">✕</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<script>
+const LAST_STATUS = <%- JSON.stringify(last || null) %>;
+
+// If backup is running (or was just triggered), poll until done
+let pollInterval = null;
+
+function startPolling() {
+  if (pollInterval) return;
+  document.getElementById('backupBtn').innerHTML = '<span class="spinner-inline"></span>Running…';
+  document.getElementById('backupBtn').disabled = true;
+  pollInterval = setInterval(async () => {
+    try {
+      const r = await fetch('/server/backups/status');
+      const d = await r.json();
+      if (!d.running && d.last !== LAST_STATUS) {
+        clearInterval(pollInterval);
+        window.location.reload();
+      }
+    } catch {}
+  }, 2000);
+}
+
+<% if (running) { %>
+startPolling();
+<% } %>
+
+function startBackup() {
+  setTimeout(startPolling, 500);
+}
+
+async function toggleLog() {
+  const box = document.getElementById('logBox');
+  if (box.style.display === 'block') { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.textContent = 'Loading…';
+  try {
+    const r = await fetch('/server/backups/log');
+    if (!r.ok) { box.textContent = 'Error: ' + r.status + ' ' + r.statusText; return; }
+    const d = await r.json();
+    box.textContent = d.log || '(log is empty)';
+    box.scrollTop = box.scrollHeight;
+  } catch (e) {
+    box.textContent = 'Failed to load log: ' + e.message;
+  }
+}
+
+async function toggleLocalLog() {
+  const box = document.getElementById('localLogBox');
+  if (box.style.display === 'block') { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.textContent = 'Loading…';
+  try {
+    const r = await fetch('/server/backups/log?src=local');
+    if (!r.ok) { box.textContent = 'Error: ' + r.status + ' ' + r.statusText; return; }
+    const d = await r.json();
+    box.textContent = d.log || '(log is empty)';
+    box.scrollTop = box.scrollHeight;
+  } catch (e) {
+    box.textContent = 'Failed to load log: ' + e.message;
+  }
+}
+</script>
+
+<%- include('partials/foot') %>

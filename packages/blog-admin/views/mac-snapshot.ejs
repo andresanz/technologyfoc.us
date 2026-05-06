@@ -1,0 +1,113 @@
+<%
+  pageTitle = 'Snapshot · ' + snapshot;
+-%>
+<%- include('partials/head') %>
+
+<style>
+.file-table { width:100%; border-collapse:collapse; font-size:.875rem; }
+.file-table th { text-align:left; padding:.5rem .75rem; color:var(--muted); font-size:.78rem; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; white-space:nowrap; }
+.file-table th:hover { color:var(--text); }
+.file-table th.sort-asc::after  { content:' ↑'; }
+.file-table th.sort-desc::after { content:' ↓'; }
+.file-table th:last-child { cursor:default; }
+.file-table td { padding:.55rem .75rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+.file-table tr:hover td { background:var(--surface2); }
+.dir-icon  { color:var(--accent); margin-right:.3rem; }
+.file-icon { color:var(--muted);  margin-right:.3rem; }
+.crumb-sep { margin:0 .3rem; color:var(--muted); }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="<%= backBase %>" class="back-link">← Backups</a>
+    <h1 style="font-size:1.1rem;margin-top:.25rem">
+      <span class="muted">Snapshot /</span> <%= snapshot %>
+    </h1>
+    <% if (typeof crumbs !== 'undefined' && crumbs.length > 2) { %>
+    <div style="font-size:.8rem;margin-top:.3rem">
+      <a href="<%= browseBase %>/snapshot/<%= encodeURIComponent(snapshot) %>">root</a>
+      <% crumbs.slice(2).forEach(c => { %>
+        <span class="crumb-sep">/</span>
+        <a href="<%= browseBase %>/browse?prefix=<%= encodeURIComponent(c.prefix) %>"><%= c.label %></a>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <% if (!items.length) { %>
+    <p style="padding:1.5rem;color:var(--muted)">Empty folder.</p>
+  <% } else { %>
+  <table class="file-table" data-nosort>
+    <thead><tr><th data-col="0">Name</th><th data-col="1">Size</th><th data-col="2">Date</th><th></th></tr></thead>
+    <tbody id="fileBody">
+      <% items.forEach(item => { %>
+      <tr data-name="<%= item.name.toLowerCase() %>" data-size="<%= item.isDir ? -1 : (parseInt(item.fmt) || 0) %>" data-isdir="<%= item.isDir ? 1 : 0 %>">
+        <td>
+          <% if (item.isDir) { %>
+            <a href="<%= browseBase %>/browse?prefix=<%= encodeURIComponent(item.key) %>">
+              <span class="dir-icon">📁</span><%= item.name %>
+            </a>
+          <% } else { %>
+            <span class="file-icon">📄</span><%= item.name %>
+          <% } %>
+        </td>
+        <td style="color:var(--muted);white-space:nowrap" data-bytes="<%= item.isDir ? -1 : (item.rawBytes || 0) %>"><%= item.fmt || '—' %></td>
+        <td style="color:var(--muted);font-size:.78rem;white-space:nowrap"><%= item.modified || '—' %></td>
+        <td style="text-align:right;white-space:nowrap">
+          <% if (!item.isDir) { const _isAudio = ['mp3','m4a','aac','ogg','wav','flac','opus','aiff','aif'].includes(item.name.split('.').pop().toLowerCase()); %>
+            <% if (_isAudio) { %><a href="<%= browseBase %>/download?key=<%= encodeURIComponent(item.key) %>" target="_blank" class="btn btn-sm" style="margin-right:.25rem">▶</a><% } %>
+            <a href="<%= browseBase %>/download?key=<%= encodeURIComponent(item.key) %>" class="btn btn-sm">↓</a>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+<script>
+(function() {
+  let sortCol = 0, sortAsc = true;
+  const tbody = document.getElementById('fileBody');
+  const ths   = document.querySelectorAll('.file-table th[data-col]');
+
+  function sortTable(col, asc) {
+    const rows = [...tbody.querySelectorAll('tr')];
+    rows.sort((a, b) => {
+      // Dirs always first
+      const ad = parseInt(a.dataset.isdir), bd = parseInt(b.dataset.isdir);
+      if (ad !== bd) return bd - ad;
+      let av, bv;
+      if (col === 0) {
+        av = a.dataset.name; bv = b.dataset.name;
+        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+      } else {
+        av = parseInt(a.querySelector('td:nth-child(2)').dataset.bytes) || 0;
+        bv = parseInt(b.querySelector('td:nth-child(2)').dataset.bytes) || 0;
+        return asc ? av - bv : bv - av;
+      }
+    });
+    rows.forEach(r => tbody.appendChild(r));
+  }
+
+  ths.forEach(th => {
+    th.addEventListener('click', () => {
+      const col = parseInt(th.dataset.col);
+      if (col === sortCol) sortAsc = !sortAsc;
+      else { sortCol = col; sortAsc = true; }
+      ths.forEach(t => t.classList.remove('sort-asc','sort-desc'));
+      th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+      sortTable(sortCol, sortAsc);
+    });
+  });
+
+  // Default sort: dirs first, then name asc
+  ths[0].classList.add('sort-asc');
+  sortTable(0, true);
+})();
+</script>
+  <% } %>
+</div>
+
+<%- include('partials/foot') %>

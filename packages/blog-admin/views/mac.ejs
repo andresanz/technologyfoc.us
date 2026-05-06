@@ -1,0 +1,71 @@
+<%
+  pageTitle = 'Mac Backups';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.backup-card { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 1.25rem; }
+.backup-label { font-size:1rem; font-weight:600; }
+.backup-meta  { font-size:.82rem; color:var(--muted); margin-top:.25rem; }
+.backup-count { font-size:2rem; font-weight:700; color:var(--accent); line-height:1; }
+.backup-count small { font-size:.72rem; font-weight:400; color:var(--muted); display:block; text-align:right; }
+.stale { color:var(--danger) !important; }
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Mac Backups</h1>
+    <div style="font-size:.8rem;color:var(--muted);margin-top:.2rem">
+      <%= bucket %> · BU script · runs daily at 2am
+    </div>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<div style="display:grid;gap:1rem;margin-top:1rem">
+<% sections.forEach(section => {
+  const latest    = section.items[0] || null;
+  const count     = section.items.length;
+  const syncDate  = section.lastSync || (latest ? latest.date : null);
+  const daysSince = syncDate ? Math.floor((Date.now() - syncDate) / 86400000) : null;
+  const stale     = daysSince !== null && daysSince > 7;
+  const lastStr   = daysSince === null ? null
+                  : daysSince === 0    ? 'today'
+                  : daysSince === 1    ? 'yesterday'
+                  :                      daysSince + ' days ago';
+%>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="backup-card">
+      <div>
+        <div class="backup-label"><%= section.label %></div>
+        <div class="backup-meta">
+          <% if (lastStr) { %>
+            Last: <strong class="<%= stale ? 'stale' : '' %>"><%= lastStr %></strong>
+            &nbsp;<span style="opacity:.65"><%= syncDate ? syncDate.toLocaleString() : '' %></span>
+          <% } else { %>
+            <span class="stale">No backups found</span>
+          <% } %>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <% if (section.key === 'home' && count > 0) { %>
+          <a href="/mac/snapshot/<%= encodeURIComponent(section.items[0].name) %>" class="btn btn-sm" style="margin-bottom:.4rem">Browse latest</a><br>
+        <% } else if (count > 0) { %>
+          <a href="/mac/browse?prefix=<%= encodeURIComponent(section.prefix) %>" class="btn btn-sm" style="margin-bottom:.4rem">Browse</a><br>
+        <% } %>
+        <div class="backup-count"><%= count %><small><%= section.unit %></small></div>
+      </div>
+    </div>
+    <% if (section.key === 'home' && count > 0) { %>
+    <div style="border-top:1px solid var(--border);padding:.5rem .75rem;display:flex;flex-wrap:wrap;gap:.35rem">
+      <% section.items.forEach(snap => { %>
+        <a href="/mac/snapshot/<%= encodeURIComponent(snap.name) %>" style="font-size:.75rem;padding:.2rem .5rem;background:var(--surface2);border-radius:4px;color:var(--text)"><%= snap.name %></a>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+<% }) %>
+</div>
+
+<%- include('partials/foot') %>

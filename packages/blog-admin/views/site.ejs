@@ -1,0 +1,103 @@
+<%
+  pageTitle = site.title;
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <div>
+    <a href="/sites" class="back-link">← Sites</a>
+    <h1><%= site.title %> <span class="status-badge status-<%= site.status %>"><%= site.status %></span></h1>
+    <a href="<%= site.url %>" target="_blank" class="muted-link"><%= site.domain %></a>
+  </div>
+  <div class="header-actions">
+    <a href="/posts/<%= site.domain %>" class="btn btn-primary">Posts</a>
+    <a href="/pages/<%= site.domain %>" class="btn">Pages</a>
+    <a href="/media/<%= site.domain %>" class="btn">Media</a>
+    <a href="/sites/<%= site.domain %>/settings" class="btn">Settings</a>
+    <a href="/sites/<%= site.domain %>/css" class="btn">CSS</a>
+    <a href="/sites/<%= site.domain %>/nav" class="btn">Nav</a>
+    <a href="/sites/<%= site.domain %>/history" class="btn">History</a>
+    <a href="<%= site.url %>/_admin/edit?on=1&back=/" target="_blank" class="btn">✏ Edit mode</a>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<div class="two-col">
+  <div>
+    <!-- Config -->
+    <section class="card">
+      <h2>Configuration</h2>
+      <dl class="config-list">
+        <dt>URL</dt>        <dd><a href="<%= site.url %>" target="_blank"><%= site.url %></a></dd>
+        <dt>Port</dt>       <dd><%= site.port %></dd>
+        <dt>Posts dir</dt>  <dd><code><%= site.postsDir %></code></dd>
+        <dt>S3 Bucket</dt>  <dd><code><%= site.s3Bucket || '(not configured)' %></code></dd>
+        <dt>Admin key</dt>  <dd><code class="secret" data-val="<%= site.adminKey %>">••••••••</code> <button class="btn-link reveal-btn" data-target=".secret">reveal</button></dd>
+      </dl>
+    </section>
+
+    <!-- Service controls -->
+    <section class="card">
+      <h2>Service <code><%= site.serviceName %></code></h2>
+      <div class="btn-row">
+        <form method="POST" action="/sites/<%= site.domain %>/restart">
+          <button class="btn">Restart</button>
+        </form>
+        <form method="POST" action="/sites/<%= site.domain %>/stop">
+          <button class="btn btn-danger">Stop</button>
+        </form>
+        <form method="POST" action="/sites/<%= site.domain %>/start">
+          <button class="btn">Start</button>
+        </form>
+        <button class="btn" id="bustBtn" data-domain="<%= site.domain %>">Bust cache</button>
+      </div>
+    </section>
+
+    <!-- SSL -->
+    <section class="card">
+      <h2>SSL Certificate</h2>
+      <% if (sslInfo) { %>
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:.75rem">
+        <tr>
+          <td style="color:var(--muted);padding:.2rem 0;width:45%">Issued</td>
+          <td><%= sslInfo.issued || '—' %></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);padding:.2rem 0">Expires</td>
+          <td><%= sslInfo.expires %>
+            <span style="margin-left:.4rem;padding:.1em .45em;border-radius:4px;font-size:.72rem;font-weight:600;background:<%= sslInfo.status==='ok'?'#dcfce7':sslInfo.status==='warning'?'#fef9c3':'#fee2e2' %>;color:<%= sslInfo.status==='ok'?'#15803d':sslInfo.status==='warning'?'#92400e':'#991b1b' %>"><%= sslInfo.daysLeft %>d left</span>
+          </td>
+        </tr>
+      </table>
+      <% } else { %>
+      <p class="hint" style="margin-bottom:.75rem">No certificate found.</p>
+      <% } %>
+      <p class="hint" style="margin-bottom:.75rem">DNS must point to this server before issuing. Certbot will also configure www.<%= site.domain %>.</p>
+      <form method="POST" action="/sites/<%= site.domain %>/ssl"
+            onsubmit="return confirm('Issue Let\'s Encrypt cert for <%= site.domain %>? DNS must already point here.')">
+        <button class="btn btn-primary">Get SSL / Renew cert</button>
+      </form>
+    </section>
+  </div>
+
+  <!-- Logs -->
+  <section class="card logs-card">
+    <h2>Recent logs</h2>
+    <pre class="log-output"><%= logs %></pre>
+  </section>
+</div>
+
+<script>
+document.querySelector('.reveal-btn').addEventListener('click', function() {
+  const el = document.querySelector('.secret');
+  el.textContent = el.textContent === '••••••••' ? el.dataset.val : '••••••••';
+});
+
+document.getElementById('bustBtn').addEventListener('click', async function() {
+  this.disabled = true;
+  this.textContent = 'Busting…';
+  const r = await fetch('/sites/<%= site.domain %>/bust', { method: 'POST' });
+  this.textContent = r.ok ? 'Cache cleared ✓' : 'Failed ✗';
+  setTimeout(() => { this.textContent = 'Bust cache'; this.disabled = false; }, 2000);
+});
+</script>
+<%- include('partials/foot') %>

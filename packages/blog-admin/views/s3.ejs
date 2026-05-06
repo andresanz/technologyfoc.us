@@ -1,0 +1,41 @@
+<%
+  pageTitle = 'S3';
+-%>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div><h1>S3 Buckets</h1></div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } else { %>
+<div class="card" style="padding:0;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:.875rem">
+    <thead>
+      <tr style="color:var(--muted);font-weight:500;border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:.6rem .75rem">Bucket</th>
+        <th style="text-align:left;padding:.6rem .75rem">Created</th>
+        <th style="padding:.6rem .75rem"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% buckets.forEach(b => { %>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.65rem .75rem;font-weight:500">
+          <a href="/s3/<%= b.name %>"><%= b.name %></a>
+        </td>
+        <td style="padding:.65rem .75rem;color:var(--muted);font-size:.8rem"><%= b.created %></td>
+        <td style="padding:.65rem .75rem;text-align:right">
+          <a href="/s3/<%= b.name %>" class="btn btn-sm">Browse →</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<%- include('partials/foot') %>

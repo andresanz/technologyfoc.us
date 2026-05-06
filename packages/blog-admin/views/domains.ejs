@@ -1,0 +1,71 @@
+<%
+  pageTitle = 'Domains';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.domain-table { width:100%;border-collapse:collapse;font-size:.875rem; }
+.domain-table th { text-align:left;padding:.6rem .75rem;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border); }
+.domain-table td { padding:.6rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle; }
+.domain-table tr:hover td { background:var(--surface2); }
+.badge { display:inline-block;padding:.15em .5em;border-radius:4px;font-size:.72rem;font-weight:600; }
+.badge-active { background:#dcfce7;color:#15803d; }
+.badge-disabled { background:#f3f4f6;color:#6b7280; }
+.expiring-soon { color:#b45309;font-weight:500; }
+.section-label { font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:.75rem .75rem .4rem;border-bottom:1px solid var(--border); }
+</style>
+
+<div class="page-header">
+  <div><h1>Domains</h1></div>
+</div>
+
+<%- include('partials/flash') %>
+
+<!-- Linode DNS -->
+<h2 style="font-size:1rem;margin-bottom:.5rem">Linode DNS <span style="font-size:.8rem;font-weight:400;color:var(--muted)">(<%= domains.length %>)</span></h2>
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:2rem">
+  <% if (!domains.length) { %>
+    <p class="empty" style="padding:2rem 1rem">No domains found.</p>
+  <% } else { %>
+  <table class="domain-table" id="r53t">
+    <thead><tr><th>Domain</th><th>Type</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <% domains.forEach(d => { %>
+      <tr>
+        <td style="font-weight:500"><%= d.domain %></td>
+        <td style="color:var(--muted);font-size:.8rem"><%= d.type %></td>
+        <td><span class="badge badge-<%= d.status %>"><%= d.status %></span></td>
+        <td style="text-align:right">
+          <a href="/domains/<%= d.id %>/records" class="btn btn-sm">Records →</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<!-- Route 53 -->
+<h2 style="font-size:1rem;margin-bottom:.5rem">AWS Route 53</h2>
+<div class="card" style="padding:1rem;color:var(--muted);font-size:.875rem">
+  <% if (r53domains && r53domains.length) { %>
+    <table class="domain-table">
+      <thead><tr><th data-col="0">Domain <span class="si">↕</span></th><th data-col="1">Expires <span class="si">↕</span></th><th data-col="2">Auto-Renew <span class="si">↕</span></th><th data-col="3">Lock <span class="si">↕</span></th><th></th></tr></thead>
+      <tbody>
+      <% r53domains.forEach(d => { %>
+        <tr>
+          <td><%= d.DomainName %></td>
+          <td><%= new Date(d.Expiry).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %></td>
+          <td><%= d.AutoRenew ? '✓' : '—' %></td>
+          <td><%= d.TransferLock ? '🔒' : '—' %></td>
+          <td style="text-align:right"><a href="/domains/r53/<%= d.DomainName %>" class="btn btn-sm">Edit →</a></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    No registered domains found in Route 53.
+  <% } %>
+</div>
+
+<%- include('partials/foot') %>

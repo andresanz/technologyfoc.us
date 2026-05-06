@@ -1,0 +1,84 @@
+<%
+  pageTitle = bucket + ' · S3';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.s3-table { width:100%;border-collapse:collapse;font-size:.875rem; }
+.s3-table th { text-align:left;padding:.6rem .75rem;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border); }
+.s3-table td { padding:.6rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle; }
+.s3-table tr:hover td { background:var(--surface2); }
+.crumb { font-size:.85rem;color:var(--muted); }
+.crumb a { color:var(--accent); }
+.crumb span { margin:0 .3rem; }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/s3" class="back-link">← S3</a>
+    <h1><%= bucket %></h1>
+    <div class="crumb" style="margin-top:.25rem">
+      <% crumbs.forEach((c, i) => { %>
+        <% if (i > 0) { %><span>/</span><% } %>
+        <% if (i < crumbs.length - 1) { %>
+          <a href="/s3/<%= bucket %>?prefix=<%= encodeURIComponent(c.prefix) %>"><%= c.label %></a>
+        <% } else { %>
+          <%= c.label %>
+        <% } %>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <% if (folders.length === 0 && files.length === 0) { %>
+    <p class="empty" style="padding:2rem 1rem">Empty folder.</p>
+  <% } else { %>
+  <table class="s3-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Size</th>
+        <th>Modified</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% folders.forEach(f => { %>
+      <tr>
+        <td>
+          <a href="/s3/<%= bucket %>?prefix=<%= encodeURIComponent(f.key) %>" style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:1.1rem">📁</span> <%= f.name %>/
+          </a>
+        </td>
+        <td style="color:var(--muted)">—</td>
+        <td style="color:var(--muted)">—</td>
+        <td></td>
+      </tr>
+      <% }) %>
+      <% files.forEach(f => { %>
+      <tr>
+        <td style="word-break:break-all">
+          <span style="font-size:1.1rem">📄</span> <%= f.name %>
+        </td>
+        <td style="color:var(--muted);white-space:nowrap"><%= f.mb %></td>
+        <td style="color:var(--muted);font-size:.78rem;white-space:nowrap"><%= f.modified %></td>
+        <td style="white-space:nowrap;text-align:right">
+          <a href="/s3/<%= bucket %>/download?key=<%= encodeURIComponent(f.key) %>" class="btn btn-sm">↓</a>
+          <form method="POST" action="/s3/<%= bucket %>/delete" style="display:inline"
+                onsubmit="return confirm('Delete <%= f.name %>?')">
+            <input type="hidden" name="key" value="<%= f.key %>">
+            <input type="hidden" name="prefix" value="<%= prefix %>">
+            <button class="btn btn-sm btn-danger">✕</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<%- include('partials/foot') %>

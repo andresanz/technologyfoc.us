@@ -1,0 +1,57 @@
+<%
+  locals.pageTitle = 'Gratitude';
+  locals.canonical = '/gratitude';
+-%>
+<%- include('layout') %>
+
+<div class="page-header-simple">
+  <h1>Gratitude</h1>
+</div>
+
+<% if (!entries || !entries.length) { %>
+  <p style="color:var(--muted,#888);font-style:italic;">No entries yet.</p>
+<% } else { %>
+  <div class="gratitude-list">
+    <% entries.forEach(function(e) { %>
+      <div class="gratitude-entry">
+        <div class="gratitude-date"><%= new Date(e.date).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) %></div>
+        <div class="gratitude-prompt"><%= e.prompt %></div>
+        <div class="gratitude-response"><%= e.response %></div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<style>
+.page-header-simple { margin-bottom: 2.5rem; }
+.page-header-simple h1 { margin: 0 0 .35rem; }
+.page-desc { color: var(--muted, #888); margin: 0; font-size: .95rem; }
+
+.gratitude-list { display: flex; flex-direction: column; gap: 2rem; }
+
+.gratitude-entry {
+  border-left: 3px solid var(--accent, #2563eb);
+  padding: .75rem 0 .75rem 1.25rem;
+}
+.gratitude-date {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted, #888);
+  margin-bottom: .5rem;
+}
+.gratitude-prompt {
+  font-style: italic;
+  color: var(--muted, #888);
+  font-size: .9rem;
+  margin-bottom: .5rem;
+}
+.gratitude-response {
+  font-size: 1rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+</style>
+
+<%- include('layout-end') %>

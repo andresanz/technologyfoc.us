@@ -1,0 +1,63 @@
+<%
+  pageTitle = 'Michele';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.backup-card { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 1.25rem; }
+.backup-label { font-size:1rem; font-weight:600; }
+.backup-meta  { font-size:.82rem; color:var(--muted); margin-top:.25rem; }
+.backup-count { font-size:2rem; font-weight:700; color:var(--accent); line-height:1; }
+.backup-count small { font-size:.72rem; font-weight:400; color:var(--muted); display:block; text-align:right; }
+.stale { color:var(--danger) !important; }
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Michele's Laptop</h1>
+    <div style="font-size:.8rem;color:var(--muted);margin-top:.2rem">
+      sanz · MicheleLaptop · runs daily at 2am
+    </div>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (!backups.length) { %>
+  <div class="card" style="padding:1.5rem;color:var(--muted)">
+    No backups yet. Run the setup script on Michele's laptop to get started.
+  </div>
+<% } else {
+  const latest    = backups[0];
+  const count     = backups.length;
+  const daysSince = Math.floor((Date.now() - new Date(latest.modified)) / 86400000);
+  const stale     = daysSince > 7;
+  const lastStr   = daysSince === 0 ? 'today' : daysSince === 1 ? 'yesterday' : daysSince + ' days ago';
+%>
+<div style="display:grid;gap:1rem;margin-top:1rem">
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="backup-card">
+      <div>
+        <div class="backup-label">Home (C:\Users)</div>
+        <div class="backup-meta">
+          Last: <strong class="<%= stale ? 'stale' : '' %>"><%= lastStr %></strong>
+          &nbsp;<span style="opacity:.65"><%= latest.modified %></span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <% if (count > 0) { %>
+          <a href="/michele/snapshot/<%= encodeURIComponent(latest.name) %>" class="btn btn-sm" style="margin-bottom:.4rem">Browse latest</a><br>
+        <% } %>
+        <div class="backup-count"><%= count %><small>snapshots</small></div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding:.5rem .75rem;display:flex;flex-wrap:wrap;gap:.35rem">
+      <% backups.forEach(snap => { %>
+        <a href="/michele/snapshot/<%= encodeURIComponent(snap.name) %>" style="font-size:.75rem;padding:.2rem .5rem;background:var(--surface2);border-radius:4px;color:var(--text)"><%= snap.name %></a>
+      <% }) %>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<%- include('partials/foot') %>

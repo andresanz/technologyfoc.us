@@ -1,0 +1,60 @@
+<%
+  pageTitle = 'Pages · ' + site.title;
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <div>
+    <a href="/sites/<%= site.domain %>" class="back-link">← <%= site.title %></a>
+    <h1>Pages <span class="muted">— <%= site.title %></span></h1>
+  </div>
+  <div class="header-actions">
+    <a href="/posts/<%= site.domain %>" class="btn">Posts</a>
+    <a href="/pages/<%= site.domain %>/new" class="btn btn-primary">New page</a>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<% if (pages.length === 0) { %>
+  <p class="empty">No pages yet. Hit "New page" to create one (About, Contact, etc.)</p>
+<% } else { %>
+  <table class="post-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Slug</th>
+        <th>Order</th>
+        <th>Nav</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pages.forEach(function(p) { %>
+        <tr>
+          <td><strong><%= p.title %></strong></td>
+          <td><code>/<%= p.slug %></code></td>
+          <td><%= p.order || '—' %></td>
+          <td><%= p.nav !== false ? '✓' : '' %></td>
+          <td>
+            <% if (p.draft) { %>
+              <span class="badge-draft">Draft</span>
+            <% } else { %>
+              <span class="badge-live">Live</span>
+            <% } %>
+          </td>
+          <td>
+            <div class="row-actions">
+              <a href="/pages/<%= site.domain %>/edit/<%= p.filename %>" class="btn btn-sm">Edit</a>
+              <a href="<%= site.url %>/<%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
+              <form method="POST" action="/pages/<%= site.domain %>/delete/<%= p.filename %>"
+                    onsubmit="return confirm('Delete \'<%= p.title %>\'?')">
+                <button class="btn btn-sm btn-danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+<%- include('partials/foot') %>

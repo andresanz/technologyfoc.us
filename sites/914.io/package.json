@@ -1,0 +1,16 @@
+{
+  "name": "914-io",
+  "version": "1.0.0",
+  "main": "app.js",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "@blog/core": "file:../blog-core",
+    "dotenv": "^16.4.0"
+  }
+}

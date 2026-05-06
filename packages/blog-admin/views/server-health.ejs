@@ -1,0 +1,231 @@
+<%
+  pageTitle = 'Health';
+
+  function levelColor(l) {
+    if (l === 'critical' || l === 'error') return 'var(--danger)';
+    if (l === 'warning') return 'var(--warning)';
+    return 'var(--success)';
+  }
+  function levelBg(l) {
+    if (l === 'critical' || l === 'error') return '#fee2e2';
+    if (l === 'warning') return '#fef9c3';
+    return '#dcfce7';
+  }
+  function levelDot(l) {
+    if (l === 'critical' || l === 'error') return 'failed';
+    if (l === 'warning') return 'warn';
+    return 'active';
+  }
+  function fmtAge(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const now = new Date();
+    const diff = Math.round((now - d) / 1000);
+    if (diff < 60) return diff + 's ago';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    return Math.floor(diff/3600) + 'h ago';
+  }
+  function kb(v) {
+    if (v >= 1024*1024) return (v/1024/1024).toFixed(1)+' GB';
+    return Math.round(v/1024)+' MB';
+  }
+  function pct(used, total) { return total ? Math.round(used/total*100) : 0; }
+-%>
+<%- include('partials/head') %>
+
+<style>
+:root {
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger:  #dc2626;
+}
+
+.health-banner {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+.health-banner .status-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.health-banner.ok       { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.health-banner.warning  { background: #fef9c3; color: #92400e; border: 1px solid #fde68a; }
+.health-banner.critical,
+.health-banner.error    { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+.health-banner .ts { font-size: .8rem; font-weight: 400; margin-left: auto; color: inherit; opacity: .7; }
+
+.alert-list {
+  list-style: none; margin: 0 0 1.5rem; padding: 0;
+  display: flex; flex-direction: column; gap: .4rem;
+}
+.alert-item {
+  display: flex; align-items: flex-start; gap: .6rem;
+  padding: .55rem .85rem;
+  border-radius: 6px;
+  font-size: .875rem;
+}
+.alert-item.critical,
+.alert-item.error   { background: #fee2e2; color: #7f1d1d; }
+.alert-item.warning { background: #fef9c3; color: #78350f; }
+
+.section-title {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); margin: 1.5rem 0 .6rem;
+}
+
+.svc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .5rem; margin-bottom: 0;
+}
+.svc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .6rem 1rem;
+  display: flex; align-items: center; gap: .65rem;
+}
+.svc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.svc-dot.active { background: var(--success); box-shadow: 0 0 0 3px #dcfce7; }
+.svc-dot.warn   { background: var(--warning); box-shadow: 0 0 0 3px #fef9c3; }
+.svc-dot.failed { background: var(--danger);  box-shadow: 0 0 0 3px #fee2e2; }
+.svc-name   { font-size: .85rem; font-weight: 600; }
+.svc-status { font-size: .72rem; color: var(--muted); }
+
+.resource-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: 1.5rem;
+}
+.res-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.25rem;
+}
+.res-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: .35rem; }
+.res-value { font-size: 1.6rem; font-weight: 700; line-height: 1; margin-bottom: .2rem; }
+.res-sub   { font-size: .78rem; color: var(--muted); margin-bottom: .5rem; }
+.bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 3px; transition: width .4s; }
+
+.ssl-table {
+  width: 100%; border-collapse: collapse; font-size: .875rem;
+}
+.ssl-table th, .ssl-table td {
+  text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border);
+}
+.ssl-table th { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.ssl-table tr:last-child td { border-bottom: none; }
+.ssl-badge {
+  display: inline-block; padding: .15em .55em; border-radius: 999px; font-size: .73rem; font-weight: 600;
+}
+.ssl-badge.ok       { background: #dcfce7; color: #15803d; }
+.ssl-badge.warning  { background: #fef9c3; color: #92400e; }
+.ssl-badge.critical,
+.ssl-badge.error    { background: #fee2e2; color: #991b1b; }
+
+@media (max-width: 500px) {
+  .resource-row { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="page-header">
+  <h1>Health</h1>
+  <div class="header-actions">
+    <a href="/server" class="btn">Server</a>
+    <a href="/server/health" class="btn" id="refresh-btn">Refresh</a>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (!health) { %>
+<div class="health-banner warning">
+  <span class="status-icon">⚠</span>
+  <span>No health data yet — the monitor runs every 5 minutes.</span>
+</div>
+<% } else { %>
+
+<%
+  const overall = health.overall || 'ok';
+  const icon = overall === 'ok' ? '✓' : overall === 'warning' ? '⚠' : '✕';
+  const label = overall === 'ok' ? 'All systems healthy'
+              : overall === 'warning' ? 'Warning — review alerts below'
+              : 'Critical — action required';
+%>
+
+<div class="health-banner <%= overall %>">
+  <span class="status-icon"><%= icon %></span>
+  <span><%= label %></span>
+  <span class="ts">Updated <%= fmtAge(health.timestamp) %></span>
+</div>
+
+<% if (health.alerts && health.alerts.length > 0) { %>
+<ul class="alert-list">
+  <% for (const alert of health.alerts) { %>
+  <%   const lvl = alert.startsWith('CRITICAL') ? 'critical' : 'warning'; %>
+  <li class="alert-item <%= lvl %>">
+    <span><%= alert %></span>
+  </li>
+  <% } %>
+</ul>
+<% } %>
+
+<!-- Resources -->
+<div class="section-title">Resources</div>
+<div class="resource-row">
+  <div class="res-card">
+    <div class="res-label">Memory</div>
+    <div class="res-value" style="color:<%= levelColor(health.memory.level) %>"><%= health.memory.pct %>%</div>
+    <div class="res-sub"><%= kb(health.memory.usedKB) %> used of <%= kb(health.memory.totalKB) %></div>
+    <div class="bar-track"><div class="bar-fill" style="width:<%= health.memory.pct %>%;background:<%= levelColor(health.memory.level) %>"></div></div>
+  </div>
+  <div class="res-card">
+    <div class="res-label">Disk (/)</div>
+    <div class="res-value" style="color:<%= levelColor(health.disk.level) %>"><%= health.disk.pct %>%</div>
+    <div class="res-sub"><%= kb(health.disk.usedKB) %> used of <%= kb(health.disk.totalKB) %></div>
+    <div class="bar-track"><div class="bar-fill" style="width:<%= health.disk.pct %>%;background:<%= levelColor(health.disk.level) %>"></div></div>
+  </div>
+</div>
+
+<!-- SSL Certs -->
+<div class="section-title">SSL Certificates</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.5rem;">
+  <table class="ssl-table">
+    <thead><tr><th>Domain</th><th>Days left</th><th>Status</th></tr></thead>
+    <tbody>
+    <% for (const cert of health.ssl) { %>
+    <tr>
+      <td><%= cert.domain %></td>
+      <td><%= cert.days >= 0 ? cert.days + 'd' : '—' %></td>
+      <td><span class="ssl-badge <%= cert.level %>"><%= cert.level.toUpperCase() %></span></td>
+    </tr>
+    <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Services -->
+<div class="section-title">Services</div>
+<div class="svc-grid" style="margin-bottom:2rem;">
+  <% for (const svc of health.services) { %>
+  <%   const dot = svc.status === 'active' ? 'active' : svc.status === 'failed' ? 'failed' : 'warn'; %>
+  <div class="svc-card">
+    <div class="svc-dot <%= dot %>"></div>
+    <div>
+      <div class="svc-name"><%= svc.name %></div>
+      <div class="svc-status"><%= svc.status %></div>
+    </div>
+  </div>
+  <% } %>
+</div>
+
+<% } %>
+
+<script>
+// Auto-refresh every 60s (health file updates every 5min, but poll faster for responsiveness)
+setTimeout(() => location.reload(), 60000);
+</script>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<%
+  locals.pageTitle = post.title;
+  locals.pageDesc  = post.excerpt;
+  locals.canonical = '/post/' + post.slug;
+-%>
+<%- include('layout') %>
+
+<article class="post">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
+      <% post.tags.forEach(function(t) { %>
+        <a href="/tag/<%= t %>" class="tag"><%= t %></a>
+      <% }) %>
+    </div>
+    <h1><%= post.title %></h1>
+    <% if (post.coverImage) { %>
+      <img class="post-cover-full lb-img" src="<%= post.coverImage %>" alt="<%= post.title %>" style="cursor:zoom-in">
+    <% } %>
+  </header>
+
+  <div class="post-body">
+    <%- post.html %>
+  </div>
+
+  <footer class="post-footer">
+    <a href="/" class="back-link">← All posts</a>
+    <% if (post.tags.length) { %>
+      <div class="post-tags">
+        <% post.tags.forEach(function(t) { %>
+          <a href="/tag/<%= t %>" class="tag"><%= t %></a>
+        <% }) %>
+      </div>
+    <% } %>
+  </footer>
+</article>
+
+<%- include('layout-end') %>
