@@ -7,3 +7,8 @@ node_modules/
 .DS_Store
 public/temp/
 
+
+# blog-admin data — managed at runtime, not in git
+packages/blog-admin/data/*.json
+packages/blog-admin/data/*.txt
+packages/blog-admin/data/*.md
