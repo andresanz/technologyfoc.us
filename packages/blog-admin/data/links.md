@@ -1,1 +1,0 @@
-- [Sony dot com](https://sony.com)
