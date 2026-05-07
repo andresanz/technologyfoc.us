@@ -12,3 +12,4 @@ public/temp/
 packages/blog-admin/data/*.json
 packages/blog-admin/data/*.txt
 packages/blog-admin/data/*.md
+sites/andresanz.com/public/temp/michele-backup-setup.ps1
