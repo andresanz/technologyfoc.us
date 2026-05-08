@@ -5,14 +5,7 @@ const { execSync, exec } = require('child_process');
 const router     = express.Router();
 
 const REPOS = [
-  { name: 'blog-core',               dir: '/var/www/blog-core' },
-  { name: 'blog-admin',              dir: '/var/www/blog-admin' },
-  { name: '914.io',                  dir: '/var/www/914.io' },
-  { name: 'andresanz.com',           dir: '/var/www/andresanz.com' },
-  { name: 'randomcategory.com',      dir: '/var/www/randomcategory.com' },
-  { name: 'samsanz.info',            dir: '/var/www/samsanz.info' },
-  { name: 'sanz.me',                 dir: '/var/www/sanz.me' },
-  { name: 'therandomactofwriting.com', dir: '/var/www/therandomactofwriting.com' },
+  { name: 'andresanz-sites (monorepo)', dir: '/var/www/server02' },
 ];
 
 function run(cmd, cwd) {
@@ -26,15 +19,17 @@ function run(cmd, cwd) {
 function getRepoInfo(repo) {
   const { name, dir } = repo;
   try {
-    const branch  = run('git rev-parse --abbrev-ref HEAD', dir);
-    const commits = run('git log --oneline -5 --format="%h|%s|%cr"', dir);
-    const status  = run('git status --short', dir);
-    const ahead   = run('git rev-list @{u}..HEAD --count 2>/dev/null || echo 0', dir);
+    const branch   = run('git rev-parse --abbrev-ref HEAD', dir);
+    const commits  = run('git log --oneline -10 --format="%h|%s|%cr"', dir);
+    const status   = run('git status --short', dir);
+    const ahead    = run('git rev-list @{u}..HEAD --count 2>/dev/null || echo 0', dir);
     const lastPush = run('git log origin/' + branch + ' -1 --format="%cr" 2>/dev/null || echo "never"', dir);
+    const remote   = run('git remote get-url origin 2>/dev/null || echo ""', dir);
     return {
       name,
       dir,
       branch,
+      remote,
       dirty:    status.length > 0,
       pending:  status.split('\n').filter(Boolean).length,
       ahead:    parseInt(ahead) || 0,
@@ -46,7 +41,7 @@ function getRepoInfo(repo) {
       error: null,
     };
   } catch (e) {
-    return { name, dir, error: e.message, commits: [] };
+    return { name, dir, error: e.message, commits: [], remote: '' };
   }
 }
 
@@ -60,20 +55,18 @@ router.get('/', (req, res) => {
 router.post('/push', (req, res) => {
   exec('/usr/local/bin/git-push-all.sh', { timeout: 60000 }, (err, stdout, stderr) => {
     const output = (stdout + stderr).trim();
-    req.flash(err ? 'error' : 'success', err ? 'Push failed: ' + output : (output || 'All repos pushed'));
+    req.flash(err ? 'error' : 'success', err ? 'Push failed: ' + output : (output || 'Monorepo pushed'));
     res.redirect('/github');
   });
 });
 
-// POST /github/push/:name — push single repo
+// POST /github/push/:name — push single repo (only monorepo supported now)
 router.post('/push/:name', (req, res) => {
-  const repo = REPOS.find(r => r.name === req.params.name);
-  if (!repo) { req.flash('error', 'Repo not found'); return res.redirect('/github'); }
-  exec(`cd ${repo.dir} && git add -A && (git diff --cached --quiet || git commit -m "manual push: $(date '+%Y-%m-%d %H:%M')") && git push`, 
+  exec('cd /var/www/server02 && git add -A && (git diff --cached --quiet || git commit -m "manual push: $(date \'+%Y-%m-%d %H:%M\')") && git push',
     { timeout: 30000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } },
     (err, stdout, stderr) => {
       const output = (stdout + stderr).trim();
-      req.flash(err ? 'error' : 'success', err ? output : (output || repo.name + ' pushed'));
+      req.flash(err ? 'error' : 'success', err ? output : (output || 'Monorepo pushed'));
       res.redirect('/github');
     }
   );
