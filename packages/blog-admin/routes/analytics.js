@@ -16,15 +16,20 @@ function getGA4() {
   return ga4Lib;
 }
 
-// GET /analytics/:domain
 router.get('/:domain', async (req, res) => {
   const site = sitesLib.getSite(req.params.domain);
   if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
 
-  const days         = parseInt(req.query.days) || 30;
-  const stats        = getAnalytics().getStats(req.params.domain, days);
-  const countryStats = getAnalytics().getCountryStats(req.params.domain, days);
-  const deviceStats  = getAnalytics().getDeviceStats(req.params.domain, days);
+  const days = parseInt(req.query.days) || 30;
+
+  let stats = null, countryStats = null, deviceStats = null;
+  try {
+    stats        = getAnalytics().getStats(req.params.domain, days);
+    countryStats = getAnalytics().getCountryStats(req.params.domain, days);
+    deviceStats  = getAnalytics().getDeviceStats(req.params.domain, days);
+  } catch (e) {
+    console.error('[analytics] SQLite error:', e.message);
+  }
 
   let ga4 = null;
   try {
@@ -36,13 +41,17 @@ router.get('/:domain', async (req, res) => {
   res.render('analytics', { site, stats, days, countryStats, deviceStats, ga4, flash: req.flash() });
 });
 
-// GET /analytics/:domain/detail?path=/some/path
 router.get('/:domain/detail', (req, res) => {
   const site = sitesLib.getSite(req.params.domain);
   if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
 
   const pagePath = req.query.path || '/';
-  const hits = getAnalytics().getDetail(req.params.domain, pagePath);
+  let hits = [];
+  try {
+    hits = getAnalytics().getDetail(req.params.domain, pagePath);
+  } catch (e) {
+    console.error('[analytics] SQLite error:', e.message);
+  }
   res.render('analytics-detail', { site, pagePath, hits, flash: req.flash() });
 });
 
