@@ -166,4 +166,138 @@
 <% } %>
 
 <% } %>
+<% if (ga4) { %>
+<div style="margin-top:2.5rem">
+  <h2 style="font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+    <svg width="14" height="14" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="192" height="192" rx="96" fill="#E37400"/><path d="M24 144h32V80H24v64zm56 0h32V48H80v96zm56 0h32V96h-32v48z" fill="#fff"/></svg>
+    Google Analytics
+    <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(<%= days %>d)</span>
+    <a href="https://analytics.google.com/analytics/web/#/p337889293/reports/reportinghub" target="_blank" style="margin-left:auto;font-size:.72rem;font-weight:500;color:var(--accent,#2563eb);text-decoration:none;border:1px solid var(--border);padding:.2rem .6rem;border-radius:5px">Open GA4 ↗</a>
+  </h2>
+
+  <!-- GA4 stat cards -->
+  <div class="analytics-grid">
+    <div class="stat-card">
+      <div class="stat-n"><%= ga4.totals.sessions.toLocaleString() %></div>
+      <div class="stat-l">Sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-n"><%= ga4.totals.users.toLocaleString() %></div>
+      <div class="stat-l">Active users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-n"><%= ga4.totals.pageviews.toLocaleString() %></div>
+      <div class="stat-l">Page views</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-n"><%= ga4.totals.newUsers.toLocaleString() %></div>
+      <div class="stat-l">New users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-n"><%= ga4.totals.bounceRate %>%</div>
+      <div class="stat-l">Bounce rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-n"><%= Math.floor(ga4.totals.avgDuration / 60) %>m <%= Math.floor(ga4.totals.avgDuration % 60) %>s</div>
+      <div class="stat-l">Avg session</div>
+    </div>
+  </div>
+
+  <!-- GA4 daily chart -->
+  <% if (ga4.dailyData.length) { %>
+  <div class="chart-wrap">
+    <div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:.6rem">Sessions per day</div>
+    <% const ga4Max = Math.max(...ga4.dailyData.map(d => d.sessions), 1); %>
+    <div class="chart-bars">
+      <% ga4.dailyData.forEach(function(d) {
+           const label = d.date.replace(/(\d{4})(\d{2})(\d{2})/, '$2/$3');
+      %>
+      <div class="chart-bar" style="height:<%= Math.max(2, Math.round(d.sessions / ga4Max * 80)) %>px" data-tip="<%= label %>: <%= d.sessions %> sessions"></div>
+      <% }) %>
+    </div>
+    <div class="chart-labels">
+      <% const f = d => d.date.replace(/(\d{4})(\d{2})(\d{2})/, '$2/$3'); %>
+      <span><%= f(ga4.dailyData[0]) %></span>
+      <span><%= f(ga4.dailyData[Math.floor(ga4.dailyData.length/2)]) %></span>
+      <span><%= f(ga4.dailyData[ga4.dailyData.length-1]) %></span>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- GA4 pages + sources -->
+  <div class="two-col-analytics">
+    <div class="table-card">
+      <h3>Top pages</h3>
+      <% const ga4MaxPV = ga4.topPages[0] ? ga4.topPages[0].views : 1; %>
+      <table class="ana-table">
+        <% ga4.topPages.forEach(function(p) { %>
+        <tr>
+          <td>
+            <a href="https://<%= site.domain %><%= p.path %>" target="_blank" style="color:var(--text);text-decoration:none" title="<%= p.path %>"><%= p.path.length > 40 ? p.path.slice(0,40)+'…' : p.path %></a>
+            <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(p.views/ga4MaxPV*100) %>%"></div></div>
+          </td>
+          <td><%= p.views.toLocaleString() %></td>
+        </tr>
+        <% }) %>
+        <% if (!ga4.topPages.length) { %><tr><td colspan="2" style="color:var(--muted)">No data</td></tr><% } %>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h3>Traffic sources</h3>
+      <% const ga4MaxS = ga4.topSources[0] ? ga4.topSources[0].sessions : 1; %>
+      <table class="ana-table">
+        <% ga4.topSources.forEach(function(s) { %>
+        <tr>
+          <td>
+            <span style="color:var(--text)"><%= s.source %></span>
+            <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(s.sessions/ga4MaxS*100) %>%"></div></div>
+          </td>
+          <td><%= s.sessions.toLocaleString() %></td>
+        </tr>
+        <% }) %>
+        <% if (!ga4.topSources.length) { %><tr><td colspan="2" style="color:var(--muted)">No data</td></tr><% } %>
+      </table>
+    </div>
+  </div>
+
+  <!-- GA4 countries + devices -->
+  <div class="two-col-analytics" style="margin-top:1rem">
+    <div class="table-card">
+      <h3>Countries</h3>
+      <% const ga4MaxC = ga4.topCountries[0] ? ga4.topCountries[0].sessions : 1; %>
+      <table class="ana-table">
+        <% ga4.topCountries.forEach(function(c) { %>
+        <tr>
+          <td>
+            <span style="color:var(--text)"><%= c.country %></span>
+            <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(c.sessions/ga4MaxC*100) %>%"></div></div>
+          </td>
+          <td><%= c.sessions.toLocaleString() %></td>
+        </tr>
+        <% }) %>
+        <% if (!ga4.topCountries.length) { %><tr><td colspan="2" style="color:var(--muted)">No data</td></tr><% } %>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h3>Devices</h3>
+      <% const ga4MaxD = ga4.topDevices[0] ? ga4.topDevices[0].sessions : 1; %>
+      <table class="ana-table">
+        <% ga4.topDevices.forEach(function(d) { %>
+        <tr>
+          <td>
+            <span style="color:var(--text)"><%= d.device %></span>
+            <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(d.sessions/ga4MaxD*100) %>%"></div></div>
+          </td>
+          <td><%= d.sessions.toLocaleString() %></td>
+        </tr>
+        <% }) %>
+        <% if (!ga4.topDevices.length) { %><tr><td colspan="2" style="color:var(--muted)">No data</td></tr><% } %>
+      </table>
+    </div>
+  </div>
+</div>
+<% } %>
+
 <%- include('partials/foot') %>
