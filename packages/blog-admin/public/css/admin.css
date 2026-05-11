@@ -355,6 +355,34 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 .health-crit { background:#fef2f2; color:var(--danger); }
 
 
+/* ── Nav dropdowns ───────────────────────────────────────────────────────── */
+.nav-dropdown { position: relative; }
+.nav-drop-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: .875rem; font-family: var(--font);
+  color: var(--muted); padding: 0;
+  display: flex; align-items: center; gap: .2rem;
+  white-space: nowrap;
+}
+.nav-drop-btn:hover { color: var(--text); }
+.nav-caret { font-size: .65rem; }
+.nav-drop-menu {
+  display: none;
+  position: absolute; top: calc(100% + .5rem); left: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,.1);
+  min-width: 140px; z-index: 200;
+  padding: .3rem 0;
+}
+.nav-dropdown.open .nav-drop-menu { display: block; }
+.nav-drop-menu a {
+  display: block; padding: .45rem 1rem;
+  font-size: .875rem; color: var(--muted);
+  white-space: nowrap;
+}
+.nav-drop-menu a:hover { color: var(--text); background: var(--surface2); text-decoration: none; }
+
 /* ── Mobile nav ──────────────────────────────────────────────────────────── */
 .nav-hamburger {
   display: none;
@@ -386,7 +414,8 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
   }
   .nav-links.open { display: flex; }
   .nav-links a,
-  .nav-links .btn-link {
+  .nav-links .btn-link,
+  .nav-links .nav-drop-btn {
     padding: .55rem 0;
     font-size: .95rem;
     border-top: 1px solid var(--border);
@@ -395,9 +424,22 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
     text-align: left;
   }
   .nav-links a:hover,
-  .nav-links .btn-link:hover { color: var(--text); text-decoration: none; }
+  .nav-links .btn-link:hover,
+  .nav-links .nav-drop-btn:hover { color: var(--text); text-decoration: none; }
   .nav-links form { width: 100%; border-top: 1px solid var(--border); }
   .nav-links .btn-link { display: block; }
+  .nav-dropdown { width: 100%; }
+  .nav-drop-btn { justify-content: space-between; }
+  .nav-drop-menu {
+    position: static; box-shadow: none; border: none;
+    border-radius: 0; padding: 0; min-width: 0;
+    background: var(--surface2);
+  }
+  .nav-drop-menu a {
+    padding: .45rem 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: .9rem;
+  }
 }
 
 /* ── Tag picker ──────────────────────────────────────────────────────────── */
