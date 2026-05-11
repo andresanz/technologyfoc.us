@@ -1,24 +1,12 @@
 'use strict';
 require('dotenv').config();
 
-const express        = require('express');
-const session        = require('express-session');
-const { RedisStore } = require('connect-redis');
-const Redis          = require('ioredis');
-const flash          = require('connect-flash');
-const path           = require('path');
+const express      = require('express');
+const session      = require('express-session');
+const flash        = require('connect-flash');
+const path         = require('path');
 
 const app = express();
-
-const redisClient = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
-redisClient.on('error', err => console.error('Redis:', err.message));
-
-// connect-redis v9 expects node-redis v4 API ({ EX: n }); ioredis uses ('EX', n).
-const redisSessionClient = {
-  get:  (key)           => redisClient.get(key),
-  set:  (key, val, opt) => opt?.EX ? redisClient.set(key, val, 'EX', opt.EX) : redisClient.set(key, val),
-  del:  (key)           => redisClient.del(key),
-};
 
 // Trust the nginx reverse proxy so secure cookies work over HTTPS
 app.set('trust proxy', 1);
@@ -37,7 +25,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Session ──────────────────────────────────────────────────────────────────
 app.use(session({
-  store:             new RedisStore({ client: redisSessionClient, prefix: 'blog-admin:' }),
   secret:            process.env.SESSION_SECRET || 'changeme',
   resave:            false,
   saveUninitialized: false,
@@ -81,7 +68,6 @@ app.use('/sharp',         requireAuth, require('./routes/sharp'));
 app.use('/logs',          requireAuth, require('./routes/logs'));
 app.use('/s3',            requireAuth, require('./routes/s3'));
 app.use('/domains',       requireAuth, require('./routes/domains'));
-app.use('/ports',         requireAuth, require('./routes/ports'));
 app.use('/michele',       requireAuth, require('./routes/michele'));
 app.use('/mac',           requireAuth, require('./routes/mac'));
 app.use('/gratitude',         require('./routes/gratitude'));
@@ -89,6 +75,7 @@ app.use('/gratitude-prompts', requireAuth, require('./routes/gratitude-prompts')
 app.use('/overthinking',      requireAuth, require('./routes/overthinking'));
 app.use('/github',         requireAuth, require('./routes/github'));
 app.use('/links',         requireAuth, require('./routes/links'));
+app.use('/claude',        requireAuth, require('./routes/claude'));
 app.use('/volume',        requireAuth, require('./routes/volume'));
 
 // ── Quick reference notes ─────────────────────────────────────────────────────
