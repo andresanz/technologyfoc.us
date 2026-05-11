@@ -13,6 +13,13 @@ const app = express();
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
 redisClient.on('error', err => console.error('Redis:', err.message));
 
+// connect-redis v9 expects node-redis v4 API ({ EX: n }); ioredis uses ('EX', n).
+const redisSessionClient = {
+  get:  (key)           => redisClient.get(key),
+  set:  (key, val, opt) => opt?.EX ? redisClient.set(key, val, 'EX', opt.EX) : redisClient.set(key, val),
+  del:  (key)           => redisClient.del(key),
+};
+
 // Trust the nginx reverse proxy so secure cookies work over HTTPS
 app.set('trust proxy', 1);
 
@@ -30,7 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Session ──────────────────────────────────────────────────────────────────
 app.use(session({
-  store:             new RedisStore({ client: redisClient, prefix: 'blog-admin:' }),
+  store:             new RedisStore({ client: redisSessionClient, prefix: 'blog-admin:' }),
   secret:            process.env.SESSION_SECRET || 'changeme',
   resave:            false,
   saveUninitialized: false,
