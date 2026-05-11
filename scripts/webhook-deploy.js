@@ -22,6 +22,13 @@ const MAP = {
   'sites/therandomactofwriting.com': ['blog-therandomactofwriting-com'],
 };
 
+// prefix -> directory to run npm install in (only when package.json changes)
+const NPM_DIRS = {
+  'packages/blog-core':        `${REPO_DIR}/packages/blog-core`,
+  'packages/blog-admin':       `${REPO_DIR}/packages/blog-admin`,
+  'packages/redirect-service': `${REPO_DIR}/packages/redirect-service`,
+};
+
 function affectedServices(files) {
   const set = new Set();
   for (const f of files)
@@ -70,8 +77,25 @@ function deploy(payload) {
     return;
   }
 
-  // restart
+  // npm install for any package whose package.json changed
   const lines = [];
+  for (const [prefix, dir] of Object.entries(NPM_DIRS)) {
+    const pkgChanged = files.some(f =>
+      f.startsWith(prefix + '/') && (f.endsWith('package.json') || f.endsWith('package-lock.json'))
+    );
+    if (!pkgChanged) continue;
+    try {
+      execSync('npm install --omit=dev --silent', { cwd: dir, timeout: 120000, stdio: 'pipe' });
+      lines.push(`📦 npm install: ${prefix}`);
+      console.log(`[deploy] npm install: ${prefix}`);
+    } catch (e) {
+      const err = (e.stderr || Buffer.alloc(0)).toString().trim();
+      lines.push(`❌ npm install failed (${prefix}): ${err.slice(0, 200)}`);
+      console.error(`[deploy] npm install failed: ${prefix}`, err);
+    }
+  }
+
+  // restart
   for (const svc of services) {
     try {
       execSync(`systemctl restart ${svc}.service`, { stdio: 'pipe' });
