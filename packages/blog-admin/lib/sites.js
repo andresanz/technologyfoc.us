@@ -149,4 +149,41 @@ function saveSettings(domain, changes) {
   fs.writeFileSync(envFile, updated, 'utf8');
 }
 
-module.exports = { getAll, getSite, saveSettings, restartService, stopService, startService, serviceLogs, bustCache };
+// ── Change a site's port (.env + nginx config) ────────────────────────────────
+function savePort(domain, newPort) {
+  const port = parseInt(newPort, 10);
+  if (!port || port < 1024 || port > 65535) throw new Error('Port must be between 1024 and 65535');
+
+  const conflict = getAll().find(s => s.domain !== domain && parseInt(s.port, 10) === port);
+  if (conflict) throw new Error(`Port ${port} is already used by ${conflict.domain}`);
+
+  const envFile = path.join(SITES_ROOT, domain, '.env');
+  const raw     = fs.readFileSync(envFile, 'utf8');
+  const re      = /^(PORT=).*$/m;
+  const updated = re.test(raw) ? raw.replace(re, `PORT=${port}`) : `${raw}\nPORT=${port}`;
+  fs.writeFileSync(envFile, updated, 'utf8');
+
+  const nginxConf = `/etc/nginx/sites-available/${domain}`;
+  if (fs.existsSync(nginxConf)) {
+    const nginx        = fs.readFileSync(nginxConf, 'utf8');
+    const nginxUpdated = nginx.replace(
+      /proxy_pass\s+http:\/\/127\.0\.0\.1:\d+/g,
+      `proxy_pass http://127.0.0.1:${port}`
+    );
+    if (nginxUpdated !== nginx) {
+      fs.writeFileSync(nginxConf, nginxUpdated, 'utf8');
+      execSync('nginx -t && systemctl reload nginx', { timeout: 10000 });
+    }
+  }
+}
+
+// ── Read the proxy_pass port from the nginx config ────────────────────────────
+function nginxPort(domain) {
+  try {
+    const conf  = fs.readFileSync(`/etc/nginx/sites-available/${domain}`, 'utf8');
+    const match = conf.match(/proxy_pass\s+http:\/\/127\.0\.0\.1:(\d+)/);
+    return match ? match[1] : null;
+  } catch { return null; }
+}
+
+module.exports = { getAll, getSite, saveSettings, savePort, nginxPort, restartService, stopService, startService, serviceLogs, bustCache };
