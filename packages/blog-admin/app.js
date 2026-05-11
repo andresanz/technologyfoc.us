@@ -19,6 +19,9 @@ app.set('view cache', false);
 // ── Static ───────────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Webhook (raw body required for HMAC — before json parser) ────────────────
+app.use('/webhook', require('./routes/webhook'));
+
 // ── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
