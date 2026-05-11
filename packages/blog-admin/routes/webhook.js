@@ -39,16 +39,17 @@ router.post('/', express.raw({ type: 'application/json' }), (req, res) => {
   const after  = payload.after?.slice(0, 7)  || '?';
 
   exec(
-    `git -C ${REPO_DIR} pull --ff-only && systemctl restart ${SERVICE}`,
-    { timeout: 60000 },
+    `git -C ${REPO_DIR} pull --ff-only`,
+    { timeout: 30000 },
     (err, stdout, stderr) => {
       const out = (stdout + stderr).trim();
       if (err) {
-        console.error(`[webhook] deploy failed: ${out}`);
+        console.error(`[webhook] pull failed: ${out}`);
         tg(`blog-admin deploy FAILED ${before} -> ${after}: ${out.slice(0, 200)}`);
       } else {
         console.log(`[webhook] deployed ${before} -> ${after}`);
         tg(`blog-admin deployed ${before} -> ${after}`);
+        exec(`systemctl restart ${SERVICE}`);
       }
     }
   );
