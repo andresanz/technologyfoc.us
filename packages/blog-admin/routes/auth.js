@@ -50,7 +50,10 @@ router.post('/login', rateCheck, (req, res) => {
 
   attempts.delete(req.ip);
   req.session.authenticated = true;
-  res.redirect('/sites');
+  req.session.save(err => {
+    if (err) console.error('Session save error:', err);
+    res.redirect('/sites');
+  });
 });
 
 // POST /logout

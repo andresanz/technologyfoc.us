@@ -1,12 +1,17 @@
 'use strict';
 require('dotenv').config();
 
-const express      = require('express');
-const session      = require('express-session');
-const flash        = require('connect-flash');
-const path         = require('path');
+const express        = require('express');
+const session        = require('express-session');
+const { RedisStore } = require('connect-redis');
+const Redis          = require('ioredis');
+const flash          = require('connect-flash');
+const path           = require('path');
 
 const app = express();
+
+const redisClient = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+redisClient.on('error', err => console.error('Redis:', err.message));
 
 // Trust the nginx reverse proxy so secure cookies work over HTTPS
 app.set('trust proxy', 1);
@@ -25,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Session ──────────────────────────────────────────────────────────────────
 app.use(session({
+  store:             new RedisStore({ client: redisClient, prefix: 'blog-admin:' }),
   secret:            process.env.SESSION_SECRET || 'changeme',
   resave:            false,
   saveUninitialized: false,
