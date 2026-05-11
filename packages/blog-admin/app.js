@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const express      = require('express');
 const session      = require('express-session');
-const RedisStore   = require('connect-redis').default;
+const { RedisStore } = require('connect-redis');
 const Redis        = require('ioredis');
 const flash        = require('connect-flash');
 const path         = require('path');
