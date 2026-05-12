@@ -71,7 +71,8 @@ function deploy(payload) {
 
   // pull (stash any local changes like package-lock.json drift from manual npm installs)
   try {
-    const dirty = execSync(`git -C ${REPO_DIR} status --porcelain`, { stdio: 'pipe' }).toString().trim();
+    // only stash tracked changes — untracked files (e.g. ?? in porcelain) are ignored by git stash
+    const dirty = execSync(`git -C ${REPO_DIR} diff --quiet HEAD ; echo $?`, { stdio: 'pipe', shell: true }).toString().trim() !== '0';
     if (dirty) execSync(`git -C ${REPO_DIR} stash`, { stdio: 'pipe' });
     execSync(`git -C ${REPO_DIR} pull --rebase origin ${branch} --quiet`, { stdio: 'pipe' });
     if (dirty) execSync(`git -C ${REPO_DIR} stash drop`, { stdio: 'pipe' });
