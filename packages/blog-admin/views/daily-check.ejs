@@ -1,0 +1,27 @@
+<%
+  pageTitle = 'Daily Check';
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <h1>Daily Check</h1>
+</div>
+<%- include('partials/flash') %>
+
+<div class="card" style="max-width:520px;">
+  <form method="POST" action="/daily-check">
+    <div style="margin-bottom:1.25rem;">
+      <label style="display:block;font-weight:600;margin-bottom:.4rem;">Sites to check</label>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.5rem;">One domain per line — no https://</p>
+      <textarea name="sites" rows="<%= Math.max(6, config.sites.length + 1) %>"
+        style="width:100%;font-family:var(--mono);font-size:.9rem;padding:.55rem .75rem;border:1px solid var(--border);border-radius:6px;resize:vertical;background:var(--surface);color:var(--text);"
+      ><%= config.sites.join('\n') %></textarea>
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label style="display:block;font-weight:600;margin-bottom:.4rem;">Disk warning threshold (%)</label>
+      <input type="number" name="diskWarnPct" value="<%= config.diskWarnPct %>" min="1" max="100"
+        style="width:100px;padding:.5rem .75rem;border:1px solid var(--border);border-radius:6px;font-size:.95rem;background:var(--surface);color:var(--text);">
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+</div>
+<%- include('partials/foot') %>

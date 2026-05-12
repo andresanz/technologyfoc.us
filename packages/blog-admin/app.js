@@ -79,6 +79,7 @@ app.use('/s3',            requireAuth, require('./routes/s3'));
 app.use('/domains',       requireAuth, require('./routes/domains'));
 app.use('/michele',       requireAuth, require('./routes/michele'));
 app.use('/mac',           requireAuth, require('./routes/mac'));
+app.use('/daily-check',   requireAuth, require('./routes/daily-check'));
 app.use('/gratitude',         require('./routes/gratitude'));
 app.use('/gratitude-prompts', requireAuth, require('./routes/gratitude-prompts'));
 app.use('/overthinking',      requireAuth, require('./routes/overthinking'));
