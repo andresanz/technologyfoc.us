@@ -6,7 +6,10 @@ const fs        = require('fs');
 
 const analytics  = require('./lib/analytics');
 const CORE_DIR  = __dirname;
-const CSS_VER   = Date.now();
+const CSS_VER   = (() => {
+  try { return require('child_process').execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim(); }
+  catch { return Date.now().toString(); }
+})();
 
 /**
  * createApp(siteDir)
