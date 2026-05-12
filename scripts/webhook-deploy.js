@@ -70,10 +70,10 @@ function deploy(payload) {
 
   // pull (stash any local changes like package-lock.json drift from manual npm installs)
   try {
-    const stashOut = execSync(`git -C ${REPO_DIR} stash`, { stdio: 'pipe' }).toString();
-    const stashed = !stashOut.includes('No local changes');
+    const dirty = execSync(`git -C ${REPO_DIR} status --porcelain`, { stdio: 'pipe' }).toString().trim();
+    if (dirty) execSync(`git -C ${REPO_DIR} stash`, { stdio: 'pipe' });
     execSync(`git -C ${REPO_DIR} pull --rebase origin ${branch} --quiet`, { stdio: 'pipe' });
-    if (stashed) execSync(`git -C ${REPO_DIR} stash drop`, { stdio: 'pipe' });
+    if (dirty) execSync(`git -C ${REPO_DIR} stash drop`, { stdio: 'pipe' });
   } catch (e) {
     const err = (e.stderr||Buffer.alloc(0)).toString().trim();
     console.error('[deploy] git pull failed:', err);
