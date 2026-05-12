@@ -8,7 +8,6 @@ const PROPERTY_MAP = {
   '914.io':                    '397659049',
   'randomcategory.com':        '401321098',
   'therandomactofwriting.com': '527596010',
-  'samsanz.info':              '338053417',
 };
 
 let client;
