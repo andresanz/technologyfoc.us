@@ -66,7 +66,7 @@ router.get('/images', (req, res) => {
     for (const bucket of buckets) {
       try {
         const out = aws(
-          `s3api list-objects-v2 --bucket ${bucket.name}` +
+          `s3api list-objects-v2 --bucket ${bucket.name} --max-items 2000` +
           ` --query 'Contents[].[Key,Size,LastModified]' --output json`
         );
         const raw = out === 'null' ? '[]' : out;
