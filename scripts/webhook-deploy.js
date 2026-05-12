@@ -27,6 +27,7 @@ const NPM_DIRS = {
   'packages/blog-core':        `${REPO_DIR}/packages/blog-core`,
   'packages/blog-admin':       `${REPO_DIR}/packages/blog-admin`,
   'packages/redirect-service': `${REPO_DIR}/packages/redirect-service`,
+  'sites/914.io':              `${REPO_DIR}/sites/914.io`,
 };
 
 function affectedServices(files) {
