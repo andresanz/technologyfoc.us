@@ -45,6 +45,15 @@
   </div>
 </div>
 
+<div style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+  <a href="#builtin" style="padding:.3rem .8rem;border-radius:6px;font-size:.8rem;border:1px solid var(--border);color:var(--muted);text-decoration:none;">Built-in</a>
+  <% if (ga4) { %>
+  <a href="#ga4" style="padding:.3rem .8rem;border-radius:6px;font-size:.8rem;border:1px solid var(--border);color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:.35rem"><svg width="11" height="11" viewBox="0 0 192 192" fill="none"><rect width="192" height="192" rx="96" fill="#E37400"/><path d="M24 144h32V80H24v64zm56 0h32V48H80v96zm56 0h32V96h-32v48z" fill="#fff"/></svg>Google Analytics</a>
+  <% } %>
+  <a href="https://analytics.google.com/analytics/web/#/p337889293/reports/reportinghub" target="_blank" style="padding:.3rem .8rem;border-radius:6px;font-size:.8rem;border:1px solid var(--border);color:var(--accent);text-decoration:none;margin-left:auto;">Open GA4 ↗</a>
+</div>
+
+<a id="builtin"></a>
 <% if (!stats) { %>
   <p style="color:var(--muted)">No analytics data yet — traffic will appear here once the site receives visitors.</p>
 <% } else { %>
@@ -167,12 +176,12 @@
 
 <% } %>
 <% if (ga4) { %>
+<a id="ga4"></a>
 <div style="margin-top:2.5rem">
   <h2 style="font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
     <svg width="14" height="14" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="192" height="192" rx="96" fill="#E37400"/><path d="M24 144h32V80H24v64zm56 0h32V48H80v96zm56 0h32V96h-32v48z" fill="#fff"/></svg>
     Google Analytics
     <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(<%= days %>d)</span>
-    <a href="https://analytics.google.com/analytics/web/#/p337889293/reports/reportinghub" target="_blank" style="margin-left:auto;font-size:.72rem;font-weight:500;color:var(--accent,#2563eb);text-decoration:none;border:1px solid var(--border);padding:.2rem .6rem;border-radius:5px">Open GA4 ↗</a>
   </h2>
 
   <!-- GA4 stat cards -->
@@ -233,7 +242,10 @@
         <% ga4.topPages.forEach(function(p) { %>
         <tr>
           <td>
-            <a href="https://<%= site.domain %><%= p.path %>" target="_blank" style="color:var(--text);text-decoration:none" title="<%= p.path %>"><%= p.path.length > 40 ? p.path.slice(0,40)+'…' : p.path %></a>
+            <div style="display:flex;align-items:baseline;gap:.5rem">
+              <a href="https://<%= site.domain %><%= p.path %>" target="_blank" style="color:var(--text);text-decoration:none" title="<%= p.path %>"><%= p.path.length > 40 ? p.path.slice(0,40)+'…' : p.path %></a>
+              <a href="/analytics/<%= site.domain %>/ga4-detail?path=<%= encodeURIComponent(p.path) %>&days=<%= days %>" style="font-size:.7rem;color:var(--muted)">drill down →</a>
+            </div>
             <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(p.views/ga4MaxPV*100) %>%"></div></div>
           </td>
           <td><%= p.views.toLocaleString() %></td>

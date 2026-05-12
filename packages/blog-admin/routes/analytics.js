@@ -41,6 +41,23 @@ router.get('/:domain', async (req, res) => {
   res.render('analytics', { site, stats, days, countryStats, deviceStats, ga4, flash: req.flash() });
 });
 
+router.get('/:domain/ga4-detail', async (req, res) => {
+  const site = sitesLib.getSite(req.params.domain);
+  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+
+  const pagePath = req.query.path || '/';
+  const days     = parseInt(req.query.days) || 30;
+
+  let data = null;
+  try {
+    data = await getGA4().getPageDetail(req.params.domain, pagePath, days);
+  } catch (e) {
+    console.error('[GA4] detail error:', e.message);
+  }
+
+  res.render('analytics-ga4-detail', { site, pagePath, days, data, flash: req.flash() });
+});
+
 router.get('/:domain/detail', (req, res) => {
   const site = sitesLib.getSite(req.params.domain);
   if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });

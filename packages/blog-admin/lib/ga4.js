@@ -99,4 +99,51 @@ async function getStats(domain, days = 30) {
   return { totals, dailyData, topPages, topSources, topCountries, topDevices, days };
 }
 
-module.exports = { getStats };
+async function getPageDetail(domain, pagePath, days = 30) {
+  const c = getClient();
+  const startDate = `${days}daysAgo`;
+  const filter = {
+    andGroup: { expressions: [
+      { filter: { fieldName: 'hostName',  stringFilter: { value: domain,   matchType: 'CONTAINS' } } },
+      { filter: { fieldName: 'pagePath',  stringFilter: { value: pagePath, matchType: 'EXACT'    } } },
+    ]}
+  };
+
+  const [daily] = await c.runReport({
+    property: `properties/${PROPERTY_ID}`,
+    dateRanges: [{ startDate, endDate: 'today' }],
+    dimensions: [{ name: 'date' }],
+    metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
+    dimensionFilter: filter,
+    orderBys: [{ dimension: { dimensionName: 'date' } }],
+  });
+
+  const [sources] = await c.runReport({
+    property: `properties/${PROPERTY_ID}`,
+    dateRanges: [{ startDate, endDate: 'today' }],
+    dimensions: [{ name: 'sessionDefaultChannelGrouping' }],
+    metrics: [{ name: 'screenPageViews' }],
+    dimensionFilter: filter,
+    orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+    limit: 8,
+  });
+
+  const [countries] = await c.runReport({
+    property: `properties/${PROPERTY_ID}`,
+    dateRanges: [{ startDate, endDate: 'today' }],
+    dimensions: [{ name: 'country' }],
+    metrics: [{ name: 'screenPageViews' }],
+    dimensionFilter: filter,
+    orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+    limit: 10,
+  });
+
+  const dailyData    = (daily.rows    || []).map(r => ({ date: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value||0), users: parseInt(r.metricValues[1].value||0) }));
+  const topSources   = (sources.rows  || []).map(r => ({ source: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value||0) }));
+  const topCountries = (countries.rows|| []).map(r => ({ country: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value||0) }));
+  const totalViews   = dailyData.reduce((s, d) => s + d.views, 0);
+
+  return { dailyData, topSources, topCountries, totalViews };
+}
+
+module.exports = { getStats, getPageDetail };

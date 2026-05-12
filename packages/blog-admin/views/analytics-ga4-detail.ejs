@@ -1,0 +1,123 @@
+<%
+  pageTitle = 'GA4 Detail · ' + site.title;
+-%>
+<%- include('partials/head') %>
+
+<style>
+.chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.75rem; }
+.chart-bars { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+.chart-bar  { flex: 1; background: var(--accent, #2563eb); border-radius: 2px 2px 0 0; min-height: 2px; opacity: .75; position: relative; cursor: default; }
+.chart-bar:hover { opacity: 1; }
+.chart-bar:hover::after { content: attr(data-tip); position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: #fff; font-size: .68rem; padding: .2em .5em; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+.chart-labels { display: flex; justify-content: space-between; font-size: .65rem; color: var(--muted); margin-top: .35rem; }
+
+.two-col-analytics { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 700px) { .two-col-analytics { grid-template-columns: 1fr; } }
+
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.table-card h3 { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: .75rem 1rem; border-bottom: 1px solid var(--border); }
+.ana-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.ana-table td { padding: .45rem 1rem; border-bottom: 1px solid var(--border); }
+.ana-table tr:last-child td { border-bottom: none; }
+.ana-table td:last-child { text-align: right; color: var(--muted); }
+.bar-bg { background: var(--surface2,#f4f4f5); border-radius: 999px; height: 6px; margin-top: .25rem; overflow: hidden; }
+.bar-fg { background: var(--accent,#2563eb); height: 6px; border-radius: 999px; }
+.days-toggle { display: flex; gap: .4rem; }
+.days-toggle a { padding: .3rem .7rem; border-radius: 6px; font-size: .78rem; border: 1px solid var(--border); color: var(--muted); text-decoration: none; }
+.days-toggle a.active { background: var(--accent,#2563eb); color: #fff; border-color: transparent; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; }
+.stat-n { font-size: 2rem; font-weight: 700; line-height: 1; }
+.stat-l { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: .3rem; }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/analytics/<%= site.domain %>?days=<%= days %>" class="back-link">← Analytics</a>
+    <h1 style="font-size:1rem;word-break:break-all"><%= pagePath %></h1>
+  </div>
+  <div class="header-actions days-toggle">
+    <a href="?path=<%= encodeURIComponent(pagePath) %>&days=7"  class="<%= days==7  ? 'active' : '' %>">7d</a>
+    <a href="?path=<%= encodeURIComponent(pagePath) %>&days=30" class="<%= days==30 ? 'active' : '' %>">30d</a>
+    <a href="?path=<%= encodeURIComponent(pagePath) %>&days=90" class="<%= days==90 ? 'active' : '' %>">90d</a>
+  </div>
+</div>
+
+<% if (!data) { %>
+  <p style="color:var(--muted)">Could not load GA4 data for this page.</p>
+<% } else { %>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;margin-bottom:1.75rem">
+  <div class="stat-card">
+    <div class="stat-n"><%= data.totalViews.toLocaleString() %></div>
+    <div class="stat-l">Page views (<%= days %>d)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-n"><%= (data.dailyData.reduce((s,d)=>s+d.users,0)).toLocaleString() %></div>
+    <div class="stat-l">Unique users (<%= days %>d)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-n"><%= data.dailyData.length > 0 ? (data.totalViews / data.dailyData.length).toFixed(1) : 0 %></div>
+    <div class="stat-l">Avg views/day</div>
+  </div>
+</div>
+
+<% if (data.dailyData.length) { %>
+<div class="chart-wrap">
+  <div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:.6rem">Page views per day</div>
+  <% const maxV = Math.max(...data.dailyData.map(d => d.views), 1); %>
+  <div class="chart-bars">
+    <% data.dailyData.forEach(function(d) {
+         const label = d.date.replace(/(\d{4})(\d{2})(\d{2})/, '$2/$3');
+    %>
+    <div class="chart-bar" style="height:<%= Math.max(2, Math.round(d.views / maxV * 80)) %>px" data-tip="<%= label %>: <%= d.views %> views"></div>
+    <% }) %>
+  </div>
+  <div class="chart-labels">
+    <% const fmt = d => d.date.replace(/(\d{4})(\d{2})(\d{2})/, '$2/$3'); %>
+    <span><%= fmt(data.dailyData[0]) %></span>
+    <span><%= fmt(data.dailyData[Math.floor(data.dailyData.length/2)]) %></span>
+    <span><%= fmt(data.dailyData[data.dailyData.length-1]) %></span>
+  </div>
+</div>
+<% } %>
+
+<div class="two-col-analytics">
+  <div class="table-card">
+    <h3>Traffic sources</h3>
+    <% const maxS = data.topSources[0] ? data.topSources[0].views : 1; %>
+    <table class="ana-table">
+      <% data.topSources.forEach(function(s) { %>
+      <tr>
+        <td>
+          <span style="color:var(--text)"><%= s.source %></span>
+          <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(s.views/maxS*100) %>%"></div></div>
+        </td>
+        <td><%= s.views.toLocaleString() %></td>
+      </tr>
+      <% }) %>
+      <% if (!data.topSources.length) { %><tr><td colspan="2" style="color:var(--muted)">No data</td></tr><% } %>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <h3>Countries</h3>
+    <% const maxC = data.topCountries[0] ? data.topCountries[0].views : 1; %>
+    <table class="ana-table">
+      <% data.topCountries.forEach(function(c) { %>
+      <tr>
+        <td>
+          <span style="color:var(--text)"><%= c.country %></span>
+          <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(c.views/maxC*100) %>%"></div></div>
+        </td>
+        <td><%= c.views.toLocaleString() %></td>
+      </tr>
+      <% }) %>
+      <% if (!data.topCountries.length) { %><tr><td colspan="2" style="color:var(--muted)">No data</td></tr><% } %>
+    </table>
+  </div>
+</div>
+
+<% } %>
+
+<%- include('partials/foot') %>
