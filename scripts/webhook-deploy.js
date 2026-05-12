@@ -14,6 +14,7 @@ const MAP = {
   'packages/blog-core':              ['blog-914-io','blog-andresanz-com','blog-randomcategory-com','blog-samsanz-info','blog-sanz-me','blog-therandomactofwriting-com'],
   'packages/blog-admin':             ['blog-admin'],
   'packages/redirect-service':       ['redirect-service'],
+  'scripts':                         ['monorepo-deploy'],
   'sites/914.io':                    ['blog-914-io'],
   'sites/andresanz.com':             ['blog-andresanz-com'],
   'sites/randomcategory.com':        ['blog-randomcategory-com'],
