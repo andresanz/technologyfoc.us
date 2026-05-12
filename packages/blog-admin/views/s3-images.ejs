@@ -1,0 +1,130 @@
+<%
+  pageTitle = 'S3 Images';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.img-filters { display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem; }
+.img-filters select { font-size:.85rem;padding:.3rem .5rem;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text); }
+.img-filters input { font-size:.85rem;padding:.3rem .5rem;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);width:200px; }
+.img-count { font-size:.82rem;color:var(--muted);margin-left:auto; }
+.img-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem; }
+.img-tile { position:relative;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer; }
+.img-tile img { width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--surface2); }
+.img-tile .img-info { padding:.4rem .5rem;font-size:.75rem; }
+.img-tile .img-name { font-weight:500;word-break:break-all;line-height:1.3; }
+.img-tile .img-meta { color:var(--muted);margin-top:.15rem;display:flex;justify-content:space-between; }
+.img-tile .img-bucket { display:inline-block;font-size:.68rem;background:var(--surface2);border-radius:3px;padding:.1rem .3rem;color:var(--muted);margin-top:.2rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.img-tile:hover { border-color:var(--accent); }
+.img-tile[hidden] { display:none; }
+.img-actions { position:absolute;top:.35rem;right:.35rem;display:none;gap:.25rem; }
+.img-tile:hover .img-actions { display:flex; }
+.img-actions a, .img-actions button { background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:3px;padding:.2rem .4rem;font-size:.72rem;cursor:pointer;text-decoration:none;line-height:1.4; }
+.img-actions form { margin:0; }
+</style>
+
+<div class="page-header">
+  <div>
+    <a href="/s3" class="back-link">← S3</a>
+    <h1>All S3 Images</h1>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } else { %>
+
+<% if (debug && bucketStats && bucketStats.length) { %>
+  <div class="alert alert-info" style="font-size:.8rem">
+    <strong>Debug — per-bucket counts:</strong><br>
+    <% bucketStats.forEach(s => { %>
+      <b><%= s.name %></b>: <%= s.total %> objects, <%= s.images %> images
+      <% if (s.sample.length) { %> — sample keys: <code><%= s.sample.join(' | ') %></code><% } %><br>
+    <% }) %>
+  </div>
+<% } %>
+
+<% if (bucketErrors && bucketErrors.length) { %>
+  <div class="alert alert-danger" style="font-size:.82rem">
+    <strong>Errors on some buckets:</strong><br>
+    <% bucketErrors.forEach(e => { %><code><%= e %></code><br><% }) %>
+  </div>
+<% } %>
+
+<div class="img-filters">
+  <select id="bucketFilter">
+    <option value="">All buckets</option>
+    <% bucketNames.forEach(b => { %>
+      <option value="<%= b %>"><%= b %></option>
+    <% }) %>
+  </select>
+  <input type="search" id="nameFilter" placeholder="Filter by filename…">
+  <span class="img-count" id="imgCount"><%= allImages.length %> images</span>
+</div>
+
+<div class="img-grid" id="imgGrid">
+  <% allImages.forEach(img => { %>
+  <div class="img-tile"
+       data-bucket="<%= img.bucket %>"
+       data-name="<%= img.name.toLowerCase() %>">
+    <a href="/s3/<%= encodeURIComponent(img.bucket) %>/download?key=<%= encodeURIComponent(img.key) %>" target="_blank">
+      <img src="/s3/<%= encodeURIComponent(img.bucket) %>/download?key=<%= encodeURIComponent(img.key) %>"
+           loading="lazy"
+           alt="<%= img.name %>"
+           onerror="this.style.opacity='.2'">
+    </a>
+    <div class="img-actions">
+      <a href="/s3/<%= encodeURIComponent(img.bucket) %>/download?key=<%= encodeURIComponent(img.key) %>" target="_blank">↗</a>
+      <form method="POST" action="/s3/<%= encodeURIComponent(img.bucket) %>/delete"
+            onsubmit="return confirm('Delete <%= img.name %>?')">
+        <input type="hidden" name="key" value="<%= img.key %>">
+        <input type="hidden" name="prefix" value="">
+        <button type="submit">✕</button>
+      </form>
+    </div>
+    <div class="img-info">
+      <div class="img-name"><%= img.name %></div>
+      <div class="img-meta">
+        <span><%= img.mb %></span>
+        <span><%= img.modified %></span>
+      </div>
+      <span class="img-bucket" title="<%= img.bucket %>"><%= img.bucket %></span>
+    </div>
+  </div>
+  <% }) %>
+</div>
+
+<% if (allImages.length === 0) { %>
+  <p class="empty" style="padding:2rem 0">No images found across any bucket.</p>
+<% } %>
+
+<script>
+(function() {
+  const bucketSel = document.getElementById('bucketFilter');
+  const nameInput = document.getElementById('nameFilter');
+  const count     = document.getElementById('imgCount');
+  const tiles     = Array.from(document.querySelectorAll('.img-tile'));
+
+  function filter() {
+    const bucket = bucketSel.value;
+    const name   = nameInput.value.toLowerCase();
+    let visible  = 0;
+    tiles.forEach(t => {
+      const show = (!bucket || t.dataset.bucket === bucket) &&
+                   (!name   || t.dataset.name.includes(name));
+      t.hidden = !show;
+      if (show) visible++;
+    });
+    count.textContent = visible + ' image' + (visible !== 1 ? 's' : '');
+  }
+
+  bucketSel.addEventListener('change', filter);
+  nameInput.addEventListener('input', filter);
+})();
+</script>
+
+<% } %>
+
+<%- include('partials/foot') %>

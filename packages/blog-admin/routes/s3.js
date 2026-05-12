@@ -52,6 +52,56 @@ function listObjects(bucket, prefix = '') {
   } catch { return { folders: [], files: [] }; }
 }
 
+// GET /s3/images — all images across all buckets
+router.get('/images', (req, res) => {
+  let error = null;
+  let allImages = [];
+  const bucketErrors = [];
+
+  const debug = req.query.debug === '1';
+  const bucketStats = [];
+
+  try {
+    const buckets = listBuckets();
+    for (const bucket of buckets) {
+      try {
+        const out = aws(
+          `s3api list-objects-v2 --bucket ${bucket.name}` +
+          ` --query 'Contents[].[Key,Size,LastModified]' --output json`
+        );
+        const raw = out === 'null' ? '[]' : out;
+        const objects = JSON.parse(raw) || [];
+        const images = objects
+          .filter(([key]) => /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(key))
+          .map(([key, size, rawDate]) => ({
+            bucket: bucket.name,
+            key,
+            name: key.split('/').pop(),
+            size,
+            mb: size >= 1048576 ? (size / 1048576).toFixed(1) + ' MB'
+              : size >= 1024    ? (size / 1024).toFixed(0) + ' KB'
+              :                   size + ' B',
+            rawDate: rawDate || '',
+            modified: rawDate ? new Date(rawDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '',
+          }));
+        allImages = allImages.concat(images);
+        if (debug) {
+          const sample = objects.slice(0, 3).map(([k]) => k);
+          bucketStats.push({ name: bucket.name, total: objects.length, images: images.length, sample });
+        }
+      } catch (e) {
+        bucketErrors.push(`${bucket.name}: ${e.message}`);
+      }
+    }
+    allImages.sort((a, b) => (b.rawDate > a.rawDate ? 1 : -1));
+  } catch (e) {
+    error = e.message;
+  }
+
+  const bucketNames = [...new Set(allImages.map(i => i.bucket))].sort();
+  res.render('s3-images', { allImages, bucketNames, error, bucketErrors, debug, bucketStats, flash: req.flash() });
+});
+
 // GET /s3 — bucket list
 router.get('/', (req, res) => {
   let buckets = [], error = null;
