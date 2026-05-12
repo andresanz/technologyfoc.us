@@ -119,6 +119,10 @@ function createApp(siteDir) {
     });
   });
 
+  // ── Site-specific routes (before core post/page routes so / can be overridden) ──
+  const siteRoutesFile = path.join(siteDir, 'routes.js');
+  if (fs.existsSync(siteRoutesFile)) app.use('/', require(siteRoutesFile));
+
   app.use('/',       require('./routes/posts')(postsLib, pagesLib));
   app.use('/upload', require('./routes/upload')());
   app.use('/feed',   require('./routes/feed')(postsLib));
@@ -174,10 +178,6 @@ function createApp(siteDir) {
   });
 
   app.use('/',       require('./routes/pages')(pagesLib, postsLib));
-
-  // ── Site-specific routes (injected before 404) ────────────────────────────
-  const siteRoutesFile = path.join(siteDir, 'routes.js');
-  if (fs.existsSync(siteRoutesFile)) app.use('/', require(siteRoutesFile));
 
   // ── 404 ───────────────────────────────────────────────────────────────────
   app.use((req, res) => {
