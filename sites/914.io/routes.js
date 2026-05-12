@@ -70,7 +70,6 @@ function renderContact(req, res) {
 
 router.get('/', renderContact);
 router.get('/contact', renderContact);
-});
 
 router.post('/contact', async (req, res) => {
   const { name, email, message, 'g-recaptcha-response': token } = req.body;
