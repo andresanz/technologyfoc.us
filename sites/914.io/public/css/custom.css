@@ -1,6 +1,10 @@
 /* 914.io custom styles */
 
-/* Center home page content */
+:root { --bg: beige; }
+
+.site-footer { display: none; }
+
+/* Centered layout for home/contact page */
 article.home-page {
   display: flex;
   align-items: center;
@@ -9,33 +13,68 @@ article.home-page {
 }
 
 article.home-page .post-body {
-  text-align: center;
+  width: 100%;
+  max-width: 400px;
 }
 
-/* Hide footer */
-.site-footer {
-  display: none;
+/* Contact form */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
 }
 
-/* Email button */
-article.home-page .post-body a[href^="mailto"] {
-  display: inline-block;
-  padding: .6em 1.4em;
-  border: 1.5px solid currentColor;
+.contact-field input,
+.contact-field textarea {
+  width: 100%;
+  padding: .6rem .75rem;
+  background: transparent;
+  border: 1.5px solid var(--text);
   border-radius: 6px;
   font-size: 1rem;
+  font-family: var(--font);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+  resize: vertical;
+}
+
+.contact-field input::placeholder,
+.contact-field textarea::placeholder {
+  color: var(--muted);
+}
+
+.contact-field input:focus,
+.contact-field textarea:focus {
+  border-color: var(--accent);
+}
+
+.contact-form button[type="submit"] {
+  align-self: flex-start;
+  padding: .6em 1.4em;
+  background: transparent;
+  border: 1.5px solid var(--text);
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: var(--font);
+  color: var(--text);
+  cursor: pointer;
   letter-spacing: .01em;
-  text-decoration: none;
   transition: background .15s, color .15s;
 }
 
-article.home-page .post-body a[href^="mailto"]:hover {
+.contact-form button[type="submit"]:hover {
   background: var(--text);
   color: var(--bg);
-  opacity: .7;
 }
 
-/* Background */
-:root {
-  --bg: beige;
+.contact-success {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.contact-error {
+  color: #b91c1c;
+  font-size: .9rem;
+  margin-bottom: .5rem;
 }

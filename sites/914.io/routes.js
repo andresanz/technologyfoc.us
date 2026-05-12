@@ -58,15 +58,18 @@ async function sendEmail(entry) {
   });
 }
 
-router.get('/contact', (req, res) => {
-  const site = res.app.locals.siteConfig();
+function renderContact(req, res) {
   res.render('contact', {
-    site,
-    pageTitle: 'Contact',
+    site: res.app.locals.siteConfig(),
+    pageTitle: null,
     recaptchaSiteKey: RECAPTCHA_SITE_KEY,
     success: req.query.success === '1',
     error: req.query.error || null,
   });
+}
+
+router.get('/', renderContact);
+router.get('/contact', renderContact);
 });
 
 router.post('/contact', async (req, res) => {
@@ -89,7 +92,7 @@ router.post('/contact', async (req, res) => {
   try { saveSubmission(entry); } catch (e) { console.error('contact save error:', e.message); }
   try { await sendEmail(entry); } catch (e) { console.error('contact email error:', e.message); }
 
-  res.redirect('/contact?success=1');
+  res.redirect('/?success=1');
 });
 
 module.exports = router;
