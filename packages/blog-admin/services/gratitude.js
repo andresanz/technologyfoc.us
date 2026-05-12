@@ -110,7 +110,12 @@ async function tgGetUpdates(offset) {
 
 async function sendPrompt() {
   if (!CHAT_ID) { console.error('TELEGRAM_CHAT_ID not set'); process.exit(1); }
-  const state  = loadState();
+  const state = loadState();
+  const today = new Date().toISOString().split('T')[0];
+  if (state.lastPromptSent && state.lastPromptSent.startsWith(today)) {
+    console.log('[gratitude] Already sent today, skipping');
+    return;
+  }
   const prompt = pickPrompt(state);
   const result = await tgSend(`✍️ *Daily Gratitude Prompt*\n\n${prompt}`, CHAT_ID);
   if (!result.ok) { console.error('Telegram error:', JSON.stringify(result)); process.exit(1); }
