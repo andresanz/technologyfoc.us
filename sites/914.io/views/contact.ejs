@@ -1,0 +1,61 @@
+<%
+  locals.pageTitle = 'Contact';
+  locals.canonical = '/contact';
+-%>
+<%- include('layout') %>
+
+<article class="post">
+  <h1 class="post-title">Get in touch</h1>
+
+  <% if (success) { %>
+    <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;color:#065f46">
+      Thanks for reaching out — I'll get back to you soon.
+    </div>
+  <% } %>
+
+  <% if (error) { %>
+    <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;color:#991b1b">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <% if (!success) { %>
+  <form method="POST" action="/contact" id="contactForm" style="max-width:480px">
+    <div style="margin-bottom:1rem">
+      <label style="display:block;font-weight:600;margin-bottom:.35rem">Name</label>
+      <input type="text" name="name" required style="width:100%;padding:.55rem .75rem;border:1px solid #d1d5db;border-radius:6px;font-size:1rem;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="display:block;font-weight:600;margin-bottom:.35rem">Email</label>
+      <input type="email" name="email" required style="width:100%;padding:.55rem .75rem;border:1px solid #d1d5db;border-radius:6px;font-size:1rem;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:1.25rem">
+      <label style="display:block;font-weight:600;margin-bottom:.35rem">Message</label>
+      <textarea name="message" required rows="6" style="width:100%;padding:.55rem .75rem;border:1px solid #d1d5db;border-radius:6px;font-size:1rem;box-sizing:border-box;resize:vertical"></textarea>
+    </div>
+    <input type="hidden" name="g-recaptcha-response" id="recaptchaToken">
+    <button type="submit" id="submitBtn" style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:.65rem 1.5rem;font-size:1rem;font-weight:600;cursor:pointer">
+      Send message
+    </button>
+    <p style="font-size:.75rem;color:#9ca3af;margin-top:.75rem">
+      Protected by reCAPTCHA.
+    </p>
+  </form>
+
+  <script src="https://www.google.com/recaptcha/api.js?render=<%= recaptchaSiteKey %>"></script>
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var form = this;
+      grecaptcha.ready(function() {
+        grecaptcha.execute('<%= recaptchaSiteKey %>', { action: 'contact' }).then(function(token) {
+          document.getElementById('recaptchaToken').value = token;
+          form.submit();
+        });
+      });
+    });
+  </script>
+  <% } %>
+</article>
+
+<%- include('layout-end') %>

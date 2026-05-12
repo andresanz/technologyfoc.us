@@ -175,6 +175,10 @@ function createApp(siteDir) {
 
   app.use('/',       require('./routes/pages')(pagesLib, postsLib));
 
+  // ── Site-specific routes (injected before 404) ────────────────────────────
+  const siteRoutesFile = path.join(siteDir, 'routes.js');
+  if (fs.existsSync(siteRoutesFile)) app.use('/', require(siteRoutesFile));
+
   // ── 404 ───────────────────────────────────────────────────────────────────
   app.use((req, res) => {
     res.status(404).render('error', {
