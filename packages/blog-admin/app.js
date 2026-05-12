@@ -6,6 +6,11 @@ const session      = require('express-session');
 const flash        = require('connect-flash');
 const path         = require('path');
 
+const GIT_HASH = (() => {
+  try { return require('child_process').execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim(); }
+  catch { return ''; }
+})();
+
 const app = express();
 
 // Trust the nginx reverse proxy so secure cookies work over HTTPS
@@ -51,6 +56,7 @@ app.use((req, res, next) => {
   res.locals.flash     = req.flash();
   res.locals.authed    = !!req.session.authenticated;
   res.locals.adminUrl  = process.env.ADMIN_URL || '';
+  res.locals.gitHash   = GIT_HASH;
   next();
 });
 
