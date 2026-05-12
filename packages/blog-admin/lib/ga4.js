@@ -1,8 +1,15 @@
 'use strict';
 const { BetaAnalyticsDataClient } = require('@google-analytics/data');
 
-const PROPERTY_ID = '337889293';
-const KEY_FILE    = '/var/www/server02/packages/blog-admin/config/ga4-key.json';
+const KEY_FILE = '/var/www/server02/packages/blog-admin/config/ga4-key.json';
+
+const PROPERTY_MAP = {
+  'andresanz.com':             '337889293',
+  '914.io':                    '397659049',
+  'randomcategory.com':        '401321098',
+  'therandomactofwriting.com': '527596010',
+  'samsanz.info':              '338053417',
+};
 
 let client;
 function getClient() {
@@ -11,6 +18,8 @@ function getClient() {
 }
 
 async function getStats(domain, days = 30) {
+  const propertyId = PROPERTY_MAP[domain];
+  if (!propertyId) throw new Error(`No GA4 property mapped for ${domain}`);
   const c = getClient();
   const startDate = `${days}daysAgo`;
   const hostFilter = {
@@ -18,7 +27,7 @@ async function getStats(domain, days = 30) {
   };
 
   const [overview] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     metrics: [
       { name: 'sessions' },
@@ -32,7 +41,7 @@ async function getStats(domain, days = 30) {
   });
 
   const [daily] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'date' }],
     metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
@@ -41,7 +50,7 @@ async function getStats(domain, days = 30) {
   });
 
   const [pages] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'pagePath' }],
     metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
@@ -51,7 +60,7 @@ async function getStats(domain, days = 30) {
   });
 
   const [sources] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'sessionDefaultChannelGrouping' }],
     metrics: [{ name: 'sessions' }],
@@ -61,7 +70,7 @@ async function getStats(domain, days = 30) {
   });
 
   const [countries] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'country' }],
     metrics: [{ name: 'sessions' }],
@@ -71,7 +80,7 @@ async function getStats(domain, days = 30) {
   });
 
   const [devices] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'deviceCategory' }],
     metrics: [{ name: 'sessions' }],
@@ -100,6 +109,8 @@ async function getStats(domain, days = 30) {
 }
 
 async function getPageDetail(domain, pagePath, days = 30) {
+  const propertyId = PROPERTY_MAP[domain];
+  if (!propertyId) throw new Error(`No GA4 property mapped for ${domain}`);
   const c = getClient();
   const startDate = `${days}daysAgo`;
   const filter = {
@@ -110,7 +121,7 @@ async function getPageDetail(domain, pagePath, days = 30) {
   };
 
   const [daily] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'date' }],
     metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
@@ -119,7 +130,7 @@ async function getPageDetail(domain, pagePath, days = 30) {
   });
 
   const [sources] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'sessionDefaultChannelGrouping' }],
     metrics: [{ name: 'screenPageViews' }],
@@ -129,7 +140,7 @@ async function getPageDetail(domain, pagePath, days = 30) {
   });
 
   const [countries] = await c.runReport({
-    property: `properties/${PROPERTY_ID}`,
+    property: `properties/${propertyId}`,
     dateRanges: [{ startDate, endDate: 'today' }],
     dimensions: [{ name: 'country' }],
     metrics: [{ name: 'screenPageViews' }],
