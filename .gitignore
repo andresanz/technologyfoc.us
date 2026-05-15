@@ -1,16 +1,7 @@
-.env
 node_modules/
-*.db
-*.db-shm
-*.db-wal
-*.log
-.DS_Store
-public/temp/
-
-
-# blog-admin data — managed at runtime, not in git
-packages/blog-admin/data/*.json
-packages/blog-admin/data/*.txt
-packages/blog-admin/data/*.md
-sites/andresanz.com/public/temp/michele-backup-setup.ps1
-packages/blog-admin/config/ga4-key.json
+analytics.db
+analytics.db-shm
+analytics.db-wal
+.env
+*.env
+package-lock.json
