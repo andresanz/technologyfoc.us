@@ -552,9 +552,14 @@ function setCoverImage(url) {
   updateCoverPreview(url);
 }
 
+const SITE_URL = '<%= site.url %>';
+function absoluteUrl(url) {
+  if (!url) return '';
+  return url.startsWith('/') ? SITE_URL.replace(/\/$/, '') + url : url;
+}
 function updateCoverPreview(url) {
   if (url) {
-    coverPreview.src = url;
+    coverPreview.src = absoluteUrl(url);
     coverPreview.style.display = '';
     clearCoverBtn.style.display = '';
   } else {
