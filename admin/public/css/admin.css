@@ -244,7 +244,9 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 .media-actions { display: flex; gap: .3rem; flex-wrap: wrap; }
 
 /* Mini grid for modal */
-.media-grid-mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: .5rem; max-height: 55vh; overflow-y: auto; }
+.media-grid-mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .5rem; max-height: 55vh; overflow-y: auto; }
+.media-grid-mini .media-actions { flex-direction: column; gap: .25rem; }
+.media-grid-mini .media-actions .btn { text-align: center; font-size: .72rem; padding: .2rem .4rem; }
 .mini-thumb { cursor: pointer; border: 2px solid transparent; border-radius: 4px; overflow: hidden; }
 .mini-thumb:hover, .mini-thumb:active { border-color: var(--accent); }
 .mini-thumb img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
