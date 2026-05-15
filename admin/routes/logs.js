@@ -22,11 +22,8 @@ function nginxSites() {
 }
 
 function journalServices() {
-  const base = ['nginx', 'redis', 'fail2ban', 'postfix', 'ssh', 'cron'];
-  const blogs = run("systemctl list-units 'blog-*' --type=service --no-pager --no-legend")
-    .split('\n').filter(Boolean)
-    .map(l => l.trim().split(/\s+/)[0].replace('.service', ''));
-  return [...base, ...blogs];
+  const base = ['andresanz', 'andresanz-admin', 'andresanz-deploy', 'nginx', 'redis', 'fail2ban', 'postfix', 'ssh', 'cron'];
+  return base;
 }
 
 function logFileSize(path) {
