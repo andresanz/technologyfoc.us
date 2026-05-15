@@ -15,7 +15,7 @@ function list(postsDir) {
       try {
         const { data } = matter(fs.readFileSync(filepath, 'utf8'));
         const stat     = fs.statSync(filepath);
-        const date     = data.date ? new Date(data.date) : stat.mtime;
+        const date     = data.date ? new Date(String(data.date).replace(/^(\d{4}-\d{2}-\d{2})$/, '$1T12:00:00')) : stat.mtime;
         return {
           filename: f,
           slug:     data.slug || path.basename(f, '.md'),
@@ -41,7 +41,7 @@ function read(postsDir, filename) {
   const raw      = fs.readFileSync(filepath, 'utf8');
   const { data, content } = matter(raw);
   const stat     = fs.statSync(filepath);
-  const date     = data.date ? new Date(data.date) : stat.mtime;
+  const date     = data.date ? new Date(String(data.date).replace(/^(\d{4}-\d{2}-\d{2})$/, '$1T12:00:00')) : stat.mtime;
 
   return {
     filename,
@@ -62,7 +62,7 @@ function write(postsDir, filename, { title, slug, date, tags, excerpt, image, dr
 
   const fm = {
     title,
-    date:  date || new Date().toISOString().split('T')[0],
+    date:  date || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
     slug:  slug || slugify(title),
     ...(tags    ? { tags: tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) } : {}),
     ...(excerpt ? { excerpt } : {}),
