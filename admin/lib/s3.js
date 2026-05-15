@@ -22,7 +22,7 @@ function makeClient(site) {
 async function upload(site, { buffer, mimetype, originalname, folder = 'images' }) {
   if (!site.s3Bucket) throw new Error('S3_BUCKET not configured for this site');
   const ext = path.extname(originalname) || mimeToExt(mimetype);
-  const key = `${site.domain}/${folder}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+  const key = `${folder}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
 
   await makeClient(site).send(new PutObjectCommand({
     Bucket:      site.s3Bucket,
@@ -36,7 +36,7 @@ async function upload(site, { buffer, mimetype, originalname, folder = 'images' 
 
 // List objects in bucket (paginated)
 async function list(site, { prefix, continuationToken, maxKeys = 50 } = {}) {
-  prefix = prefix !== undefined ? prefix : `${site.domain}/`;
+  prefix = prefix !== undefined ? prefix : '';
   if (!site.s3Bucket) return { objects: [], nextToken: null };
 
   const cmd = new ListObjectsV2Command({
@@ -77,7 +77,7 @@ async function remove(site, key) {
 // Presigned upload URL (for future client-side direct uploads)
 async function presign(site, { filename, mimetype, folder = 'images', expires = 300 }) {
   const ext = path.extname(filename) || mimeToExt(mimetype);
-  const key = `${site.domain}/${folder}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+  const key = `${folder}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
   const url = await getSignedUrl(
     makeClient(site),
     new PutObjectCommand({ Bucket: site.s3Bucket, Key: key, ContentType: mimetype }),
