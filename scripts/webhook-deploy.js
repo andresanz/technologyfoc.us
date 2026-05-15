@@ -3,42 +3,13 @@ const http   = require('http');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
 
-const PORT             = parseInt(process.env.DEPLOY_PORT      || '4101');
-const WEBHOOK_SECRET   = process.env.WEBHOOK_SECRET            || '';
-const TELEGRAM_TOKEN   = process.env.TELEGRAM_BOT_TOKEN        || '';
-const TELEGRAM_CHAT    = process.env.TELEGRAM_CHAT_ID          || '';
-const REPO_DIR         = process.env.REPO_DIR                  || '/var/www/server02';
+const PORT           = parseInt(process.env.DEPLOY_PORT   || '4101');
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET         || '';
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN     || '';
+const TELEGRAM_CHAT  = process.env.TELEGRAM_CHAT_ID       || '';
+const APP_DIR        = process.env.APP_DIR                 || '/var/www/andresanz.com';
 
-// prefix -> services that must restart when any file under that prefix changes
-const MAP = {
-  'packages/blog-core':              ['blog-914-io','blog-andresanz-com','blog-randomcategory-com','blog-samsanz-info','blog-sanz-me','blog-therandomactofwriting-com'],
-  'packages/blog-admin':             ['blog-admin'],
-  'packages/redirect-service':       ['redirect-service'],
-  'scripts':                         ['monorepo-deploy'],
-  'sites/914.io':                    ['blog-914-io'],
-  'sites/andresanz.com':             ['blog-andresanz-com'],
-  'sites/randomcategory.com':        ['blog-randomcategory-com'],
-  'sites/samsanz.info':              ['blog-samsanz-info'],
-  'sites/sanz.me':                   ['blog-sanz-me'],
-  'sites/therandomactofwriting.com': ['blog-therandomactofwriting-com'],
-};
-
-// prefix -> directory to run npm install in (only when package.json changes)
-const NPM_DIRS = {
-  'packages/blog-core':        `${REPO_DIR}/packages/blog-core`,
-  'packages/blog-admin':       `${REPO_DIR}/packages/blog-admin`,
-  'packages/redirect-service': `${REPO_DIR}/packages/redirect-service`,
-  'sites/914.io':              `${REPO_DIR}/sites/914.io`,
-};
-
-function affectedServices(files) {
-  const set = new Set();
-  for (const f of files)
-    for (const [prefix, svcs] of Object.entries(MAP))
-      if (f === prefix || f.startsWith(prefix + '/'))
-        svcs.forEach(s => set.add(s));
-  return [...set];
-}
+const SERVICES = ['andresanz', 'andresanz-admin'];
 
 function telegram(text) {
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT) return;
@@ -54,69 +25,60 @@ function telegram(text) {
 }
 
 function deploy(payload) {
-  const branch   = (payload.ref || '').replace('refs/heads/', '');
-  const pusher   = payload.pusher?.name || 'unknown';
-  const commits  = payload.commits || [];
-  const files    = [...new Set(commits.flatMap(c =>
+  const branch  = (payload.ref || '').replace('refs/heads/', '');
+  const pusher  = payload.pusher?.name || 'unknown';
+  const commits = payload.commits || [];
+  const files   = [...new Set(commits.flatMap(c =>
     [...(c.added||[]), ...(c.modified||[]), ...(c.removed||[])]
   ))];
 
-  const services = affectedServices(files);
-  console.log(`[deploy] branch=${branch} pusher=${pusher} files=${files.length} svcs=${services.join(',') || 'none'}`);
+  console.log(`[deploy] branch=${branch} pusher=${pusher} files=${files.length}`);
 
-  if (!services.length) {
-    telegram(`ℹ️ <b>monorepo push</b> by ${pusher} (${branch})\nNo services affected.`);
-    return;
-  }
-
-  // pull (stash any local changes like package-lock.json drift from manual npm installs)
+  // pull
   try {
-    // only stash tracked changes — untracked files (e.g. ?? in porcelain) are ignored by git stash
-    const dirty = execSync(`git -C ${REPO_DIR} diff --quiet HEAD ; echo $?`, { stdio: 'pipe', shell: true }).toString().trim() !== '0';
-    if (dirty) execSync(`git -C ${REPO_DIR} stash`, { stdio: 'pipe' });
-    execSync(`git -C ${REPO_DIR} pull --rebase origin ${branch} --quiet`, { stdio: 'pipe' });
-    if (dirty) execSync(`git -C ${REPO_DIR} stash drop`, { stdio: 'pipe' });
+    const dirty = execSync(`git -C ${APP_DIR} diff --quiet HEAD; echo $?`, { stdio: 'pipe', shell: true }).toString().trim() !== '0';
+    if (dirty) execSync(`git -C ${APP_DIR} stash`, { stdio: 'pipe' });
+    execSync(`git -C ${APP_DIR} pull --rebase origin ${branch} --quiet`, { stdio: 'pipe' });
+    if (dirty) execSync(`git -C ${APP_DIR} stash drop`, { stdio: 'pipe' });
   } catch (e) {
-    const err = (e.stderr||Buffer.alloc(0)).toString().trim();
+    const err = (e.stderr || Buffer.alloc(0)).toString().trim();
     console.error('[deploy] git pull failed:', err);
-    telegram(`❌ <b>deploy FAILED</b> – git pull error\n${err}`);
+    telegram(`❌ <b>andresanz.com deploy FAILED</b> – git pull\n${err}`);
     return;
   }
 
-  // npm install for any package whose package.json changed
   const lines = [];
-  for (const [prefix, dir] of Object.entries(NPM_DIRS)) {
-    const pkgChanged = files.some(f =>
-      f.startsWith(prefix + '/') && (f.endsWith('package.json') || f.endsWith('package-lock.json'))
-    );
-    if (!pkgChanged) continue;
+
+  // npm install if package.json changed
+  const pkgChanged = files.some(f => f === 'package.json' || f === 'package-lock.json');
+  if (pkgChanged) {
     try {
-      execSync('npm install --omit=dev --silent', { cwd: dir, timeout: 120000, stdio: 'pipe' });
-      lines.push(`📦 npm install: ${prefix}`);
-      console.log(`[deploy] npm install: ${prefix}`);
+      execSync('npm install --omit=dev --silent', { cwd: APP_DIR, timeout: 120000, stdio: 'pipe' });
+      lines.push('📦 npm install');
+      console.log('[deploy] npm install done');
     } catch (e) {
       const err = (e.stderr || Buffer.alloc(0)).toString().trim();
-      lines.push(`❌ npm install failed (${prefix}): ${err.slice(0, 200)}`);
-      console.error(`[deploy] npm install failed: ${prefix}`, err);
+      lines.push(`❌ npm install failed: ${err.slice(0, 200)}`);
+      console.error('[deploy] npm install failed:', err);
     }
   }
 
-  // restart
-  for (const svc of services) {
+  // restart services
+  for (const svc of SERVICES) {
     try {
       execSync(`systemctl restart ${svc}.service`, { stdio: 'pipe' });
       lines.push(`✅ ${svc}`);
       console.log(`[deploy] restarted ${svc}`);
     } catch (e) {
-      const err = (e.stderr||Buffer.alloc(0)).toString().trim();
+      const err = (e.stderr || Buffer.alloc(0)).toString().trim();
       lines.push(`❌ ${svc}: ${err}`);
       console.error(`[deploy] restart failed: ${svc}`, err);
     }
   }
 
   telegram(
-    `🚀 <b>deploy</b> by ${pusher} (${branch})\n` +
-    `${files.length} file(s) changed\n\n` +
+    `🚀 <b>andresanz.com</b> deployed by ${pusher} (${branch})\n` +
+    `${files.length} file(s)\n\n` +
     lines.join('\n')
   );
 }
@@ -140,7 +102,6 @@ http.createServer((req, res) => {
     }
     res.writeHead(200); res.end('accepted');
     let p; try { p = JSON.parse(body); } catch { return; }
-    // run async, don't block the response
     setImmediate(() => { try { deploy(p); } catch(e) { console.error(e); } });
   });
 }).listen(PORT, '127.0.0.1', () =>

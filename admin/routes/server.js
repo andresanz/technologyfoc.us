@@ -7,7 +7,8 @@ const router     = express.Router();
 
 // Services to manage (in display order)
 const MANAGED_SERVICES = [
-  { name: 'blog-admin',   label: 'Blog Admin', group: 'web'  },
+  { name: 'andresanz-admin', label: 'Admin',  group: 'web'  },
+  { name: 'andresanz',       label: 'Site',   group: 'web'  },
   { name: 'nginx',        label: 'Nginx',      group: 'web'  },
   { name: 'redis-server', label: 'Redis',      group: 'data' },
   { name: 'fail2ban',     label: 'Fail2ban',   group: 'sec'  },

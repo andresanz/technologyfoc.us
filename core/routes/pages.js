@@ -11,7 +11,7 @@ module.exports = function createPagesRouter(pagesLib, postsLib) {
     const page = pagesLib.getBySlug(req.params.slug);
     if (!page) return next();
     const domain   = (process.env.SITE_URL || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const adminUrl = process.env.ADMIN_URL || 'https://admin.server02.andresanz.com';
+    const adminUrl = process.env.ADMIN_URL || 'https://andresanz.com/admin';
     const fname    = require('path').basename(page._filepath || (page.slug + '.md'));
     res.redirect(`${adminUrl}/pages/${domain}/edit/${encodeURIComponent(fname)}`);
   });

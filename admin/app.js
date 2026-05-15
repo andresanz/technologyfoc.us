@@ -118,7 +118,7 @@ app.use((err, req, res, _next) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.ADMIN_PORT || process.env.PORT || 4000;
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`Blog admin running on http://127.0.0.1:${PORT}`);
 });

@@ -1,0 +1,17 @@
+[Unit]
+Description=andresanz.com admin panel
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/andresanz.com
+ExecStart=/usr/bin/node admin/app.js
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=/var/www/andresanz.com/.env
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

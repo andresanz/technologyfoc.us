@@ -1,0 +1,17 @@
+[Unit]
+Description=andresanz.com webhook deploy listener
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/andresanz.com
+ExecStart=/usr/bin/node scripts/webhook-deploy.js
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=/var/www/andresanz.com/.env
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

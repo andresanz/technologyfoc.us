@@ -71,6 +71,7 @@ function getSite(domain) {
     pageCount,
     status:      serviceStatus(domain),
     serviceName: domain === 'andresanz.com' ? 'andresanz' : `blog-${domain.replace(/\./g, '-')}`,
+    bustCache:   () => bustCache({ port: cfg.PORT || '3000', adminKey: cfg.ADMIN_KEY || '' }),
   };
 }
 

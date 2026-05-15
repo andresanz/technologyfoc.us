@@ -1,19 +1,18 @@
 'use strict';
 
 const express     = require('express');
-const sitesLib    = require('../lib/sites');
 const sharpConfig = require('../lib/sharp-config');
 const sharpStats  = require('../lib/sharp-stats');
 const router      = express.Router();
 
 // GET /sharp
 router.get('/', (req, res) => {
-  const sites  = sitesLib.getAll();
+  const site   = req.site;
   const config = sharpConfig.load();
   const stats  = sharpStats.getStats();
   const totals = sharpStats.getTotals();
   const recent = sharpStats.getRecent(null, 50);
-  res.render('sharp', { sites, config, stats, totals, recent, flash: req.flash() });
+  res.render('sharp', { sites: [site], config, stats, totals, recent, flash: req.flash() });
 });
 
 // POST /sharp/settings/global
@@ -30,7 +29,7 @@ router.post('/settings/global', (req, res) => {
 
 // POST /sharp/settings/:domain
 router.post('/settings/:domain', (req, res) => {
-  const { domain } = req.params;
+  const domain = req.params.domain;
   if (req.body.useGlobal === 'on') {
     sharpConfig.saveSite(domain, {});
   } else {
