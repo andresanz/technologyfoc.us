@@ -66,6 +66,7 @@ function getSite(domain) {
     awsRegion:   cfg.AWS_REGION       || 'us-east-1',
     awsKey:      cfg.AWS_ACCESS_KEY_ID     || '',
     awsSecret:   cfg.AWS_SECRET_ACCESS_KEY || '',
+    cdnUrl:      cfg.CDN_URL          || '',
     postCount,
     privatePostCount,
     pageCount,
