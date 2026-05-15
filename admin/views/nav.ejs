@@ -17,40 +17,71 @@
 
 <form id="nav-form" method="POST" action="/server/nav" onsubmit="serializeNav()">
   <input type="hidden" name="nav" id="navJson">
+  <input type="hidden" name="homeNav" id="homeNavJson">
+  <input type="hidden" name="useHomeNav" id="useHomeNavInput" value="<%= hasHomeNav ? '1' : '0' %>">
 
   <section class="card">
-    <table class="nav-table" data-nosort id="navTable">
-      <thead>
-        <tr>
-          <th style="width:2rem"></th>
-          <th>Label</th>
-          <th>URL</th>
-          <th style="width:5rem; text-align:center">Enabled</th>
-          <th style="width:5rem; text-align:center">New tab</th>
-          <th style="width:3rem"></th>
-        </tr>
-      </thead>
+    <h3 style="margin-bottom:.75rem">All pages nav</h3>
+    <table class="nav-table" id="navTable">
+      <thead><tr>
+        <th style="width:2rem"></th>
+        <th>Label</th><th>URL</th>
+        <th style="width:5rem;text-align:center">Enabled</th>
+        <th style="width:5rem;text-align:center">New tab</th>
+        <th style="width:3rem"></th>
+      </tr></thead>
       <tbody id="navBody">
-        <% navItems.forEach(function(item, i) { %>
+        <% navItems.forEach(function(item) { %>
         <tr class="nav-row" draggable="true">
           <td class="drag-handle" title="Drag to reorder">⠿</td>
           <td><input type="text" class="nav-label" value="<%= item.label %>" placeholder="Label"></td>
           <td><input type="text" class="nav-url"   value="<%= item.url %>"   placeholder="/path or https://…"></td>
-          <td style="text-align:center">
-            <input type="checkbox" class="nav-enabled" <%= item.enabled !== false ? 'checked' : '' %>>
-          </td>
-          <td style="text-align:center">
-            <input type="checkbox" class="nav-newtab" <%= item.newTab ? 'checked' : '' %>>
-          </td>
+          <td style="text-align:center"><input type="checkbox" class="nav-enabled" <%= item.enabled !== false ? 'checked' : '' %>></td>
+          <td style="text-align:center"><input type="checkbox" class="nav-newtab" <%= item.newTab ? 'checked' : '' %>></td>
           <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>
         </tr>
         <% }) %>
       </tbody>
     </table>
-
-    <div style="margin-top:1rem; display:flex; gap:.5rem">
-      <button type="button" class="btn" onclick="addRow()">+ Add item</button>
+    <div style="margin-top:1rem;display:flex;gap:.5rem">
+      <button type="button" class="btn" onclick="addRow('navBody')">+ Add item</button>
       <button type="button" class="btn" onclick="resetDefaults()">Reset to defaults</button>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:1rem">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
+      <h3 style="margin:0">Home page nav</h3>
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:.875rem;cursor:pointer">
+        <input type="checkbox" id="enableHomeNav" <%= hasHomeNav ? 'checked' : '' %> onchange="toggleHomeNav(this.checked)">
+        Different from all-pages nav
+      </label>
+    </div>
+    <div id="homeNavSection" style="<%= hasHomeNav ? '' : 'display:none' %>">
+      <table class="nav-table" id="homeNavTable">
+        <thead><tr>
+          <th style="width:2rem"></th>
+          <th>Label</th><th>URL</th>
+          <th style="width:5rem;text-align:center">Enabled</th>
+          <th style="width:5rem;text-align:center">New tab</th>
+          <th style="width:3rem"></th>
+        </tr></thead>
+        <tbody id="homeNavBody">
+          <% homeNavItems.forEach(function(item) { %>
+          <tr class="nav-row" draggable="true">
+            <td class="drag-handle" title="Drag to reorder">⠿</td>
+            <td><input type="text" class="nav-label" value="<%= item.label %>" placeholder="Label"></td>
+            <td><input type="text" class="nav-url"   value="<%= item.url %>"   placeholder="/path or https://…"></td>
+            <td style="text-align:center"><input type="checkbox" class="nav-enabled" <%= item.enabled !== false ? 'checked' : '' %>></td>
+            <td style="text-align:center"><input type="checkbox" class="nav-newtab" <%= item.newTab ? 'checked' : '' %>></td>
+            <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <div style="margin-top:1rem;display:flex;gap:.5rem">
+        <button type="button" class="btn" onclick="addRow('homeNavBody')">+ Add item</button>
+      </div>
     </div>
   </section>
 </form>
@@ -67,34 +98,35 @@
 
 <script>
 // ── Drag-to-reorder ──────────────────────────────────────────────────────────
-const tbody = document.getElementById('navBody');
 let dragSrc = null;
-
-tbody.addEventListener('dragstart', e => {
-  dragSrc = e.target.closest('tr');
-  dragSrc.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-});
-tbody.addEventListener('dragend', e => {
-  document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('dragging','drag-over'));
-});
-tbody.addEventListener('dragover', e => {
-  e.preventDefault();
-  const row = e.target.closest('tr');
-  if (row && row !== dragSrc) {
+document.querySelectorAll('tbody').forEach(tbody => {
+  tbody.addEventListener('dragstart', e => {
+    dragSrc = e.target.closest('tr');
+    dragSrc.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  tbody.addEventListener('dragend', () => {
+    document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('dragging','drag-over'));
+  });
+  tbody.addEventListener('dragover', e => {
+    e.preventDefault();
+    const row = e.target.closest('tr');
+    if (row && row !== dragSrc) {
+      document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    }
+  });
+  tbody.addEventListener('drop', e => {
+    e.preventDefault();
+    const row = e.target.closest('tr');
+    if (row && row !== dragSrc) tbody.insertBefore(dragSrc, row);
     document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('drag-over'));
-    row.classList.add('drag-over');
-  }
-});
-tbody.addEventListener('drop', e => {
-  e.preventDefault();
-  const row = e.target.closest('tr');
-  if (row && row !== dragSrc) tbody.insertBefore(dragSrc, row);
-  document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('drag-over'));
+  });
 });
 
 // ── Add / remove rows ────────────────────────────────────────────────────────
-function addRow(label = '', url = '') {
+function addRow(tbodyId, label = '', url = '') {
+  const tbody = document.getElementById(tbodyId);
   const tr = document.createElement('tr');
   tr.className = 'nav-row';
   tr.draggable = true;
@@ -108,31 +140,32 @@ function addRow(label = '', url = '') {
   tbody.appendChild(tr);
 }
 
-function removeRow(btn) {
-  btn.closest('tr').remove();
-}
+function removeRow(btn) { btn.closest('tr').remove(); }
 
 function resetDefaults() {
-  const defaults = [
-    { label: 'Posts', url: '/' },
-    { label: 'Tags',  url: '/tags' },
-    { label: 'RSS',   url: '/feed/rss' },
-  ];
-  tbody.innerHTML = '';
-  defaults.forEach(d => {
-    addRow(d.label, d.url);
-  });
+  const defaults = [{ label: 'Posts', url: '/' }, { label: 'Tags', url: '/tags' }, { label: 'RSS', url: '/feed/rss' }];
+  document.getElementById('navBody').innerHTML = '';
+  defaults.forEach(d => addRow('navBody', d.label, d.url));
+}
+
+function toggleHomeNav(on) {
+  document.getElementById('homeNavSection').style.display = on ? '' : 'none';
+  document.getElementById('useHomeNavInput').value = on ? '1' : '0';
 }
 
 // ── Serialize to JSON before submit ──────────────────────────────────────────
-function serializeNav() {
-  const items = [...tbody.querySelectorAll('.nav-row')].map(row => ({
+function serializeRows(tbodyId) {
+  return [...document.getElementById(tbodyId).querySelectorAll('.nav-row')].map(row => ({
     label:   row.querySelector('.nav-label').value.trim(),
-    url:     (row.querySelector('.nav-url').value.trim() || '/').replace(/^https?:\/\/(?=mailto:)/i, ''),
+    url:     (row.querySelector('.nav-url').value.trim() || '/'),
     enabled: row.querySelector('.nav-enabled').checked,
     newTab:  row.querySelector('.nav-newtab').checked,
   })).filter(i => i.label);
-  document.getElementById('navJson').value = JSON.stringify(items);
+}
+
+function serializeNav() {
+  document.getElementById('navJson').value     = JSON.stringify(serializeRows('navBody'));
+  document.getElementById('homeNavJson').value = JSON.stringify(serializeRows('homeNavBody'));
 }
 </script>
 

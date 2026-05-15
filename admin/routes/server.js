@@ -466,10 +466,18 @@ router.get('/health', (req, res) => {
 router.get('/nav', (req, res) => {
   const site    = req.site;
   const navFile = path.join(site.dir, 'content', 'nav.json');
-  let navItems  = [];
-  try { navItems = JSON.parse(fs.readFileSync(navFile, 'utf8')); }
-  catch { navItems = []; }
-  res.render('nav', { site, navItems, flash: req.flash() });
+  let navItems = [], homeNavItems = [], hasHomeNav = false;
+  try {
+    const raw = JSON.parse(fs.readFileSync(navFile, 'utf8'));
+    if (Array.isArray(raw)) {
+      navItems = raw;
+    } else {
+      navItems     = raw.nav     || [];
+      homeNavItems = raw.homeNav || [];
+      hasHomeNav   = 'homeNav' in raw;
+    }
+  } catch {}
+  res.render('nav', { site, navItems, homeNavItems, hasHomeNav, flash: req.flash() });
 });
 
 // ── POST /server/nav ──────────────────────────────────────────────────────────
@@ -477,9 +485,12 @@ router.post('/nav', async (req, res) => {
   const site    = req.site;
   const navFile = path.join(site.dir, 'content', 'nav.json');
   try {
-    const nav = JSON.parse(req.body.nav || '[]');
+    const nav        = JSON.parse(req.body.nav     || '[]');
+    const useHomeNav = req.body.useHomeNav === '1';
+    const homeNav    = useHomeNav ? JSON.parse(req.body.homeNav || '[]') : undefined;
+    const out        = useHomeNav ? { nav, homeNav } : nav;
     fs.mkdirSync(path.dirname(navFile), { recursive: true });
-    fs.writeFileSync(navFile, JSON.stringify(nav, null, 2), 'utf8');
+    fs.writeFileSync(navFile, JSON.stringify(out, null, 2), 'utf8');
     await site.bustCache().catch(() => {});
     req.flash('success', 'Nav saved');
   } catch (e) {
