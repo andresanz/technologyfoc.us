@@ -209,11 +209,11 @@ router.get('/logs', (req, res) => {
 
 // ── POST /server/nginx/reload ─────────────────────────────────────────────────
 router.post('/nginx/reload', (req, res) => {
-  const test = run('nginx -t 2>&1');
+  const test = run('sudo nginx -t 2>&1');
   if (test.includes('failed')) {
     req.flash('error', `nginx config error: ${test}`);
   } else {
-    run('systemctl reload nginx');
+    run('sudo systemctl reload nginx');
     req.flash('success', 'Nginx reloaded');
   }
   res.redirect('/server');
@@ -238,7 +238,7 @@ router.get('/nginx', (req, res) => {
     try { config = fs.readFileSync(`${availDir}/${selected}`, 'utf8'); } catch {}
   }
 
-  const testResult = run('nginx -t 2>&1');
+  const testResult = run('sudo nginx -t 2>&1');
   const testOk = testResult.includes('test is successful');
 
   res.render('server-nginx', { sites, selected, config, testResult, testOk, flash: req.flash() });
@@ -264,11 +264,11 @@ router.post('/nginx/save', (req, res) => {
   }
 
   // Test config
-  const test = run('nginx -t 2>&1');
+  const test = run('sudo nginx -t 2>&1');
   if (test.includes('failed')) {
     req.flash('error', `Saved but nginx test failed: ${test}`);
   } else {
-    run('systemctl reload nginx');
+    run('sudo systemctl reload nginx');
     req.flash('success', `Saved and reloaded nginx for ${site}`);
   }
   res.redirect(`/server/nginx?site=${site}`);
@@ -288,8 +288,8 @@ router.post('/nginx/toggle', (req, res) => {
     fs.symlinkSync(availPath, enabledPath);
     req.flash('success', `Enabled ${site}`);
   }
-  const test = run('nginx -t 2>&1');
-  if (!test.includes('failed')) run('systemctl reload nginx');
+  const test = run('sudo nginx -t 2>&1');
+  if (!test.includes('failed')) run('sudo systemctl reload nginx');
   res.redirect(`/server/nginx?site=${site}`);
 });
 
