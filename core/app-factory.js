@@ -61,10 +61,12 @@ function createApp(siteDir) {
   });
 
   // ── Posts + Pages libraries ───────────────────────────────────────────────
-  const postsDir = path.join(siteDir, 'content', 'posts');
-  const pagesDir = path.join(siteDir, 'content', 'pages');
-  const postsLib = require('./lib/posts')(postsDir);
-  const pagesLib = require('./lib/pages')(pagesDir);
+  const postsDir        = path.join(siteDir, 'content', 'posts');
+  const privatePostsDir = path.join(siteDir, 'content', 'private-posts');
+  const pagesDir        = path.join(siteDir, 'content', 'pages');
+  const postsLib        = require('./lib/posts')(postsDir);
+  const privatePostsLib = require('./lib/posts')(privatePostsDir);
+  const pagesLib        = require('./lib/pages')(pagesDir);
 
   const { processShortcodes } = require('./lib/shortcodes');
   const PER_PAGE = parseInt(process.env.PER_PAGE) || 5;
@@ -123,9 +125,10 @@ function createApp(siteDir) {
   const siteRoutesFile = path.join(siteDir, 'routes.js');
   if (fs.existsSync(siteRoutesFile)) app.use('/', require(siteRoutesFile));
 
-  app.use('/',       require('./routes/posts')(postsLib, pagesLib));
-  app.use('/upload', require('./routes/upload')());
-  app.use('/feed',   require('./routes/feed')(postsLib));
+  app.use('/',        require('./routes/posts')(postsLib, pagesLib));
+  app.use('/private', require('./routes/private')(privatePostsLib));
+  app.use('/upload',  require('./routes/upload')());
+  app.use('/feed',    require('./routes/feed')(postsLib));
 
   // ── Home page edit shortcut ───────────────────────────────────────────────
   app.get('/home/edit', (req, res) => {

@@ -45,7 +45,7 @@ module.exports = function createPostsLib(postsDir) {
       const filename = path.basename(filepath, '.md');
       const slug     = data.slug || slugify(data.title || filename);
       const stat     = fs.statSync(filepath);
-      const date     = data.date ? new Date(data.date) : stat.mtime;
+      const date     = data.date ? new Date(data.date.toString().replace(/^(\d{4}-\d{2}-\d{2})$/, '$1T12:00:00')) : stat.mtime;
 
       return {
         slug,

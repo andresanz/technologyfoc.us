@@ -117,7 +117,7 @@ router.post('/tags/rename', async (req, res) => {
 router.get('/new', (req, res) => {
   const site = req.site;
 
-  const today = new Date().toISOString().split('T')[0];
+  const _d = new Date(); const today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
   res.render('post-edit', {
     site,
     post:      { filename: '', slug: '', title: '', date: today, tags: '', excerpt: '', image: '', draft: false, body: '' },

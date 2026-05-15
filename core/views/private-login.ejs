@@ -1,0 +1,17 @@
+<%
+  locals.pageTitle = 'Private';
+  locals.canonical = '/private';
+-%>
+<%- include('layout') %>
+<div style="max-width:340px;margin:4rem auto;padding:0 1rem">
+  <h1 style="font-size:1.4rem;margin-bottom:1.5rem">Private posts</h1>
+  <% if (locals.error) { %>
+    <p style="color:var(--danger,#dc2626);margin-bottom:1rem;font-size:.875rem"><%= error %></p>
+  <% } %>
+  <form method="POST" action="/private">
+    <input type="password" name="password" placeholder="Password" autofocus
+           style="width:100%;margin-bottom:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--radius);font-size:1rem">
+    <button type="submit" style="width:100%;padding:.6rem;background:var(--accent,#2563eb);color:#fff;border:none;border-radius:var(--radius);font-size:1rem;cursor:pointer">Enter</button>
+  </form>
+</div>
+<%- include('layout-end') %>
