@@ -56,7 +56,7 @@ module.exports = function createPostsLib(postsDir) {
         dateStr:    date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         tags:       Array.isArray(data.tags) ? data.tags : (data.tags ? [data.tags] : []),
         excerpt:    data.excerpt   || excerptFrom(content),
-        coverImage: data.image     || null,
+        coverImage: data.image     || firstImageFrom(content),
         draft:      data.draft     || false,
         raw:        content,
         _filepath:  filepath,
@@ -129,6 +129,11 @@ function slugify(str) {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function firstImageFrom(content) {
+  const m = content.match(/!\[.*?\]\(([^)]+)\)/);
+  return m ? m[1] : null;
 }
 
 function excerptFrom(content) {
