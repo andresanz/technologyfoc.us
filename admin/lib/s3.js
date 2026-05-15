@@ -87,13 +87,10 @@ async function presign(site, { filename, mimetype, folder = 'images', expires = 
 }
 
 function publicUrl(site, key) {
-  // key format: domain.com/images/filename.ext → strip domain prefix
-  // nginx on site.url proxies /images/ → S3
+  // key format: images/filename.ext — nginx proxies /images/ → S3
   const cdnBase = site.cdnUrl || site.url;
   if (cdnBase) {
-    const parts    = key.split('/');
-    const filePath = parts.slice(1).join('/');
-    return cdnBase.replace(/\/$/, '') + '/' + filePath;
+    return cdnBase.replace(/\/$/, '') + '/' + key;
   }
   return `https://${site.s3Bucket}.s3.${site.awsRegion}.amazonaws.com/${key}`;
 }
