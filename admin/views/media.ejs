@@ -78,6 +78,7 @@
 .attr-label { color:var(--muted); font-size:.75rem; font-weight:600; margin-right:.2rem; }
 .attr-chip { background:var(--surface,#fff); border:1px solid var(--border); border-radius:3px; padding:.1rem .4rem; font-size:.75rem; cursor:default; }
 .attr-chip code { background:none; border:none; padding:0; font-size:.75rem; }
+.media-thumb img { cursor: zoom-in; }
 </style>
 
 <!-- Media grid -->
@@ -110,6 +111,10 @@
 <% } %>
 
 <div id="toast" class="toast" style="display:none"></div>
+
+<div id="media-lb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out">
+  <img id="media-lb-img" src="" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.6)">
+</div>
 
 <script>
 // ── Upload ──────────────────────────────────────────────────────────────────
@@ -255,6 +260,17 @@ document.getElementById('bustCacheBtn').addEventListener('click', () => {
   });
   toast('Cache busted — images reloading');
 });
+
+// ── Lightbox ─────────────────────────────────────────────────────────────────
+const lb    = document.getElementById('media-lb');
+const lbImg = document.getElementById('media-lb-img');
+document.addEventListener('click', e => {
+  if (!e.target.matches('.media-thumb img')) return;
+  lbImg.src = e.target.src.split('?')[0];
+  lb.style.display = 'flex';
+});
+lb.addEventListener('click', () => { lb.style.display = 'none'; lbImg.src = ''; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { lb.style.display = 'none'; lbImg.src = ''; } });
 
 // ── Toast ────────────────────────────────────────────────────────────────────
 function toast(msg, err) {
