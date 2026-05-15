@@ -8,7 +8,7 @@ const Database        = require('better-sqlite3');
 const router          = express.Router();
 
 const DATA_FILE = path.join(__dirname, '..', 'data', 'redirects.json');
-const DB_PATH   = path.join(__dirname, '..', 'data', 'redirects.db');
+const DB_PATH   = process.env.REDIRECTS_DB || path.join(__dirname, '..', 'data', 'redirects.db');
 
 function getDb() {
   if (!fs.existsSync(DB_PATH)) return null;
