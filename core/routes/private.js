@@ -59,5 +59,10 @@ module.exports = function createPrivateRouter(postsLib, pagesLib) {
     res.redirect('/private');
   });
 
+  // GET /private/:slug — legacy redirect (must be last)
+  router.get('/:slug', (req, res) => {
+    res.redirect('/private/posts/' + req.params.slug);
+  });
+
   return router;
 };
