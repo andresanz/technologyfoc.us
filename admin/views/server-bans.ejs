@@ -200,13 +200,11 @@ function countryToFlag(cc) {
 
 async function loadFlags() {
   const els = document.querySelectorAll('.ip-flag[data-ip]');
-  const ips = [...new Set([...els].map(e => e.dataset.ip))].slice(0, 30);
+  const ips = [...new Set([...els].map(e => e.dataset.ip))].slice(0, 50);
   if (!ips.length) return;
   try {
-    const results = await Promise.all(
-      ips.map(ip => fetch(`https://ipapi.co/${ip}/country/`).then(r => r.text()).catch(() => ''))
-    );
-    const map = Object.fromEntries(ips.map((ip, i) => [ip, results[i].trim()]));
+    const data = await fetch('/server/bans/geoip?ips=' + ips.join(',')).then(r => r.json());
+    const map  = Object.fromEntries(data.map(r => [r.query, r.countryCode]));
     document.querySelectorAll('.ip-flag[data-ip]').forEach(el => {
       const flag = countryToFlag(map[el.dataset.ip]);
       if (flag) el.textContent = flag + ' ';

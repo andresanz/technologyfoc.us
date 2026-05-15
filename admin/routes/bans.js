@@ -2,6 +2,8 @@
 
 const express    = require('express');
 const { execSync } = require('child_process');
+const https      = require('https');
+const http       = require('http');
 const fs         = require('fs');
 const router     = express.Router();
 
@@ -85,6 +87,29 @@ router.post('/ban', (req, res) => {
   run(`sudo fail2ban-client set ${safe_jail} banip ${ip}`);
   req.flash('success', `Banned ${ip} in ${safe_jail}`);
   res.redirect('/server/bans');
+});
+
+// GET /server/bans/geoip?ips=1.2.3.4,5.6.7.8
+router.get('/geoip', (req, res) => {
+  const ips = (req.query.ips || '').split(',').filter(ip => /^[\d.:a-fA-F]+$/.test(ip)).slice(0, 50);
+  if (!ips.length) return res.json([]);
+  const body = JSON.stringify(ips.map(q => ({ query: q, fields: 'query,countryCode' })));
+  const options = {
+    hostname: 'ip-api.com',
+    path:     '/batch?fields=query,countryCode',
+    method:   'POST',
+    headers:  { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+  };
+  const req2 = http.request(options, r => {
+    let data = '';
+    r.on('data', c => data += c);
+    r.on('end', () => {
+      try { res.json(JSON.parse(data)); } catch { res.json([]); }
+    });
+  });
+  req2.on('error', () => res.json([]));
+  req2.write(body);
+  req2.end();
 });
 
 module.exports = router;
