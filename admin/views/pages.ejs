@@ -4,12 +4,12 @@
 <%- include('partials/head') %>
 <div class="page-header">
   <div>
-    <a href="/sites/<%= site.domain %>" class="back-link">← <%= site.title %></a>
+    <a href="/" class="back-link">← Dashboard</a>
     <h1>Pages <span class="muted">— <%= site.title %></span></h1>
   </div>
   <div class="header-actions">
-    <a href="/posts/<%= site.domain %>" class="btn">Posts</a>
-    <a href="/pages/<%= site.domain %>/new" class="btn btn-primary">New page</a>
+    <a href="/posts" class="btn">Posts</a>
+    <a href="/pages/new" class="btn btn-primary">New page</a>
   </div>
 </div>
 <%- include('partials/flash') %>
@@ -44,9 +44,9 @@
           </td>
           <td>
             <div class="row-actions">
-              <a href="/pages/<%= site.domain %>/edit/<%= p.filename %>" class="btn btn-sm">Edit</a>
+              <a href="/pages/edit/<%= p.filename %>" class="btn btn-sm">Edit</a>
               <a href="<%= site.url %>/<%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
-              <form method="POST" action="/pages/<%= site.domain %>/delete/<%= p.filename %>"
+              <form method="POST" action="/pages/delete/<%= p.filename %>"
                     onsubmit="return confirm('Delete \'<%= p.title %>\'?')">
                 <button class="btn btn-sm btn-danger">Delete</button>
               </form>

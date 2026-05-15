@@ -1,15 +1,15 @@
 <%
   pageTitle = (isNew ? 'New page' : 'Edit: ' + page.title) + ' · ' + site.title;
   const action = isNew
-    ? '/pages/' + site.domain + '/new'
-    : '/pages/' + site.domain + '/edit/' + page.filename;
+    ? '/pages/new'
+    : '/pages/edit/' + page.filename;
 -%>
 <%- include('partials/head') %>
 <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
 
 <div class="page-header">
   <div>
-    <a href="/pages/<%= site.domain %>" class="back-link">← Pages</a>
+    <a href="/pages" class="back-link">← Pages</a>
     <h1><%= isNew ? 'New page' : 'Edit page' %> <span class="muted">— <%= site.title %></span></h1>
   </div>
   <div class="header-actions">
@@ -196,7 +196,7 @@ function slugify(s) {
 async function uploadFile(file) {
   const fd = new FormData();
   fd.append('images', file);
-  const r = await fetch('/media/<%= site.domain %>/upload', { method:'POST', body: fd });
+  const r = await fetch('/media/upload', { method:'POST', body: fd });
   if (!r.ok) throw new Error(await r.text());
   const data = await r.json();
   return data.files[0].url;

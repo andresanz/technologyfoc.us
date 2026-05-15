@@ -2,25 +2,23 @@
 
 const express  = require('express');
 const fs       = require('fs');
-const sitesLib = require('../lib/sites');
 const postsLib = require('../lib/posts'); // pages use same read/write helpers
 const gitLib   = require('../lib/git');
+const sitesLib = require('../lib/sites');
 const router   = express.Router();
 
-// GET /pages/:domain — list pages
-router.get('/:domain', (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// GET /pages — list pages
+router.get('/', (req, res) => {
+  const site = req.site;
 
   if (!fs.existsSync(site.pagesDir)) fs.mkdirSync(site.pagesDir, { recursive: true });
   const pages = postsLib.list(site.pagesDir);
   res.render('pages', { site, pages, flash: req.flash() });
 });
 
-// GET /pages/:domain/new
-router.get('/:domain/new', (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// GET /pages/new
+router.get('/new', (req, res) => {
+  const site = req.site;
 
   res.render('page-edit', {
     site,
@@ -30,10 +28,9 @@ router.get('/:domain/new', (req, res) => {
   });
 });
 
-// POST /pages/:domain/new
-router.post('/:domain/new', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// POST /pages/new
+router.post('/new', async (req, res) => {
+  const site = req.site;
 
   if (!fs.existsSync(site.pagesDir)) fs.mkdirSync(site.pagesDir, { recursive: true });
 
@@ -52,17 +49,16 @@ router.post('/:domain/new', async (req, res) => {
     await sitesLib.bustCache(site).catch(() => {});
     gitLib.autoCommit(site, `Create page: ${title}`);
     req.flash('success', `Page "${title}" created`);
-    res.redirect(`/pages/${req.params.domain}`);
+    res.redirect('/pages');
   } catch (e) {
     req.flash('error', e.message);
-    res.redirect(`/pages/${req.params.domain}/new`);
+    res.redirect('/pages/new');
   }
 });
 
-// GET /pages/:domain/edit/:filename
-router.get('/:domain/edit/:filename', (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// GET /pages/edit/:filename
+router.get('/edit/:filename', (req, res) => {
+  const site = req.site;
 
   const page = postsLib.read(site.pagesDir, req.params.filename);
   if (!page) return res.status(404).render('error', { code: 404, message: 'Page not found' });
@@ -70,10 +66,9 @@ router.get('/:domain/edit/:filename', (req, res) => {
   res.render('page-edit', { site, page, isNew: false, flash: req.flash() });
 });
 
-// POST /pages/:domain/edit/:filename
-router.post('/:domain/edit/:filename', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// POST /pages/edit/:filename
+router.post('/edit/:filename', async (req, res) => {
+  const site = req.site;
 
   const { title, slug, order, nav, draft, body } = req.body;
 
@@ -88,17 +83,16 @@ router.post('/:domain/edit/:filename', async (req, res) => {
     await sitesLib.bustCache(site).catch(() => {});
     gitLib.autoCommit(site, `Save page: ${title}`);
     req.flash('success', 'Page saved');
-    res.redirect(`/pages/${req.params.domain}/edit/${req.params.filename}`);
+    res.redirect(`/pages/edit/${req.params.filename}`);
   } catch (e) {
     req.flash('error', e.message);
-    res.redirect(`/pages/${req.params.domain}/edit/${req.params.filename}`);
+    res.redirect(`/pages/edit/${req.params.filename}`);
   }
 });
 
-// POST /pages/:domain/delete/:filename
-router.post('/:domain/delete/:filename', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// POST /pages/delete/:filename
+router.post('/delete/:filename', async (req, res) => {
+  const site = req.site;
 
   try {
     postsLib.remove(site.pagesDir, req.params.filename);
@@ -108,7 +102,7 @@ router.post('/:domain/delete/:filename', async (req, res) => {
   } catch (e) {
     req.flash('error', e.message);
   }
-  res.redirect(`/pages/${req.params.domain}`);
+  res.redirect('/pages');
 });
 
 module.exports = router;
