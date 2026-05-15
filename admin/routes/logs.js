@@ -79,8 +79,7 @@ router.get('/fetch', (req, res) => {
   } else if (source === 'sysfile') {
     const allowed = ['syslog', 'auth.log', 'ufw.log', 'mail.log', 'kern.log',
                      'fail2ban.log', 'letsencrypt/letsencrypt.log',
-                     'unattended-upgrades/unattended-upgrades.log',
-                     'blog-monitor.log', 'blog-backup.log'];
+                     'unattended-upgrades/unattended-upgrades.log'];
     const file = req.query.file || '';
     if (!allowed.includes(file)) return res.json({ content: 'File not allowed' });
     const full = `/var/log/${file}`;
