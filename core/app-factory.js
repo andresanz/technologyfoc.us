@@ -1,6 +1,7 @@
 'use strict';
 
-const express   = require('express');
+const express      = require('express');
+const cookieParser = require('cookie-parser');
 const path      = require('path');
 const fs        = require('fs');
 
@@ -43,6 +44,7 @@ function createApp(siteDir) {
   app.use(express.static(path.join(CORE_DIR, 'public')));
 
   // ── Request parsing ───────────────────────────────────────────────────────
+  app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   const _domain = (process.env.SITE_URL || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, '');
