@@ -1,6 +1,6 @@
 <%
   locals.pageTitle = 'Private posts';
-  locals.canonical = '/private';
+  locals.canonical = '/private/posts';
 -%>
 <%- include('layout') %>
 
@@ -16,7 +16,7 @@
     <% posts.forEach(function(post) { %>
       <article class="post-card">
         <% if (post.coverImage) { %>
-          <a href="/private/post/<%= post.slug %>" class="post-cover">
+          <a href="/private/posts/<%= post.slug %>" class="post-cover">
             <img src="<%= post.coverImage %>" alt="<%= post.title %>">
           </a>
         <% } %>
@@ -24,10 +24,10 @@
           <div class="post-meta">
             <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
           </div>
-          <h2><a href="/private/post/<%= post.slug %>"><%= post.title %></a></h2>
+          <h2><a href="/private/posts/<%= post.slug %>"><%= post.title %></a></h2>
           <% var ex = post.excerpt || ''; var truncated = ex.length > 140 ? ex.slice(0, 137) + '…' : ex; %>
           <% if (truncated) { %><p class="excerpt"><%= truncated %></p><% } %>
-          <a href="/private/post/<%= post.slug %>" class="read-more">Read more →</a>
+          <a href="/private/posts/<%= post.slug %>" class="read-more">Read more →</a>
         </div>
       </article>
     <% }) %>

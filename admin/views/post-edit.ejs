@@ -15,7 +15,7 @@
   </div>
   <div class="header-actions">
     <% if (!isNew) { %>
-      <a href="<%= site.url %><%= isPrivate ? '/private/' : '/post/' %><%= post.slug %>" target="_blank" class="btn">View live ↗</a>
+      <a href="<%= site.url %><%= isPrivate ? '/private/posts/' : '/post/' %><%= post.slug %>" target="_blank" class="btn">View live ↗</a>
     <% } %>
     <button form="post-form" type="submit" class="btn btn-primary">Save post</button>
   </div>
