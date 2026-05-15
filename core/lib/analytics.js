@@ -14,7 +14,13 @@ function getDb(domain) {
   if (dbs[domain]) return dbs[domain];
   const dir = `/var/www/${domain}`;
   if (!fs.existsSync(dir)) return null;
-  const db = new Database(path.join(dir, 'analytics.db'));
+  let db;
+  try {
+    db = new Database(path.join(dir, 'analytics.db'));
+  } catch (e) {
+    console.error(`[analytics] cannot open DB for ${domain}:`, e.message);
+    return null;
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS pageviews (
       id       INTEGER PRIMARY KEY AUTOINCREMENT,
