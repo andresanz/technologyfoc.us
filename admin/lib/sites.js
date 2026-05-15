@@ -32,9 +32,10 @@ function getSite(domain) {
 
   const cfg = dotenv.parse(fs.readFileSync(envFile));
 
-  const postsDir        = path.join(siteDir, 'content', 'posts');
-  const privatePostsDir = path.join(siteDir, 'content', 'private-posts');
-  const pagesDir        = path.join(siteDir, 'content', 'pages');
+  const postsDir         = path.join(siteDir, 'content', 'posts');
+  const privatePostsDir  = path.join(siteDir, 'content', 'private-posts');
+  const pagesDir         = path.join(siteDir, 'content', 'pages');
+  const privatePagesDir  = path.join(siteDir, 'content', 'private-pages');
   let postCount  = 0;
   if (fs.existsSync(postsDir)) {
     postCount = fs.readdirSync(postsDir).filter(f => f.endsWith('.md') && !f.startsWith('.')).length;
@@ -54,6 +55,7 @@ function getSite(domain) {
     postsDir,
     privatePostsDir,
     pagesDir,
+    privatePagesDir,
     url:         cfg.SITE_URL         || `https://${domain}`,
     title:       cfg.SITE_TITLE       || domain,
     description: cfg.SITE_DESCRIPTION || '',

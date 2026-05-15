@@ -8,6 +8,7 @@
   </div>
   <div class="header-actions">
     <a href="/pages/new" class="btn btn-primary">New page</a>
+    <a href="/pages/new?dir=private-pages" class="btn">New private page</a>
   </div>
 </div>
 <%- include('partials/flash') %>
@@ -34,10 +35,10 @@
     <tbody>
       <% pages.forEach(function(p) { %>
         <tr>
-          <td><strong><%= p.title %></strong></td>
-          <td><code>/<%= p.slug %></code></td>
+          <td><strong><%= p.title %></strong><% if (p.isPrivate) { %> <span class="badge-private">Private</span><% } %></td>
+          <td><code><%= p.isPrivate ? '/private/pages/' : '/' %><%= p.slug %></code></td>
           <td><%= p.order || '—' %></td>
-          <td><%= p.nav !== false ? '✓' : '' %></td>
+          <td><%= (!p.isPrivate && p.nav !== false) ? '✓' : '' %></td>
           <td>
             <% if (p.draft) { %>
               <span class="badge-draft">Draft</span>
@@ -47,9 +48,9 @@
           </td>
           <td>
             <div class="row-actions">
-              <a href="/pages/edit/<%= p.filename %>" class="btn btn-sm">Edit</a>
-              <a href="<%= site.url %>/<%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
-              <form method="POST" action="/pages/delete/<%= p.filename %>"
+              <a href="/pages/edit/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>" class="btn btn-sm">Edit</a>
+              <a href="<%= site.url %><%= p.isPrivate ? '/private/pages/' : '/' %><%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
+              <form method="POST" action="/pages/delete/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>"
                     onsubmit="return confirm('Delete \'<%= p.title %>\'?')">
                 <button class="btn btn-sm btn-danger">Delete</button>
               </form>

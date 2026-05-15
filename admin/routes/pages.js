@@ -7,14 +7,16 @@ const gitLib   = require('../lib/git');
 const sitesLib = require('../lib/sites');
 const router   = express.Router();
 
-// GET /pages — list pages
+// GET /pages — list pages (public + private)
 router.get('/', (req, res) => {
   const site = req.site;
 
   if (!fs.existsSync(site.pagesDir)) fs.mkdirSync(site.pagesDir, { recursive: true });
-  let pages = postsLib.list(site.pagesDir);
+  const publicPages  = postsLib.list(site.pagesDir).map(p => ({ ...p, isPrivate: false }));
+  const privatePages = site.privatePagesDir ? postsLib.list(site.privatePagesDir).map(p => ({ ...p, isPrivate: true })) : [];
 
   const status = req.query.status || 'published';
+  let pages = [...publicPages, ...privatePages];
   if (status === 'drafts') {
     pages = pages.filter(p => p.draft);
   } else {
@@ -27,11 +29,12 @@ router.get('/', (req, res) => {
 // GET /pages/new
 router.get('/new', (req, res) => {
   const site = req.site;
-
+  const isPrivate = req.query.dir === 'private-pages';
   res.render('page-edit', {
     site,
     page:  { filename: '', slug: '', title: '', order: '', nav: true, draft: false, body: '' },
     isNew: true,
+    isPrivate,
     flash: req.flash(),
   });
 });
@@ -39,15 +42,18 @@ router.get('/new', (req, res) => {
 // POST /pages/new
 router.post('/new', async (req, res) => {
   const site = req.site;
+  const isPrivate = req.query.dir === 'private-pages';
+  const dir = isPrivate ? site.privatePagesDir : site.pagesDir;
+  const dirParam = isPrivate ? '?dir=private-pages' : '';
 
-  if (!fs.existsSync(site.pagesDir)) fs.mkdirSync(site.pagesDir, { recursive: true });
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const { title, slug, order, nav, draft, body } = req.body;
   const finalSlug = slug || postsLib.slugify(title);
   const filename  = `${finalSlug}.md`;
 
   try {
-    postsLib.write(site.pagesDir, filename, {
+    postsLib.write(dir, filename, {
       title, slug: finalSlug,
       order: order ? parseInt(order, 10) : undefined,
       nav:   nav !== '0',
@@ -55,33 +61,38 @@ router.post('/new', async (req, res) => {
       body,
     });
     await sitesLib.bustCache(site).catch(() => {});
-    gitLib.autoCommit(site, `Create page: ${title}`);
+    gitLib.autoCommit(site, `Create ${isPrivate ? 'private ' : ''}page: ${title}`);
     req.flash('success', `Page "${title}" created`);
     res.redirect('/pages');
   } catch (e) {
     req.flash('error', e.message);
-    res.redirect('/pages/new');
+    res.redirect('/pages/new' + dirParam);
   }
 });
 
 // GET /pages/edit/:filename
 router.get('/edit/:filename', (req, res) => {
   const site = req.site;
+  const isPrivate = req.query.dir === 'private-pages';
+  const dir = isPrivate ? site.privatePagesDir : site.pagesDir;
 
-  const page = postsLib.read(site.pagesDir, req.params.filename);
+  const page = postsLib.read(dir, req.params.filename);
   if (!page) return res.status(404).render('error', { code: 404, message: 'Page not found' });
 
-  res.render('page-edit', { site, page, isNew: false, flash: req.flash() });
+  res.render('page-edit', { site, page, isNew: false, isPrivate, flash: req.flash() });
 });
 
 // POST /pages/edit/:filename
 router.post('/edit/:filename', async (req, res) => {
   const site = req.site;
+  const isPrivate = req.query.dir === 'private-pages';
+  const dir = isPrivate ? site.privatePagesDir : site.pagesDir;
+  const dirParam = isPrivate ? '?dir=private-pages' : '';
 
   const { title, slug, order, nav, draft, body } = req.body;
 
   try {
-    postsLib.write(site.pagesDir, req.params.filename, {
+    postsLib.write(dir, req.params.filename, {
       title, slug,
       order: order ? parseInt(order, 10) : undefined,
       nav:   nav !== '0',
@@ -91,19 +102,20 @@ router.post('/edit/:filename', async (req, res) => {
     await sitesLib.bustCache(site).catch(() => {});
     gitLib.autoCommit(site, `Save page: ${title}`);
     req.flash('success', 'Page saved');
-    res.redirect(`/pages/edit/${req.params.filename}`);
+    res.redirect(`/pages/edit/${req.params.filename}${dirParam}`);
   } catch (e) {
     req.flash('error', e.message);
-    res.redirect(`/pages/edit/${req.params.filename}`);
+    res.redirect(`/pages/edit/${req.params.filename}${dirParam}`);
   }
 });
 
 // POST /pages/delete/:filename
 router.post('/delete/:filename', async (req, res) => {
   const site = req.site;
+  const dir = req.query.dir === 'private-pages' ? site.privatePagesDir : site.pagesDir;
 
   try {
-    postsLib.remove(site.pagesDir, req.params.filename);
+    postsLib.remove(dir, req.params.filename);
     await sitesLib.bustCache(site).catch(() => {});
     gitLib.autoCommit(site, `Delete page: ${req.params.filename}`);
     req.flash('success', 'Page deleted');
