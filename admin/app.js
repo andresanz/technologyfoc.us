@@ -105,9 +105,6 @@ app.post('/quickref', requireAuth, express.text(), (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Dashboard redirect
-app.get('/dashboard', requireAuth, (_req, res) => res.redirect('/server'));
-
 // ── 404 / error ───────────────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).render('error', { code: 404, message: 'Not found' }));
 
