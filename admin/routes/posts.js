@@ -2,7 +2,6 @@
 
 const express  = require('express');
 const path     = require('path');
-const sitesLib = require('../lib/sites');
 const fs       = require('fs');
 const TEMPLATES_FILE = path.join(__dirname, '..', 'data', 'post-templates.json');
 function loadTemplates() {
@@ -18,10 +17,9 @@ function resolveDir(site, req) {
   return req.query.dir === 'private-posts' ? site.privatePostsDir : site.postsDir;
 }
 
-// GET /posts/:domain — list all posts (public + private)
-router.get('/:domain', (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// GET /posts — list all posts (public + private)
+router.get('/', (req, res) => {
+  const site = req.site;
 
   const publicPosts  = postsLib.list(site.postsDir).map(p => ({ ...p, isPrivate: false }));
   const privatePosts = postsLib.list(site.privatePostsDir).map(p => ({ ...p, isPrivate: true }));
@@ -33,10 +31,9 @@ router.get('/:domain', (req, res) => {
   res.render('posts', { site, posts, flash: req.flash() });
 });
 
-// GET /posts/:domain/new — new post form
-router.get('/:domain/new', (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// GET /posts/new — new post form
+router.get('/new', (req, res) => {
+  const site = req.site;
 
   const today = new Date().toISOString().split('T')[0];
   res.render('post-edit', {
@@ -50,10 +47,9 @@ router.get('/:domain/new', (req, res) => {
   });
 });
 
-// POST /posts/:domain/new — create post
-router.post('/:domain/new', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// POST /posts/new — create post
+router.post('/new', async (req, res) => {
+  const site = req.site;
 
   const { title, slug, date, tags, excerpt, image, draft, body, visibility } = req.body;
   const finalSlug = slug || postsLib.slugify(title);
@@ -62,20 +58,19 @@ router.post('/:domain/new', async (req, res) => {
 
   try {
     postsLib.write(dir, filename, { title, slug: finalSlug, date, tags, excerpt, image, draft: !!draft, body });
-    await sitesLib.bustCache(site).catch(() => {});
+    await site.bustCache().catch(() => {});
     gitLib.autoCommit(site, `Create ${visibility === 'private' ? 'private ' : ''}post: ${title}`);
     req.flash('success', `Post "${title}" created`);
-    res.redirect(`/posts/${req.params.domain}`);
+    res.redirect('/posts');
   } catch (e) {
     req.flash('error', e.message);
-    res.redirect(`/posts/${req.params.domain}/new`);
+    res.redirect('/posts/new');
   }
 });
 
-// GET /posts/:domain/edit/:filename — edit post (?dir=private-posts for private)
-router.get('/:domain/edit/:filename', (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// GET /posts/edit/:filename — edit post (?dir=private-posts for private)
+router.get('/edit/:filename', (req, res) => {
+  const site = req.site;
 
   const dir  = resolveDir(site, req);
   const post = postsLib.read(dir, req.params.filename);
@@ -92,10 +87,9 @@ router.get('/:domain/edit/:filename', (req, res) => {
   });
 });
 
-// POST /posts/:domain/edit/:filename — save post
-router.post('/:domain/edit/:filename', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// POST /posts/edit/:filename — save post
+router.post('/edit/:filename', async (req, res) => {
+  const site = req.site;
 
   const { title, slug, date, tags, excerpt, image, draft, body, visibility, originalVisibility } = req.body;
   const currentDir  = originalVisibility === 'private' ? site.privatePostsDir : site.postsDir;
@@ -108,32 +102,31 @@ router.post('/:domain/edit/:filename', async (req, res) => {
       postsLib.remove(currentDir, req.params.filename);
     }
     postsLib.write(targetDir, req.params.filename, { title, slug, date, tags, excerpt, image, draft: !!draft, body });
-    await sitesLib.bustCache(site).catch(() => {});
+    await site.bustCache().catch(() => {});
     gitLib.autoCommit(site, `Save post: ${title}`);
     req.flash('success', 'Post saved');
-    res.redirect(`/posts/${req.params.domain}/edit/${req.params.filename}${dirParam}`);
+    res.redirect(`/posts/edit/${req.params.filename}${dirParam}`);
   } catch (e) {
     req.flash('error', e.message);
-    res.redirect(`/posts/${req.params.domain}/edit/${req.params.filename}${dirParam}`);
+    res.redirect(`/posts/edit/${req.params.filename}${dirParam}`);
   }
 });
 
-// POST /posts/:domain/delete/:filename — delete post
-router.post('/:domain/delete/:filename', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// POST /posts/delete/:filename — delete post
+router.post('/delete/:filename', async (req, res) => {
+  const site = req.site;
 
   const dir = req.body.dir === 'private-posts' ? site.privatePostsDir : site.postsDir;
 
   try {
     postsLib.remove(dir, req.params.filename);
-    await sitesLib.bustCache(site).catch(() => {});
+    await site.bustCache().catch(() => {});
     gitLib.autoCommit(site, `Delete post: ${req.params.filename}`);
     req.flash('success', 'Post deleted');
   } catch (e) {
     req.flash('error', e.message);
   }
-  res.redirect(`/posts/${req.params.domain}`);
+  res.redirect('/posts');
 });
 
 module.exports = router;
