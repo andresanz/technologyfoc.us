@@ -63,12 +63,14 @@ function createApp(siteDir) {
   });
 
   // ── Posts + Pages libraries ───────────────────────────────────────────────
-  const postsDir        = path.join(siteDir, 'content', 'posts');
-  const privatePostsDir = path.join(siteDir, 'content', 'private-posts');
-  const pagesDir        = path.join(siteDir, 'content', 'pages');
-  const postsLib        = require('./lib/posts')(postsDir);
-  const privatePostsLib = require('./lib/posts')(privatePostsDir);
-  const pagesLib        = require('./lib/pages')(pagesDir);
+  const postsDir         = path.join(siteDir, 'content', 'posts');
+  const privatePostsDir  = path.join(siteDir, 'content', 'private-posts');
+  const pagesDir         = path.join(siteDir, 'content', 'pages');
+  const privatePagesDir  = path.join(siteDir, 'content', 'private-pages');
+  const postsLib         = require('./lib/posts')(postsDir);
+  const privatePostsLib  = require('./lib/posts')(privatePostsDir);
+  const pagesLib         = require('./lib/pages')(pagesDir);
+  const privatePagesLib  = require('./lib/pages')(privatePagesDir);
 
   const { processShortcodes } = require('./lib/shortcodes');
   const PER_PAGE = parseInt(process.env.PER_PAGE) || 5;
@@ -128,7 +130,7 @@ function createApp(siteDir) {
   if (fs.existsSync(siteRoutesFile)) app.use('/', require(siteRoutesFile));
 
   app.use('/',        require('./routes/posts')(postsLib, pagesLib));
-  app.use('/private', require('./routes/private')(privatePostsLib));
+  app.use('/private', require('./routes/private')(privatePostsLib, privatePagesLib));
   app.use('/upload',  require('./routes/upload')());
   app.use('/feed',    require('./routes/feed')(postsLib));
 

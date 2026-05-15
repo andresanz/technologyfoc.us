@@ -5,7 +5,7 @@ const express = require('express');
 const COOKIE  = '_priv';
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-module.exports = function createPrivateRouter(postsLib) {
+module.exports = function createPrivateRouter(postsLib, pagesLib) {
   const router = express.Router();
 
   function authed(req) {
@@ -43,6 +43,14 @@ module.exports = function createPrivateRouter(postsLib) {
     const post = postsLib.getBySlug(req.params.slug);
     if (!post) return res.status(404).render('error', { code: 404, message: 'Post not found', site: req.app.locals.siteConfig() });
     res.render('private-post', { post, site: req.app.locals.siteConfig() });
+  });
+
+  // GET /private/pages/:slug
+  router.get('/pages/:slug', (req, res) => {
+    if (!authed(req)) return res.redirect('/private');
+    const page = pagesLib.getBySlug(req.params.slug);
+    if (!page) return res.status(404).render('error', { code: 404, message: 'Page not found', site: req.app.locals.siteConfig() });
+    res.render('private-page', { page, site: req.app.locals.siteConfig() });
   });
 
   // GET /private/logout
