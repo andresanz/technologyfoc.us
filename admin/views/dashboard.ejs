@@ -3,187 +3,57 @@
 -%>
 <%- include('partials/head') %>
 <div class="page-header">
-  <h1>Sites</h1>
-  <a href="/sites/new/site" class="btn btn-primary">+ New site</a>
+  <h1>Dashboard</h1>
 </div>
 <%- include('partials/flash') %>
 
-<div class="dash-toolbar">
-  <div class="dash-filters" id="dashFilters">
-    <button class="dash-filter active" data-filter="all">All <span class="dash-filter-count" id="cnt-all"></span></button>
-    <button class="dash-filter" data-filter="active">Active <span class="dash-filter-count" id="cnt-active"></span></button>
-    <button class="dash-filter" data-filter="inactive">Inactive <span class="dash-filter-count" id="cnt-inactive"></span></button>
-    <button class="dash-filter" data-filter="failed">Failed <span class="dash-filter-count" id="cnt-failed"></span></button>
-  </div>
-  <div class="dash-group-wrap">
-    <label class="dash-group-label" for="dashGroup">Group by</label>
-    <select id="dashGroup" class="dash-group-select">
-      <option value="none">None</option>
-      <option value="status">Status</option>
-      <option value="domain">TLD</option>
-    </select>
-  </div>
-</div>
+<div class="two-col">
+  <div>
+    <section class="card">
+      <h2>andresanz.com <span class="status-badge status-<%= typeof site !== 'undefined' ? site.status : 'unknown' %>"><%= typeof site !== 'undefined' ? site.status : 'unknown' %></span></h2>
+      <% if (typeof site !== 'undefined' && site) { %>
+      <dl class="config-list">
+        <dt>URL</dt>       <dd><a href="<%= site.url %>" target="_blank"><%= site.url %></a></dd>
+        <dt>Posts</dt>     <dd><%= site.postCount %></dd>
+        <dt>Pages</dt>     <dd><%= site.pageCount %></dd>
+        <dt>Port</dt>      <dd><%= site.port %></dd>
+      </dl>
+      <% } %>
+    </section>
 
-<div id="siteGridWrap">
-  <div class="site-grid" id="siteGrid">
-    <% sites.forEach(function(site) {
-         const tld = site.domain.split('.').slice(-1)[0];
-    %>
-      <div class="site-card"
-           data-status="<%= site.status %>"
-           data-tld="<%= tld %>"
-           data-domain="<%= site.domain %>">
-        <div class="site-card-top">
-          <div>
-            <div class="site-title"><%= site.title %></div>
-            <div class="site-domain"><a href="<%= site.url %>" target="_blank"><%= site.domain %></a></div>
-          </div>
-          <span class="status-badge status-<%= site.status %>"><%= site.status %></span>
-        </div>
-        <div class="site-stats">
-          <span><strong><%= site.postCount %></strong> posts</span>
-          <span><strong><%= site.pageCount %></strong> pages</span>
-          <span>:<%= site.port %></span>
-        </div>
-        <div class="site-actions">
-          <a href="/posts/<%= site.domain %>/new" class="btn btn-sm btn-primary">+ New post</a>
-          <a href="/analytics/<%= site.domain %>" class="btn btn-sm">Analytics</a>
-          <a href="/posts/<%= site.domain %>" class="btn btn-sm">Posts</a>
-          <a href="/pages/<%= site.domain %>" class="btn btn-sm">Pages</a>
-          <a href="/media/<%= site.domain %>" class="btn btn-sm">Media</a>
-          <a href="/sites/<%= site.domain %>/settings" class="btn btn-sm">Settings</a>
-          <a href="/sites/<%= site.domain %>" class="btn btn-sm">Site</a>
-        </div>
+    <section class="card">
+      <h2>Quick links</h2>
+      <div class="btn-row" style="flex-wrap:wrap;gap:.5rem">
+        <a href="/posts" class="btn btn-primary">Posts</a>
+        <a href="/pages" class="btn">Pages</a>
+        <a href="/media" class="btn">Media</a>
+        <a href="/redirects" class="btn">Redirects</a>
+        <a href="/server" class="btn">Server</a>
+        <a href="/logs" class="btn">Logs</a>
       </div>
-    <% }) %>
-
-    <% if (sites.length === 0) { %>
-      <p class="empty">No sites found. <a href="/sites/new/site">Create one →</a></p>
-    <% } %>
+    </section>
   </div>
-</div>
 
-<style>
-.dash-toolbar {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap;
-}
-.dash-filters { display: flex; gap: .35rem; flex-wrap: wrap; }
-.dash-filter {
-  padding: .3rem .75rem; border-radius: 6px; font-size: .78rem; font-weight: 500;
-  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
-  cursor: pointer; transition: all .15s;
-}
-.dash-filter:hover { color: var(--text); border-color: var(--accent); }
-.dash-filter.active { background: var(--accent,#2563eb); color: #fff; border-color: transparent; }
-.dash-filter-count { font-weight: 700; margin-left: .2rem; }
-.dash-group-wrap { display: flex; align-items: center; gap: .5rem; }
-.dash-group-label { font-size: .75rem; color: var(--muted); white-space: nowrap; }
-.dash-group-select {
-  padding: .3rem .6rem; border-radius: 6px; font-size: .78rem;
-  border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  cursor: pointer;
-}
-.dash-group-heading {
-  font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .07em; color: var(--muted);
-  padding: .4rem .1rem; margin: 1rem 0 .5rem;
-  border-bottom: 1px solid var(--border);
-  grid-column: 1 / -1;
-}
-.site-card[hidden] { display: none !important; }
-</style>
+  <section class="card">
+    <h2>Service</h2>
+    <div class="btn-row" style="margin-bottom:1rem">
+      <form method="POST" action="/sites/restart">
+        <button class="btn">Restart</button>
+      </form>
+      <button class="btn" id="bustBtn">Bust cache</button>
+    </div>
+    <a href="/sites" class="btn btn-sm">Site details →</a>
+  </section>
+</div>
 
 <script>
-(function() {
-  const cards   = [...document.querySelectorAll('.site-card')];
-  const grid    = document.getElementById('siteGrid');
-  const filters = document.querySelectorAll('.dash-filter');
-  const groupSel = document.getElementById('dashGroup');
-
-  let currentFilter = localStorage.getItem('dashFilter') || 'all';
-  let currentGroup  = localStorage.getItem('dashGroup')  || 'none';
-
-  // Count badges
-  function updateCounts() {
-    const visible = cards.filter(c => matchesFilter(c, currentFilter));
-    document.getElementById('cnt-all').textContent    = cards.length;
-    document.getElementById('cnt-active').textContent  = cards.filter(c => c.dataset.status === 'active').length;
-    document.getElementById('cnt-inactive').textContent = cards.filter(c => c.dataset.status === 'inactive').length;
-    document.getElementById('cnt-failed').textContent  = cards.filter(c => c.dataset.status === 'failed').length;
-  }
-
-  function matchesFilter(card, filter) {
-    if (filter === 'all') return true;
-    return card.dataset.status === filter;
-  }
-
-  function render() {
-    // Remove old group headings
-    grid.querySelectorAll('.dash-group-heading').forEach(h => h.remove());
-
-    // Show/hide cards
-    cards.forEach(c => { c.hidden = !matchesFilter(c, currentFilter); });
-
-    const visible = cards.filter(c => !c.hidden);
-
-    if (currentGroup === 'none' || visible.length === 0) {
-      // Put all visible cards back in natural order
-      visible.forEach(c => grid.appendChild(c));
-      return;
-    }
-
-    // Group
-    const keyFn = currentGroup === 'status'
-      ? c => c.dataset.status
-      : c => '.' + c.dataset.tld;
-
-    const groups = {};
-    visible.forEach(c => {
-      const k = keyFn(c);
-      (groups[k] = groups[k] || []).push(c);
-    });
-
-    const order = currentGroup === 'status'
-      ? ['active', 'inactive', 'failed', 'unknown']
-      : Object.keys(groups).sort();
-
-    order.forEach(key => {
-      if (!groups[key]) return;
-      const h = document.createElement('div');
-      h.className = 'dash-group-heading';
-      h.textContent = currentGroup === 'status'
-        ? key.charAt(0).toUpperCase() + key.slice(1)
-        : key;
-      grid.appendChild(h);
-      groups[key].forEach(c => grid.appendChild(c));
-    });
-  }
-
-  filters.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filters.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentFilter = btn.dataset.filter;
-      localStorage.setItem('dashFilter', currentFilter);
-      render();
-    });
-  });
-
-  groupSel.addEventListener('change', () => {
-    currentGroup = groupSel.value;
-    localStorage.setItem('dashGroup', currentGroup);
-    render();
-  });
-
-  // Restore UI state
-  filters.forEach(b => b.classList.toggle('active', b.dataset.filter === currentFilter));
-  groupSel.value = currentGroup;
-
-  updateCounts();
-  render();
-})();
+document.getElementById('bustBtn').addEventListener('click', async function() {
+  this.disabled = true;
+  this.textContent = 'Busting…';
+  const r = await fetch('/sites/bust-cache', { method: 'POST' });
+  this.textContent = r.ok ? 'Cache cleared ✓' : 'Failed ✗';
+  setTimeout(() => { this.textContent = 'Bust cache'; this.disabled = false; }, 2000);
+});
 </script>
 
 <%- include('partials/foot') %>

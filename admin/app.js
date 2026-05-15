@@ -57,6 +57,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Single-site: attach the site object to every request
+const sitesLib = require('./lib/sites');
+const SITE_DOMAIN = process.env.SITE_DOMAIN || 'andresanz.com';
+app.use((req, res, next) => {
+  req.site = sitesLib.getSite(SITE_DOMAIN);
+  next();
+});
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/',       require('./routes/auth'));
 app.use('/sites',  requireAuth, require('./routes/sites'));

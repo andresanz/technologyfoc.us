@@ -1,22 +1,18 @@
 <%
-  pageTitle = site.title;
+  pageTitle = 'Site';
 -%>
 <%- include('partials/head') %>
 <div class="page-header">
   <div>
-    <a href="/sites" class="back-link">← Sites</a>
-    <h1><%= site.title %> <span class="status-badge status-<%= site.status %>"><%= site.status %></span></h1>
-    <a href="<%= site.url %>" target="_blank" class="muted-link"><%= site.domain %></a>
+    <h1>andresanz.com <span class="status-badge status-<%= site.status %>"><%= site.status %></span></h1>
+    <a href="<%= site.url %>" target="_blank" class="muted-link"><%= site.url %></a>
   </div>
   <div class="header-actions">
-    <a href="/posts/<%= site.domain %>" class="btn btn-primary">Posts</a>
-    <a href="/pages/<%= site.domain %>" class="btn">Pages</a>
-    <a href="/media/<%= site.domain %>" class="btn">Media</a>
-    <a href="/sites/<%= site.domain %>/settings" class="btn">Settings</a>
-    <a href="/sites/<%= site.domain %>/css" class="btn">CSS</a>
-    <a href="/sites/<%= site.domain %>/nav" class="btn">Nav</a>
-    <a href="/sites/<%= site.domain %>/history" class="btn">History</a>
-    <a href="<%= site.url %>/_admin/edit?on=1&back=/" target="_blank" class="btn">✏ Edit mode</a>
+    <a href="/posts" class="btn btn-primary">Posts</a>
+    <a href="/pages" class="btn">Pages</a>
+    <a href="/media" class="btn">Media</a>
+    <a href="/sites/css" class="btn">CSS</a>
+    <a href="/sites/history" class="btn">History</a>
   </div>
 </div>
 <%- include('partials/flash') %>
@@ -39,16 +35,10 @@
     <section class="card">
       <h2>Service <code><%= site.serviceName %></code></h2>
       <div class="btn-row">
-        <form method="POST" action="/sites/<%= site.domain %>/restart">
+        <form method="POST" action="/sites/restart">
           <button class="btn">Restart</button>
         </form>
-        <form method="POST" action="/sites/<%= site.domain %>/stop">
-          <button class="btn btn-danger">Stop</button>
-        </form>
-        <form method="POST" action="/sites/<%= site.domain %>/start">
-          <button class="btn">Start</button>
-        </form>
-        <button class="btn" id="bustBtn" data-domain="<%= site.domain %>">Bust cache</button>
+        <button class="btn" id="bustBtn">Bust cache</button>
       </div>
     </section>
 
@@ -71,11 +61,21 @@
       <% } else { %>
       <p class="hint" style="margin-bottom:.75rem">No certificate found.</p>
       <% } %>
-      <p class="hint" style="margin-bottom:.75rem">DNS must point to this server before issuing. Certbot will also configure www.<%= site.domain %>.</p>
-      <form method="POST" action="/sites/<%= site.domain %>/ssl"
-            onsubmit="return confirm('Issue Let\'s Encrypt cert for <%= site.domain %>? DNS must already point here.')">
-        <button class="btn btn-primary">Get SSL / Renew cert</button>
-      </form>
+
+      <!-- Recent git activity -->
+      <% if (typeof commits !== 'undefined' && commits && commits.length) { %>
+      <h2 style="margin-top:1.5rem">Recent commits</h2>
+      <ul style="font-size:.8rem;list-style:none;padding:0;margin:0">
+        <% commits.slice(0,5).forEach(function(c) { %>
+        <li style="padding:.3rem 0;border-bottom:1px solid var(--border)">
+          <code style="color:var(--muted);font-size:.72rem"><%= c.hash %></code>
+          <span style="margin-left:.5rem"><%= c.subject %></span>
+          <span style="float:right;color:var(--muted);font-size:.72rem"><%= c.date %></span>
+        </li>
+        <% }) %>
+      </ul>
+      <a href="/sites/history" class="btn btn-sm" style="margin-top:.75rem">Full history →</a>
+      <% } %>
     </section>
   </div>
 
@@ -95,7 +95,7 @@ document.querySelector('.reveal-btn').addEventListener('click', function() {
 document.getElementById('bustBtn').addEventListener('click', async function() {
   this.disabled = true;
   this.textContent = 'Busting…';
-  const r = await fetch('/sites/<%= site.domain %>/bust', { method: 'POST' });
+  const r = await fetch('/sites/bust-cache', { method: 'POST' });
   this.textContent = r.ok ? 'Cache cleared ✓' : 'Failed ✗';
   setTimeout(() => { this.textContent = 'Bust cache'; this.disabled = false; }, 2000);
 });
