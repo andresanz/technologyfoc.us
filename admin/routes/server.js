@@ -132,9 +132,10 @@ function getNodeMem() {
       const limit = limitMatch ? limitMatch[1]+'MB' : 'none';
       // identify by script path
       let name = 'node';
-      if (args.includes('admin/app.js'))          name = 'andresanz-admin';
+      if (args.includes('admin/app.js'))           name = 'andresanz-admin';
       else if (args.includes('webhook-deploy'))    name = 'andresanz-deploy';
-      else if (args.includes('app.js'))            name = 'andresanz';
+      else if (args.includes('redirect-service'))  name = 'redirect-service';
+      else if (args.includes('andresanz.com/app')) name = 'andresanz';
       return { name, limit, rss: Math.round(rss/1024)+'MB' };
     }).sort((a,b)=>a.name.localeCompare(b.name));
   } catch { return []; }
