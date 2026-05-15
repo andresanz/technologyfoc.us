@@ -5,5 +5,5 @@ tags:
   - home
   - bluffton
 ---
-![This morning’s view](/img/1777381628746-08045fee08bd.jpeg)
+![This morning’s view](/images/1777381628746-08045fee08bd.jpeg)
 

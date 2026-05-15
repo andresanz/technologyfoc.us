@@ -5,5 +5,5 @@ tags:
   - alligator
   - bluffton
 ---
-![Alligator & Egret](/img/1777570615319-ee43b7437830.jpeg)
+![Alligator & Egret](/images/1777570615319-ee43b7437830.jpeg)
 

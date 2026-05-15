@@ -5,5 +5,5 @@ tags:
   - plane
   - travel
 ---
-![Me and my plane](/img/1777050048834-69e75a6e7100.jpeg)
+![Me and my plane](/images/1777050048834-69e75a6e7100.jpeg)
 

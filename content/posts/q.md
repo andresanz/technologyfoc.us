@@ -6,6 +6,6 @@ tags:
   - brewster
   - potd
 ---
-![A view from today](/img/1776394802503-65c89aad3695.jpeg)
+![A view from today](/images/1776394802503-65c89aad3695.jpeg)
 
 I **wish** i was more cretive in my writing, **so i will be**.

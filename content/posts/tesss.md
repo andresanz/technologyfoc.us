@@ -7,4 +7,4 @@ tags:
 ---
 - 
 
-![Boots.pdf](/img/2026/05/boots-pdf-4d52b9bbd5a8.jpg)prov
+![Boots.pdf](/images/2026/05/boots-pdf-4d52b9bbd5a8.jpg)prov

@@ -5,5 +5,5 @@ tags:
   - south
   - bluffton
 ---
-![Welcome to the South](/img/1777339644810-6fb1113adb0a.jpeg)
+![Welcome to the South](/images/1777339644810-6fb1113adb0a.jpeg)
 

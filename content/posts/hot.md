@@ -5,5 +5,5 @@ tags:
   - hear
   - hotel
 ---
-![Hot!](/img/1776380375946-1bbaf43642b7.jpeg)
+![Hot!](/images/1776380375946-1bbaf43642b7.jpeg)
 

@@ -5,5 +5,5 @@ tags:
   - sav
   - plane
 ---
-![Fighters at the gate](/img/1777987540690-dd918bc540ba.jpeg)
+![Fighters at the gate](/images/1777987540690-dd918bc540ba.jpeg)
 

@@ -25,7 +25,7 @@ The fix: one app, one domain, one process.
 
 **Auth:** Shared password gate on all `/private/*` using bcryptjs + signed cookies. No session store, no database. The signed cookie *is* the credential. One `app.use('/private/*', requirePrivateAuth)` covers everything — no per-route exceptions to forget.
 
-**Images:** S3 (bucket: `andresanz-images`), Sharp for resize/EXIF strip, disk cache. `/img/*` for public, `/private/img/*` for gated — the auth gate covers image requests automatically since they're under `/private/`.
+**Images:** S3 (bucket: `andresanz-images`), Sharp for resize/EXIF strip, disk cache. `/images/*` for public, `/private/images/*` for gated — the auth gate covers image requests automatically since they're under `/private/`.
 
 **No Apache:** Dropped Apache entirely. nginx stays as the TLS front door (it's already serving ~40 other vhosts on the box), proxying to the Hono app on `127.0.0.1:3000`.
 

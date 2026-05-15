@@ -6,5 +6,5 @@ tags:
   - potd
   - bluffton
 ---
-![Pine needle mulch](/img/1777487041339-537b12e465bd.jpeg)
+![Pine needle mulch](/images/1777487041339-537b12e465bd.jpeg)
 

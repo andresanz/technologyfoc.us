@@ -5,5 +5,5 @@ tags:
   - bluffton
   - fail
 ---
-![Wake of the flood](/img/1777584551554-0fd4bd53d021.jpeg)
+![Wake of the flood](/images/1777584551554-0fd4bd53d021.jpeg)
 

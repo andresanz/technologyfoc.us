@@ -5,5 +5,5 @@ tags:
   - fellas
   - boys
 ---
-![Fellas](/img/1776869415483-309391dbbdf7.jpg)
+![Fellas](/images/1776869415483-309391dbbdf7.jpg)
 

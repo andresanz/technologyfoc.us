@@ -5,5 +5,5 @@ tags:
   - bucees
   - food
 ---
-![A Chopped Brisket Sandwich](/img/1776869976116-32fccebf67fd.jpg)
+![A Chopped Brisket Sandwich](/images/1776869976116-32fccebf67fd.jpg)
 
