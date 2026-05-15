@@ -73,10 +73,15 @@ router.post('/new', async (req, res) => {
 // GET /pages/edit/:filename
 router.get('/edit/:filename', (req, res) => {
   const site = req.site;
-  const isPrivate = req.query.dir === 'private-pages';
-  const dir = isPrivate ? site.privatePagesDir : site.pagesDir;
+  let isPrivate = req.query.dir === 'private-pages';
+  let dir = isPrivate ? site.privatePagesDir : site.pagesDir;
 
-  const page = postsLib.read(dir, req.params.filename);
+  let page = postsLib.read(dir, req.params.filename);
+  if (!page && !isPrivate && site.privatePagesDir) {
+    // auto-detect: try private-pages dir
+    page = postsLib.read(site.privatePagesDir, req.params.filename);
+    if (page) { isPrivate = true; dir = site.privatePagesDir; }
+  }
   if (!page) return res.status(404).render('error', { code: 404, message: 'Page not found' });
 
   res.render('page-edit', { site, page, isNew: false, isPrivate, flash: req.flash() });
