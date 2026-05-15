@@ -49,7 +49,7 @@
           <td>
             <div class="row-actions">
               <a href="/pages/edit/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>" class="btn btn-sm">Edit</a>
-              <a href="<%= site.url %><%= p.isPrivate ? '/private/pages/' : '/' %><%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
+              <a href="<%= site.url %><%= p.isPrivate ? '/private/' : '/' %><%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
               <form method="POST" action="/pages/delete/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>"
                     onsubmit="return confirm('Delete \'<%= p.title %>\'?')">
                 <button class="btn btn-sm btn-danger">Delete</button>

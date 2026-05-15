@@ -45,23 +45,24 @@ module.exports = function createPrivateRouter(postsLib, pagesLib) {
     res.render('private-post', { post, site: req.app.locals.siteConfig() });
   });
 
-  // GET /private/pages/:slug
-  router.get('/pages/:slug', (req, res) => {
-    if (!authed(req)) return res.redirect('/private');
-    const page = pagesLib.getBySlug(req.params.slug);
-    if (!page) return res.status(404).render('error', { code: 404, message: 'Page not found', site: req.app.locals.siteConfig() });
-    res.render('private-page', { page, site: req.app.locals.siteConfig() });
-  });
-
   // GET /private/logout
   router.get('/logout', (req, res) => {
     res.clearCookie(COOKIE, { path: '/' });
     res.redirect('/private');
   });
 
-  // GET /private/:slug — legacy redirect (must be last)
+  // GET /private/:slug — post or page (must be last)
   router.get('/:slug', (req, res) => {
-    res.redirect('/private/posts/' + req.params.slug);
+    if (!authed(req)) return res.redirect('/private');
+    const slug = req.params.slug;
+    const post = postsLib.getBySlug(slug);
+    if (post) {
+      const rendered = postsLib.renderPost ? postsLib.renderPost(post) : post;
+      return res.render('private-post', { post: rendered, site: req.app.locals.siteConfig() });
+    }
+    const page = pagesLib.getBySlug(slug);
+    if (page) return res.render('private-page', { page, site: req.app.locals.siteConfig() });
+    res.status(404).render('error', { code: 404, message: 'Not found', site: req.app.locals.siteConfig() });
   });
 
   return router;
