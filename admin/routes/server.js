@@ -122,7 +122,7 @@ function getStats() {
 // ── Node.js process memory snapshot ─────────────────────────────────────────
 function getNodeMem() {
   try {
-    const lines = run("ps -eo pid,rss,args | grep 'node.*app.js' | grep -v grep").split('\n').filter(Boolean);
+    const lines = run("ps -eo pid,rss,args | grep -E 'node.*(app|webhook)' | grep -v grep").split('\n').filter(Boolean);
     return lines.map(line => {
       const parts = line.trim().split(/\s+/);
       const pid   = parts[0];
@@ -130,13 +130,11 @@ function getNodeMem() {
       const args  = parts.slice(2).join(' ');
       const limitMatch = args.match(/--max-old-space-size=(\d+)/);
       const limit = limitMatch ? limitMatch[1]+'MB' : 'none';
-      // identify by listening port
+      // identify by script path
       let name = 'node';
-      try {
-        const port = run(`ss -tlnp 2>/dev/null | grep "pid=${pid}," | grep -oP '(?<=:)\\d+'`).trim();
-        const portMap = { '3000': 'andresanz', '4000': 'andresanz-admin', '4101': 'andresanz-deploy' };
-        name = portMap[port] || `node:${pid}`;
-      } catch {}
+      if (args.includes('admin/app.js'))          name = 'andresanz-admin';
+      else if (args.includes('webhook-deploy'))    name = 'andresanz-deploy';
+      else if (args.includes('app.js'))            name = 'andresanz';
       return { name, limit, rss: Math.round(rss/1024)+'MB' };
     }).sort((a,b)=>a.name.localeCompare(b.name));
   } catch { return []; }
