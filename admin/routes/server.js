@@ -134,7 +134,8 @@ function getNodeMem() {
       let name = 'node';
       try {
         const port = run(`ss -tlnp 2>/dev/null | grep "pid=${pid}," | grep -oP '(?<=:)\\d+'`).trim();
-        name = port === '4000' ? 'andresanz-admin' : port === '3000' ? 'andresanz' : `node:${pid}`;
+        const portMap = { '3000': 'andresanz', '4000': 'andresanz-admin', '4101': 'andresanz-deploy' };
+        name = portMap[port] || `node:${pid}`;
       } catch {}
       return { name, limit, rss: Math.round(rss/1024)+'MB' };
     }).sort((a,b)=>a.name.localeCompare(b.name));
