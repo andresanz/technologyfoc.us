@@ -462,4 +462,30 @@ router.get('/health', (req, res) => {
   res.render('server-health', { health, flash: req.flash() });
 });
 
+// ── GET /server/nav ───────────────────────────────────────────────────────────
+router.get('/nav', (req, res) => {
+  const site    = req.site;
+  const navFile = path.join(site.dir, 'content', 'nav.json');
+  let navItems  = [];
+  try { navItems = JSON.parse(fs.readFileSync(navFile, 'utf8')); }
+  catch { navItems = []; }
+  res.render('nav', { site, navItems, flash: req.flash() });
+});
+
+// ── POST /server/nav ──────────────────────────────────────────────────────────
+router.post('/nav', async (req, res) => {
+  const site    = req.site;
+  const navFile = path.join(site.dir, 'content', 'nav.json');
+  try {
+    const nav = JSON.parse(req.body.nav || '[]');
+    fs.mkdirSync(path.dirname(navFile), { recursive: true });
+    fs.writeFileSync(navFile, JSON.stringify(nav, null, 2), 'utf8');
+    await site.bustCache().catch(() => {});
+    req.flash('success', 'Nav saved');
+  } catch (e) {
+    req.flash('error', `Failed to save nav: ${e.message}`);
+  }
+  res.redirect('/server/nav');
+});
+
 module.exports = router;

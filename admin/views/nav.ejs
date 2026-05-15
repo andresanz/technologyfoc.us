@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <a href="/sites/<%= site.domain %>" class="back-link">← <%= site.title %></a>
+    <a href="/server" class="back-link">← Server</a>
     <h1>Navigation <span class="muted">— <%= site.title %></span></h1>
   </div>
   <div class="header-actions">
@@ -15,7 +15,7 @@
 </div>
 <%- include('partials/flash') %>
 
-<form id="nav-form" method="POST" action="/sites/<%= site.domain %>/nav" onsubmit="serializeNav()">
+<form id="nav-form" method="POST" action="/server/nav" onsubmit="serializeNav()">
   <input type="hidden" name="nav" id="navJson">
 
   <section class="card">

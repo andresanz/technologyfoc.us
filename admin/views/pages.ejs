@@ -4,18 +4,21 @@
 <%- include('partials/head') %>
 <div class="page-header">
   <div>
-    <a href="/" class="back-link">← Dashboard</a>
     <h1>Pages <span class="muted">— <%= site.title %></span></h1>
   </div>
   <div class="header-actions">
-    <a href="/posts" class="btn">Posts</a>
     <a href="/pages/new" class="btn btn-primary">New page</a>
   </div>
 </div>
 <%- include('partials/flash') %>
 
+<div style="display:flex;gap:.5rem;margin-bottom:1rem;">
+  <a href="/pages?status=published" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
+  <a href="/pages?status=drafts" class="btn<%= status === 'drafts' ? ' btn-primary' : '' %>">Drafts</a>
+</div>
+
 <% if (pages.length === 0) { %>
-  <p class="empty">No pages yet. Hit "New page" to create one (About, Contact, etc.)</p>
+  <p class="empty">No <%= status === 'drafts' ? 'draft pages' : 'published pages' %> yet.<% if (status !== 'drafts') { %> <a href="/pages/new">Create one →</a><% } %></p>
 <% } else { %>
   <table class="post-table">
     <thead>

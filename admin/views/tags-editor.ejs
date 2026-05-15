@@ -1,0 +1,45 @@
+<%
+  pageTitle = 'Tags · ' + site.title;
+-%>
+<%- include('partials/head') %>
+<div class="page-header">
+  <div>
+    <a href="/posts" class="back-link">← Posts</a>
+    <h1>Tags <span class="muted">— <%= site.title %></span></h1>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<% if (tags.length === 0) { %>
+  <p class="empty">No tags found across any posts.</p>
+<% } else { %>
+  <table class="post-table">
+    <thead>
+      <tr>
+        <th>Tag</th>
+        <th>Count</th>
+        <th>Rename to</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% tags.forEach(function(tag) { %>
+        <tr>
+          <td><span class="tag"><%= tag.name %></span></td>
+          <td class="muted"><%= tag.count %></td>
+          <td>
+            <form method="POST" action="/posts/tags/rename" style="display:flex;gap:.5rem;align-items:center;">
+              <input type="hidden" name="from" value="<%= tag.name %>">
+              <input type="text" name="to" value="<%= tag.name %>"
+                style="width:180px;padding:.3rem .5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:inherit;font-size:.875rem;"
+                required>
+              <button class="btn btn-sm" type="submit">Rename</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('partials/foot') %>

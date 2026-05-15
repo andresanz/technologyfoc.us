@@ -15,44 +15,12 @@
       <span></span><span></span><span></span>
     </button>
     <div class="nav-links" id="navLinks">
-      <a href="/server">Dashboard</a>
-      <a href="/analytics">Analytics</a>
       <a href="/write">Write</a>
       <a href="/posts">Posts</a>
       <a href="/pages">Pages</a>
       <a href="/media">Media</a>
-      <div class="nav-dropdown">
-        <button class="nav-drop-btn" type="button">Content <span class="nav-caret">▾</span></button>
-        <div class="nav-drop-menu">
-          <a href="/redirects">Redirects</a>
-          <a href="/templates">Templates</a>
-          <a href="/sharp">Images</a>
-          <a href="/s3">S3</a>
-          <a href="/links">Links</a>
-        </div>
-      </div>
-      <div class="nav-dropdown">
-        <button class="nav-drop-btn" type="button">Server <span class="nav-caret">▾</span></button>
-        <div class="nav-drop-menu">
-          <a href="/server">Server</a>
-          <a href="/server/shell">Shell</a>
-          <a href="/logs">Logs</a>
-          <a href="/volume">Volume</a>
-          <a href="/domains">Domains</a>
-        </div>
-      </div>
-      <div class="nav-dropdown">
-        <button class="nav-drop-btn" type="button">Tools <span class="nav-caret">▾</span></button>
-        <div class="nav-drop-menu">
-          <a href="/claude">Claude</a>
-          <a href="/github">GitHub</a>
-          <a href="/mac">Mac</a>
-          <a href="/daily-check">Daily Check</a>
-          <a href="/gratitude-prompts">Gratitude</a>
-          <a href="/overthinking">Overthinking</a>
-          <a href="/michele">Michele</a>
-        </div>
-      </div>
+      <a href="/analytics">Analytics</a>
+      <a href="/server">Server</a>
       <form method="POST" action="/logout" style="display:inline">
         <button type="submit" class="btn-link">Sign out</button>
       </form>
@@ -63,18 +31,6 @@
   document.getElementById('navToggle').addEventListener('click', function() {
     this.classList.toggle('open');
     document.getElementById('navLinks').classList.toggle('open');
-  });
-  document.querySelectorAll('.nav-drop-btn').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var dropdown = this.closest('.nav-dropdown');
-      var isOpen = dropdown.classList.contains('open');
-      document.querySelectorAll('.nav-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
-      if (!isOpen) dropdown.classList.add('open');
-    });
-  });
-  document.addEventListener('click', function() {
-    document.querySelectorAll('.nav-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
   });
 </script>
 <main>

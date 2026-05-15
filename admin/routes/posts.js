@@ -25,10 +25,92 @@ router.get('/', (req, res) => {
   const privatePosts = postsLib.list(site.privatePostsDir).map(p => ({ ...p, isPrivate: true }));
 
   // Merge and sort by date descending
-  const posts = [...publicPosts, ...privatePosts]
+  let posts = [...publicPosts, ...privatePosts]
     .sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.mtime - a.mtime));
 
-  res.render('posts', { site, posts, flash: req.flash() });
+  // Filter by status tab
+  const status = req.query.status || 'published';
+  if (status === 'drafts') {
+    posts = posts.filter(p => p.draft);
+  } else {
+    posts = posts.filter(p => !p.draft);
+  }
+
+  res.render('posts', { site, posts, status, flash: req.flash() });
+});
+
+// GET /posts/tags — list all tags with counts
+router.get('/tags', (req, res) => {
+  const site = req.site;
+
+  const dirs = [
+    { dir: site.postsDir, isPrivate: false },
+    { dir: site.privatePostsDir, isPrivate: true },
+  ];
+
+  const tagCounts = {};
+  dirs.forEach(({ dir }) => {
+    postsLib.list(dir).forEach(post => {
+      post.tags.forEach(tag => {
+        if (!tag) return;
+        const t = tag.toLowerCase();
+        tagCounts[t] = (tagCounts[t] || 0) + 1;
+      });
+    });
+  });
+
+  const tags = Object.entries(tagCounts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  res.render('tags-editor', { site, tags, flash: req.flash() });
+});
+
+// POST /posts/tags/rename — rename a tag across all post files
+router.post('/tags/rename', async (req, res) => {
+  const site = req.site;
+  const { from, to } = req.body;
+
+  if (!from || !to || from === to) {
+    req.flash('error', 'Invalid rename: from and to must differ and be non-empty');
+    return res.redirect('/posts/tags');
+  }
+
+  const fromTag = from.trim().toLowerCase();
+  const toTag   = to.trim().toLowerCase();
+
+  const dirs = [site.postsDir, site.privatePostsDir].filter(Boolean);
+  let renamed = 0;
+
+  dirs.forEach(dir => {
+    if (!fs.existsSync(dir)) return;
+    fs.readdirSync(dir).filter(f => f.endsWith('.md')).forEach(filename => {
+      const filepath = path.join(dir, filename);
+      try {
+        let raw = fs.readFileSync(filepath, 'utf8');
+        // Only process files that contain the tag in frontmatter
+        const matter = require('gray-matter');
+        const parsed = matter(raw);
+        const tags = Array.isArray(parsed.data.tags) ? parsed.data.tags : [];
+        if (!tags.map(t => t.toLowerCase()).includes(fromTag)) return;
+
+        // Replace the tag value in the YAML tags array — match lines like `  - oldtag` or `- oldtag`
+        const replaced = raw.replace(
+          new RegExp(`^(\\s*-\\s*)${fromTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s*)$`, 'gim'),
+          `$1${toTag}$2`
+        );
+        if (replaced !== raw) {
+          fs.writeFileSync(filepath, replaced, 'utf8');
+          renamed++;
+        }
+      } catch {}
+    });
+  });
+
+  try { await site.bustCache().catch(() => {}); } catch {}
+
+  req.flash('success', `Renamed "${fromTag}" → "${toTag}" in ${renamed} file(s)`);
+  res.redirect('/posts/tags');
 });
 
 // GET /posts/new — new post form

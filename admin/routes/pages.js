@@ -12,8 +12,16 @@ router.get('/', (req, res) => {
   const site = req.site;
 
   if (!fs.existsSync(site.pagesDir)) fs.mkdirSync(site.pagesDir, { recursive: true });
-  const pages = postsLib.list(site.pagesDir);
-  res.render('pages', { site, pages, flash: req.flash() });
+  let pages = postsLib.list(site.pagesDir);
+
+  const status = req.query.status || 'published';
+  if (status === 'drafts') {
+    pages = pages.filter(p => p.draft);
+  } else {
+    pages = pages.filter(p => !p.draft);
+  }
+
+  res.render('pages', { site, pages, status, flash: req.flash() });
 });
 
 // GET /pages/new

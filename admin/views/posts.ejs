@@ -4,18 +4,23 @@
 <%- include('partials/head') %>
 <div class="page-header">
   <div>
-    <a href="/" class="back-link">← Dashboard</a>
     <h1>Posts — <span class="muted"><%= site.title %></span></h1>
   </div>
-  <div style="display:flex;gap:.5rem;">
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <a href="/posts/tags" class="btn">Tags</a>
     <a href="/posts/new" class="btn btn-primary">+ Public post</a>
     <a href="/posts/new?dir=private-posts" class="btn">+ Private post</a>
   </div>
 </div>
 <%- include('partials/flash') %>
 
+<div style="display:flex;gap:.5rem;margin-bottom:1rem;">
+  <a href="/posts?status=published" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
+  <a href="/posts?status=drafts" class="btn<%= status === 'drafts' ? ' btn-primary' : '' %>">Drafts</a>
+</div>
+
 <% if (posts.length === 0) { %>
-  <p class="empty">No posts yet. <a href="/posts/new">Write one →</a></p>
+  <p class="empty">No <%= status === 'drafts' ? 'drafts' : 'published posts' %>. <% if (status !== 'drafts') { %><a href="/posts/new">Write one →</a><% } %></p>
 <% } else { %>
   <table class="post-table">
     <thead>
