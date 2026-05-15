@@ -96,12 +96,12 @@
         <div style="margin-top:1rem;">
           <div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem;">Visibility</div>
           <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-            <label id="visTogglePub" style="flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:<%= !isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= !isPrivate ? '#fff' : 'var(--text)' %>;">
-              <input type="radio" name="visibility" value="public" style="display:none;position:absolute;pointer-events:none;" <%= !isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePriv').style.cssText='flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:var(--surface);color:var(--text)';this.parentElement.style.background='var(--accent,#2563eb)';this.parentElement.style.color='#fff';">
+            <label id="visTogglePub" style="flex:1;display:flex;align-items:center;justify-content:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:<%= !isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= !isPrivate ? '#fff' : 'var(--text)' %>;">
+              <input type="radio" name="visibility" value="public" style="display:none;" <%= !isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePub').style.background='var(--accent,#2563eb)';document.getElementById('visTogglePub').style.color='#fff';document.getElementById('visTogglePriv').style.background='var(--surface)';document.getElementById('visTogglePriv').style.color='var(--text)';">
               Public
             </label>
-            <label id="visTogglePriv" style="flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:<%= isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= isPrivate ? '#fff' : 'var(--text)' %>;">
-              <input type="radio" name="visibility" value="private" style="display:none;position:absolute;pointer-events:none;" <%= isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePub').style.cssText='flex:1;text-align:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:var(--surface);color:var(--text)';this.parentElement.style.background='var(--accent,#2563eb)';this.parentElement.style.color='#fff';">
+            <label id="visTogglePriv" style="flex:1;display:flex;align-items:center;justify-content:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;border-left:1px solid var(--border);background:<%= isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= isPrivate ? '#fff' : 'var(--text)' %>;">
+              <input type="radio" name="visibility" value="private" style="display:none;" <%= isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePriv').style.background='var(--accent,#2563eb)';document.getElementById('visTogglePriv').style.color='#fff';document.getElementById('visTogglePub').style.background='var(--surface)';document.getElementById('visTogglePub').style.color='var(--text)';">
               Private
             </label>
           </div>
