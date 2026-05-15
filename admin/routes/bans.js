@@ -14,12 +14,12 @@ function run(cmd) {
 
 function getJails() {
   const jails = [];
-  const raw = run('fail2ban-client status 2>/dev/null');
+  const raw = run('sudo sudo fail2ban-client status 2>/dev/null');
   const names = (raw.match(/Jail list:\s+(.+)/) || ['',''])[1]
     .split(',').map(s => s.trim()).filter(Boolean);
 
   for (const jail of names) {
-    const out = run(`fail2ban-client status ${jail} 2>/dev/null`);
+    const out = run(`sudo fail2ban-client status ${jail} 2>/dev/null`);
     const banned  = parseInt((out.match(/Currently banned:\s+(\d+)/)    || [0,0])[1]) || 0;
     const total   = parseInt((out.match(/Total banned:\s+(\d+)/)         || [0,0])[1]) || 0;
     const failed  = parseInt((out.match(/Currently failed:\s+(\d+)/)    || [0,0])[1]) || 0;
@@ -71,7 +71,7 @@ router.post('/unban', (req, res) => {
   // Basic IP validation
   if (!/^[\d.:a-fA-F]+$/.test(ip)) return res.status(400).json({ error: 'Invalid IP' });
   const safe_jail = jail.replace(/[^a-z0-9_-]/gi, '');
-  run(`fail2ban-client set ${safe_jail} unbanip ${ip}`);
+  run(`sudo fail2ban-client set ${safe_jail} unbanip ${ip}`);
   req.flash('success', `Unbanned ${ip} from ${safe_jail}`);
   res.redirect('/server/bans');
 });
@@ -82,7 +82,7 @@ router.post('/ban', (req, res) => {
   if (!jail || !ip) return res.status(400).json({ error: 'Missing jail or ip' });
   if (!/^[\d.:a-fA-F]+$/.test(ip)) return res.status(400).json({ error: 'Invalid IP' });
   const safe_jail = jail.replace(/[^a-z0-9_-]/gi, '');
-  run(`fail2ban-client set ${safe_jail} banip ${ip}`);
+  run(`sudo fail2ban-client set ${safe_jail} banip ${ip}`);
   req.flash('success', `Banned ${ip} in ${safe_jail}`);
   res.redirect('/server/bans');
 });
