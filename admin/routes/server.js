@@ -130,9 +130,12 @@ function getNodeMem() {
       const args  = parts.slice(2).join(' ');
       const limitMatch = args.match(/--max-old-space-size=(\d+)/);
       const limit = limitMatch ? limitMatch[1]+'MB' : 'none';
-      // derive name from cwd via /proc
+      // identify by listening port
       let name = 'node';
-      try { name = require('fs').readlinkSync(`/proc/${pid}/cwd`).split('/').pop(); } catch {}
+      try {
+        const port = run(`ss -tlnp 2>/dev/null | grep "pid=${pid}," | grep -oP '(?<=:)\\d+'`).trim();
+        name = port === '4000' ? 'andresanz-admin' : port === '3000' ? 'andresanz' : `node:${pid}`;
+      } catch {}
       return { name, limit, rss: Math.round(rss/1024)+'MB' };
     }).sort((a,b)=>a.name.localeCompare(b.name));
   } catch { return []; }
