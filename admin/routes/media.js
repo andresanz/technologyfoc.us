@@ -68,7 +68,7 @@ router.post('/upload', upload.array('images', 20), async (req, res) => {
 
   try {
     const isVideo   = (req.files || []).some(f => f.mimetype.startsWith('video/'));
-    const folder    = (req.body.folder || (isVideo ? 'videos' : 'images')).replace(/[^a-z0-9_-]/gi, '');
+    const folder    = (req.body.folder || (isVideo ? 'videos' : 'img')).replace(/[^a-z0-9_-]/gi, '');
     const cfg       = sharpConfig.loadForSite(site.domain);
     const processed = await Promise.all((req.files || []).map(f => f.mimetype.startsWith('video/') ? Promise.resolve({...f, skipped: true}) : processImage(f, cfg)));
 
