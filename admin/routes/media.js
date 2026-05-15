@@ -3,7 +3,6 @@
 const express      = require('express');
 const multer       = require('multer');
 const sharp        = require('sharp');
-const sitesLib     = require('../lib/sites');
 const s3Lib        = require('../lib/s3');
 const sharpConfig  = require('../lib/sharp-config');
 const sharpStats   = require('../lib/sharp-stats');
@@ -45,10 +44,9 @@ const upload = multer({
   },
 });
 
-// GET /media/:domain
-router.get('/:domain', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).render('error', { code: 404, message: 'Site not found' });
+// GET /media
+router.get('/', async (req, res) => {
+  const site = req.site;
 
   const isJson = 'json' in req.query;
   try {
@@ -64,10 +62,9 @@ router.get('/:domain', async (req, res) => {
   }
 });
 
-// POST /media/:domain/upload
-router.post('/:domain/upload', upload.array('images', 20), async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).json({ error: 'Site not found' });
+// POST /media/upload
+router.post('/upload', upload.array('images', 20), async (req, res) => {
+  const site = req.site;
 
   try {
     const isVideo   = (req.files || []).some(f => f.mimetype.startsWith('video/'));
@@ -102,10 +99,9 @@ router.post('/:domain/upload', upload.array('images', 20), async (req, res) => {
   }
 });
 
-// POST /media/:domain/delete
-router.post('/:domain/delete', async (req, res) => {
-  const site = sitesLib.getSite(req.params.domain);
-  if (!site) return res.status(404).json({ error: 'Site not found' });
+// POST /media/delete
+router.post('/delete', async (req, res) => {
+  const site = req.site;
 
   try {
     await s3Lib.remove(site, req.body.key);

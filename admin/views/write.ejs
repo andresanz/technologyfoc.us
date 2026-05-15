@@ -1,6 +1,5 @@
 <%
-  const activeDomain = site ? site.domain : '';
-  const activeTitle  = site ? site.title  : '';
+  const activeTitle = site ? site.title : '';
 -%>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,19 +45,16 @@
       backdrop-filter: blur(20px) saturate(180%);
     }
 
-    /* Site chip */
-    .site-chip {
+    /* Site label */
+    .site-label {
       display: inline-flex; align-items: center; gap: .3rem;
       background: var(--faint); border-radius: 999px;
       padding: .3rem .7rem; font-size: .78rem; font-weight: 600;
-      color: var(--ink); cursor: pointer; border: none;
+      color: var(--ink);
       font-family: var(--font); white-space: nowrap;
-      -webkit-tap-highlight-color: transparent;
-      transition: background .15s;
       max-width: 160px; overflow: hidden; text-overflow: ellipsis;
     }
-    .site-chip:active { background: #dcd8d0; }
-    .site-chip svg { flex-shrink: 0; }
+    .site-label svg { flex-shrink: 0; }
 
     .nav-spacer { flex: 1; }
 
@@ -191,45 +187,6 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .toast.error { background: var(--red); }
 
-    /* ── Site picker sheet ── */
-    .sheet-backdrop {
-      position: fixed; inset: 0; z-index: 50;
-      background: rgba(0,0,0,.35);
-      opacity: 0; pointer-events: none;
-      transition: opacity .25s;
-      -webkit-backdrop-filter: blur(2px);
-      backdrop-filter: blur(2px);
-    }
-    .sheet-backdrop.open { opacity: 1; pointer-events: all; }
-
-    .sheet {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 51;
-      background: var(--paper); border-radius: 20px 20px 0 0;
-      padding: .5rem 0;
-      padding-bottom: max(.5rem, env(safe-area-inset-bottom));
-      transform: translateY(100%);
-      transition: transform .3s cubic-bezier(.32,0,.67,0);
-    }
-    .sheet.open { transform: translateY(0); }
-
-    .sheet-handle {
-      width: 36px; height: 4px; background: var(--faint);
-      border-radius: 2px; margin: .5rem auto 1rem;
-    }
-    .sheet-title { font-size: .7rem; font-weight: 600; color: var(--ghost); text-transform: uppercase; letter-spacing: .06em; padding: 0 1.25rem .5rem; }
-
-    .sheet-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .85rem 1.25rem; cursor: pointer;
-      font-size: .975rem; font-family: var(--font);
-      -webkit-tap-highlight-color: transparent;
-      transition: background .1s;
-    }
-    .sheet-item:active { background: var(--faint); }
-    .sheet-item-sub { font-size: .78rem; color: var(--ghost); }
-    .sheet-check { color: var(--blue); font-weight: 700; opacity: 0; }
-    .sheet-item.selected .sheet-check { opacity: 1; }
-
     /* ── Spinner ── */
     .spin {
       display: none; width: 14px; height: 14px;
@@ -248,10 +205,10 @@
 
 <!-- Top nav -->
 <nav class="topnav">
-  <button class="site-chip" onclick="openSheet()" id="siteChip">
+  <span class="site-label">
     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
-    <span id="siteChipLabel"><%= activeTitle || activeDomain %></span>
-  </button>
+    <%= activeTitle %>
+  </span>
   <div class="nav-spacer"></div>
   <button class="nav-btn" onclick="submitDraft()" id="draftBtn">Draft</button>
   <button class="nav-publish" id="publishBtn" onclick="submitPost()">
@@ -267,9 +224,8 @@
   <script>document.addEventListener('DOMContentLoaded',()=>showToast('<%= flash.error[0].replace(/'/g,"\\'") %>',true));</script>
 <% } %>
 
-<form id="writeForm" method="POST" action="/write" style="display:contents">
-  <input type="hidden" name="domain" id="domainInput" value="<%= activeDomain %>">
-  <input type="hidden" name="draft"  id="draftInput"  value="">
+<form id="writeForm" method="POST" action="/posts/new" style="display:contents">
+  <input type="hidden" name="draft" id="draftInput" value="">
 
   <div class="surface">
     <textarea
@@ -338,23 +294,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Site picker sheet -->
-<div class="sheet-backdrop" id="backdrop" onclick="closeSheet()"></div>
-<div class="sheet" id="sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title">Post to</div>
-  <% sites.forEach(s => { %>
-    <div class="sheet-item <%= s.domain === activeDomain ? 'selected' : '' %>"
-         onclick="selectSite('<%= s.domain %>','<%= s.title.replace(/'/g,"\\'") %>')">
-      <div>
-        <div><%= s.title %></div>
-        <div class="sheet-item-sub"><%= s.domain %></div>
-      </div>
-      <span class="sheet-check">✓</span>
-    </div>
-  <% }) %>
-</div>
-
 <script>
 // ── Auto-resize textareas ──────────────────────────────────────────────────────
 function autoResize(el) {
@@ -405,12 +344,11 @@ function insertCode() {
 }
 
 // ── Image upload ───────────────────────────────────────────────────────────────
-const domainVal = document.getElementById('domainInput').value;
 const uploadStatus = document.getElementById('uploadStatus');
 
 async function uploadFile(file) {
   const fd = new FormData(); fd.append('images', file);
-  const r = await fetch('/media/'+domainVal+'/upload', { method:'POST', body:fd });
+  const r = await fetch('/media/upload', { method:'POST', body:fd });
   if (!r.ok) throw new Error(await r.text());
   return (await r.json()).files[0].url;
 }
@@ -458,21 +396,6 @@ function submitDraft() {
   document.getElementById('writeForm').submit();
 }
 
-// ── Site picker sheet ──────────────────────────────────────────────────────────
-function openSheet() {
-  document.getElementById('backdrop').classList.add('open');
-  document.getElementById('sheet').classList.add('open');
-}
-function closeSheet() {
-  document.getElementById('backdrop').classList.remove('open');
-  document.getElementById('sheet').classList.remove('open');
-}
-function selectSite(domain, title) {
-  closeSheet();
-  saveDraft();
-  window.location = '/write?site=' + domain;
-}
-
 // ── Toast ──────────────────────────────────────────────────────────────────────
 function showToast(msg, err) {
   const t = document.getElementById('toast');
@@ -483,7 +406,7 @@ function showToast(msg, err) {
 }
 
 // ── LocalStorage autosave ──────────────────────────────────────────────────────
-const KEY = 'write_' + domainVal;
+const KEY = 'write_draft';
 function saveDraft() {
   localStorage.setItem(KEY, JSON.stringify({
     title: titleEl.value, body: bodyEl.value,

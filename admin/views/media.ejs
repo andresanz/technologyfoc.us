@@ -4,11 +4,11 @@
 <%- include('partials/head') %>
 <div class="page-header">
   <div>
-    <a href="/sites" class="back-link">← Sites</a>
+    <a href="/" class="back-link">← Dashboard</a>
     <h1>Media — <span class="muted"><%= site.title %></span></h1>
   </div>
   <div class="header-actions">
-    <a href="/posts/<%= site.domain %>" class="btn">Posts</a>
+    <a href="/posts" class="btn">Posts</a>
     <button class="btn" id="bustCacheBtn" title="Force-reload all images">↺ Bust cache</button>
     <button class="btn" id="openVideoUploadBtn">Upload video</button>
     <button class="btn btn-primary" id="openUploadBtn">Upload images</button>
@@ -112,8 +112,6 @@
 <div id="toast" class="toast" style="display:none"></div>
 
 <script>
-const DOMAIN = '<%= site.domain %>';
-
 // ── Upload ──────────────────────────────────────────────────────────────────
 document.getElementById('openUploadBtn').addEventListener('click', () => {
   const panel = document.getElementById('uploadPanel');
@@ -144,7 +142,7 @@ async function handleVideoFiles(files) {
   [...files].forEach(f => fd.append('images', f));
   videoResults.innerHTML = '<p>Uploading… this may take a moment for large files.</p>';
   try {
-    const r    = await fetch(`/media/${DOMAIN}/upload`, { method: 'POST', body: fd });
+    const r    = await fetch(`/media/upload`, { method: 'POST', body: fd });
     const data = await r.json();
     if (!r.ok || data.error) {
       videoResults.innerHTML = '<p class="error">Upload failed: ' + (data.error || r.statusText) + '</p>';
@@ -179,7 +177,7 @@ async function handleFiles(files) {
   [...files].forEach(f => fd.append('images', f));
   results.innerHTML = '<p>Uploading…</p>';
   try {
-    const r    = await fetch(`/media/${DOMAIN}/upload`, { method: 'POST', body: fd });
+    const r    = await fetch(`/media/upload`, { method: 'POST', body: fd });
     const data = await r.json();
     if (!r.ok || data.error) {
       results.innerHTML = '<p class="error">Upload failed: ' + (data.error || r.statusText) + '</p>';
@@ -230,7 +228,7 @@ document.addEventListener('click', async e => {
   const name = key.split('/').pop();
   if (!confirm(`Delete ${name}?`)) return;
   try {
-    const r = await fetch(`/media/${DOMAIN}/delete`, {
+    const r = await fetch(`/media/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key }),
