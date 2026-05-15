@@ -1,6 +1,7 @@
 ---
 title: André Sanz
-hide_title: true
+date: '2026-05-15'
+slug: home
 ---
 
 <img src="/img/1778803631000-profile.jpg" style="width: 180px; float: left; margin: 0 1.5rem 1rem 0; border-radius: 4px;">
