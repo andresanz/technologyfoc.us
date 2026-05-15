@@ -42,11 +42,17 @@
     document.body.style.overflow = '';
   }
 
-  // Wire up post images — cover, body, figures (skip ones inside <a>)
-  document.querySelectorAll('.post-body img, .post-cover-full, .lb-img').forEach(function(img) {
+  // Wire up post/page images via delegation (works for dynamically rendered content too)
+  document.addEventListener('click', function(e) {
+    var img = e.target;
+    if (img.tagName !== 'IMG') return;
     if (img.closest('a')) return;
-    img.style.cursor = 'zoom-in';
-    img.addEventListener('click', function(){ open(img.src, img.alt); });
+    if (!img.closest('.post-body, .page-body, .post-cover-full') && !img.classList.contains('lb-img')) return;
+    open(img.src, img.alt);
+  });
+  // cursor hint
+  document.querySelectorAll('.post-body img, .page-body img, .post-cover-full, .lb-img').forEach(function(img) {
+    if (!img.closest('a')) img.style.cursor = 'zoom-in';
   });
 
   document.getElementById('lb-close').addEventListener('click', close);
