@@ -28,7 +28,7 @@ function recordFail(ip) {
 
 // GET /login
 router.get('/login', (req, res) => {
-  if (req.session.authenticated) return res.redirect('/sites');
+  if (req.session.authenticated) return res.redirect('/server');
   res.render('login', { error: req.flash('error')[0] || null });
 });
 
@@ -52,7 +52,7 @@ router.post('/login', rateCheck, (req, res) => {
   req.session.authenticated = true;
   req.session.save(err => {
     if (err) console.error('Session save error:', err);
-    res.redirect('/sites');
+    res.redirect('/server');
   });
 });
 
@@ -63,7 +63,7 @@ router.post('/logout', (req, res) => {
 
 // Root redirect
 router.get('/', (req, res) => {
-  res.redirect(req.session.authenticated ? '/sites' : '/login');
+  res.redirect(req.session.authenticated ? '/server' : '/login');
 });
 
 module.exports = router;

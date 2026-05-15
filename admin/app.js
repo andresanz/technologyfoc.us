@@ -67,7 +67,6 @@ app.use((req, res, next) => {
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/',       require('./routes/auth'));
-app.use('/sites',  requireAuth, require('./routes/sites'));
 app.use('/posts',  requireAuth, require('./routes/posts'));
 app.use('/pages',  requireAuth, require('./routes/pages'));
 app.use('/media',  requireAuth, require('./routes/media'));
@@ -107,7 +106,7 @@ app.post('/quickref', requireAuth, express.text(), (req, res) => {
 });
 
 // Dashboard redirect
-app.get('/dashboard', requireAuth, (_req, res) => res.redirect('/sites'));
+app.get('/dashboard', requireAuth, (_req, res) => res.redirect('/server'));
 
 // ── 404 / error ───────────────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).render('error', { code: 404, message: 'Not found' }));

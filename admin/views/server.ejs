@@ -100,6 +100,8 @@
     <a href="/server/bans" class="btn">Bans</a>
     <a href="/server/logs" class="btn">Logs</a>
     <a href="/server/backups" class="btn">Backups</a>
+    <a href="/server/css" class="btn">CSS</a>
+    <a href="/server/history" class="btn">History</a>
     <form method="POST" action="/server/updates/check">
       <button class="btn">Check updates</button>
     </form>
@@ -265,6 +267,95 @@
     </tbody>
   </table>
 </div>
+
+<!-- Site section -->
+<div class="section-header" style="margin-top:1.5rem">
+  <h2>Site</h2>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <form method="POST" action="/server/site/restart" style="display:inline">
+      <button class="btn btn-sm">Restart service</button>
+    </form>
+    <button class="btn btn-sm" id="bustCacheBtn">Bust cache</button>
+    <a href="/server/css" class="btn btn-sm">CSS editor</a>
+    <a href="/server/history" class="btn btn-sm">History</a>
+  </div>
+</div>
+
+<div class="card" style="padding:.75rem 1rem; margin-bottom:1rem">
+  <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+    <tbody>
+      <tr>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border);color:var(--muted);width:120px">URL</td>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border)"><a href="<%= site.url %>" target="_blank"><%= site.url %></a></td>
+      </tr>
+      <tr>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border);color:var(--muted)">Port</td>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border)"><%= site.port %></td>
+      </tr>
+      <% if (site.s3Bucket) { %>
+      <tr>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border);color:var(--muted)">S3 bucket</td>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border)"><%= site.s3Bucket %></td>
+      </tr>
+      <% } %>
+      <% if (sslInfo) { %>
+      <tr>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border);color:var(--muted)">SSL issued</td>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border)"><%= sslInfo.issued || '—' %></td>
+      </tr>
+      <tr>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border);color:var(--muted)">SSL expires</td>
+        <td style="padding:.35rem .5rem;border-bottom:1px solid var(--border)">
+          <%= sslInfo.expires %>
+          <span style="display:inline-block;margin-left:.5rem;padding:.15em .55em;border-radius:999px;font-size:.72rem;font-weight:600;
+            background:<%= sslInfo.status==='ok' ? '#dcfce7' : sslInfo.status==='warning' ? '#fef9c3' : '#fee2e2' %>;
+            color:<%= sslInfo.status==='ok' ? '#15803d' : sslInfo.status==='warning' ? '#92400e' : '#991b1b' %>">
+            <%= sslInfo.daysLeft %>d
+          </span>
+        </td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<% if (commits && commits.length) { %>
+<div class="section-header">
+  <h2 style="font-size:.875rem">Recent commits</h2>
+</div>
+<div class="card" style="padding:0; margin-bottom:1.5rem">
+  <table style="width:100%;font-size:.8rem;border-collapse:collapse">
+    <tbody>
+      <% commits.slice(0,5).forEach(function(c) { %>
+      <tr>
+        <td style="padding:.35rem .75rem;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;width:110px"><%= c.date %></td>
+        <td style="padding:.35rem .75rem;border-bottom:1px solid var(--border)"><%= c.message %></td>
+        <td style="padding:.35rem .75rem;border-bottom:1px solid var(--border);text-align:right"><code style="font-size:.72rem;color:var(--muted)"><%= c.hash %></code></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<% if (siteLogs && siteLogs.length) { %>
+<div class="section-header">
+  <h2 style="font-size:.875rem">Service logs <span style="font-weight:400;color:var(--muted)">(last 30 lines)</span></h2>
+</div>
+<div class="card" style="padding:.75rem 1rem; margin-bottom:1.5rem">
+  <pre style="font-size:.72rem;line-height:1.5;overflow-x:auto;margin:0;white-space:pre-wrap;word-break:break-all"><%= siteLogs.join('\n') %></pre>
+</div>
+<% } %>
+
+<script>
+document.getElementById('bustCacheBtn').addEventListener('click', async function() {
+  this.disabled = true;
+  this.textContent = 'Busting…';
+  const r = await fetch('/server/site/bust-cache', { method: 'POST' });
+  this.textContent = r.ok ? 'Cache cleared ✓' : 'Failed ✗';
+  setTimeout(() => { this.textContent = 'Bust cache'; this.disabled = false; }, 2000);
+});
+</script>
 
 <script>
 // Auto-refresh metrics every 10 seconds

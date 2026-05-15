@@ -37,12 +37,12 @@
   <section class="card">
     <h2>Service</h2>
     <div class="btn-row" style="margin-bottom:1rem">
-      <form method="POST" action="/sites/restart">
+      <form method="POST" action="/server/site/restart">
         <button class="btn">Restart</button>
       </form>
       <button class="btn" id="bustBtn">Bust cache</button>
     </div>
-    <a href="/sites" class="btn btn-sm">Site details →</a>
+    <a href="/server" class="btn btn-sm">Site details →</a>
   </section>
 </div>
 
@@ -50,7 +50,7 @@
 document.getElementById('bustBtn').addEventListener('click', async function() {
   this.disabled = true;
   this.textContent = 'Busting…';
-  const r = await fetch('/sites/bust-cache', { method: 'POST' });
+  const r = await fetch('/server/site/bust-cache', { method: 'POST' });
   this.textContent = r.ok ? 'Cache cleared ✓' : 'Failed ✗';
   setTimeout(() => { this.textContent = 'Bust cache'; this.disabled = false; }, 2000);
 });

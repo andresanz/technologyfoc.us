@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <a href="/sites/<%= site.domain %>/history" class="back-link">← History</a>
+    <a href="/server/history" class="back-link">← History</a>
     <h1>Commit <code style="font-size:1rem"><%= hash %></code></h1>
   </div>
 </div>
@@ -22,7 +22,7 @@
           <li style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
             <code style="font-size:.8rem;color:var(--muted);word-break:break-all"><%= f %></code>
             <% if (f.startsWith('content/')) { %>
-              <form method="POST" action="/sites/<%= site.domain %>/history/<%= hash %>/restore"
+              <form method="POST" action="/server/history/<%= hash %>/restore"
                     onsubmit="return confirm('Restore <%= f %> to this version? Current version will be overwritten.')">
                 <input type="hidden" name="file" value="<%= f %>">
                 <button class="btn btn-sm btn-danger">Restore</button>

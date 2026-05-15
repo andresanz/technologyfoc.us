@@ -5,7 +5,7 @@
 
 <div class="page-header">
   <div>
-    <a href="/sites/<%= site.domain %>" class="back-link">← <%= site.title %></a>
+    <a href="/server" class="back-link">← Server</a>
     <h1>Custom CSS <span class="muted">— <%= site.title %></span></h1>
   </div>
   <div class="header-actions">
@@ -16,7 +16,7 @@
 </div>
 <%- include('partials/flash') %>
 
-<form id="css-form" method="POST" action="/sites/<%= site.domain %>/css">
+<form id="css-form" method="POST" action="/server/css">
   <section class="card" style="padding:0; overflow:hidden">
     <textarea name="css" id="cssEditor" spellcheck="false"><%= css %></textarea>
   </section>
