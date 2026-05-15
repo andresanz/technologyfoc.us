@@ -16,16 +16,16 @@ module.exports = function createPrivateRouter(postsLib) {
 
   // GET /private
   router.get('/', (req, res) => {
-    if (!authed(req)) return res.render('private-login', { error: null, site: res.locals.siteConfig() });
+    if (!authed(req)) return res.render('private-login', { error: null, site: req.app.locals.siteConfig() });
     const posts = postsLib.getAll({ includeDrafts: false });
-    res.render('private-index', { posts, site: res.locals.siteConfig() });
+    res.render('private-index', { posts, site: req.app.locals.siteConfig() });
   });
 
   // POST /private — login
   router.post('/', express.urlencoded({ extended: false }), (req, res) => {
     const pw = process.env.PRIVATE_PASSWORD;
     if (!pw || req.body.password !== pw) {
-      return res.render('private-login', { error: 'Wrong password', site: res.locals.siteConfig() });
+      return res.render('private-login', { error: 'Wrong password', site: req.app.locals.siteConfig() });
     }
     res.cookie(COOKIE, pw, { maxAge: MAX_AGE, httpOnly: true, sameSite: 'lax', path: '/' });
     res.redirect('/private');
@@ -35,8 +35,8 @@ module.exports = function createPrivateRouter(postsLib) {
   router.get('/post/:slug', (req, res) => {
     if (!authed(req)) return res.redirect('/private');
     const post = postsLib.getBySlug(req.params.slug);
-    if (!post) return res.status(404).render('error', { code: 404, message: 'Post not found', site: res.locals.siteConfig() });
-    res.render('private-post', { post, site: res.locals.siteConfig() });
+    if (!post) return res.status(404).render('error', { code: 404, message: 'Post not found', site: req.app.locals.siteConfig() });
+    res.render('private-post', { post, site: req.app.locals.siteConfig() });
   });
 
   // GET /private/logout
