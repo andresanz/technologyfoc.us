@@ -50,7 +50,7 @@
           <td>
             <div class="row-actions">
               <a href="/posts/edit/<%= post.filename %><%= dirParam %>" class="btn btn-sm">Edit</a>
-              <a href="<%= site.url %><%= post.isPrivate ? '/private/' : '/posts/' %><%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
+              <a href="<%= site.url %><%= post.isPrivate ? '/private/posts/' : '/posts/' %><%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
               <form method="POST" action="/posts/delete/<%= post.filename %>"
                     onsubmit="return confirm('Delete <%= post.title.replace(/'/g, "\\'") %>?')">
                 <input type="hidden" name="dir" value="<%= post.isPrivate ? 'private-posts' : 'posts' %>">
