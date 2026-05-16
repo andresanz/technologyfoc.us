@@ -12,16 +12,12 @@ const BLOG           = process.env.GRATITUDE_BLOG || 'randomcategory.com';
 const SITES_ROOT     = process.env.SITES_ROOT || '/var/www';
 const GRATITUDE_FILE = path.join(SITES_ROOT, BLOG, 'content', 'gratitude.json');
 const STATE_FILE     = path.join(__dirname, '..', 'data', 'gratitude-state.json');
+const PROMPTS_FILE   = path.join(__dirname, '..', 'data', 'gratitude-prompts.json');
 
 const TGAPI = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-// ── Prompts ───────────────────────────────────────────────────────────────────
-
-const PROMPTS_FILE = path.join(__dirname, "..", "data", "gratitude-prompts.json");
-function loadPrompts() {
-  try { return JSON.parse(fs.readFileSync(PROMPTS_FILE, "utf8")); } catch { return []; }
-}
-const PROMPTS = [
+// ── Fallback prompts (used when prompts file is empty or missing) ─────────────
+const FALLBACK_PROMPTS = [
   "What's one small thing from today you'd miss if it were gone?",
   "Who did something kind for you recently — even something tiny?",
   "What part of your body are you grateful it's working today?",
@@ -68,6 +64,32 @@ const PROMPTS = [
   "Write one sentence about today that could be the first line of a short story.",
 ];
 
+// ── Prompts ───────────────────────────────────────────────────────────────────
+
+function loadPrompts() {
+  try {
+    const p = JSON.parse(fs.readFileSync(PROMPTS_FILE, 'utf8'));
+    return p.length ? p : FALLBACK_PROMPTS;
+  } catch {
+    return FALLBACK_PROMPTS;
+  }
+}
+
+// ── Entries ───────────────────────────────────────────────────────────────────
+
+function loadEntries() {
+  try { return JSON.parse(fs.readFileSync(GRATITUDE_FILE, 'utf8')); } catch { return []; }
+}
+
+function deleteEntry(idx) {
+  const entries = loadEntries();
+  if (idx >= 0 && idx < entries.length) {
+    entries.splice(idx, 1);
+    fs.mkdirSync(path.dirname(GRATITUDE_FILE), { recursive: true });
+    fs.writeFileSync(GRATITUDE_FILE, JSON.stringify(entries, null, 2) + '\n', 'utf8');
+  }
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 function loadState() {
@@ -80,14 +102,14 @@ function saveState(s) {
 }
 
 function pickPrompt(state) {
-  const PROMPTS = loadPrompts();
+  const prompts   = loadPrompts();
   const used      = state.usedPrompts || [];
-  const allIdx    = PROMPTS.map((_, i) => i);
+  const allIdx    = prompts.map((_, i) => i);
   const remaining = allIdx.filter(i => !used.includes(i));
   const pool      = remaining.length ? remaining : allIdx;
   const idx       = pool[Math.floor(Math.random() * pool.length)];
   state.usedPrompts = remaining.length ? [...used, idx] : [idx];
-  return PROMPTS[idx];
+  return prompts[idx];
 }
 
 // ── Telegram helpers ──────────────────────────────────────────────────────────
@@ -108,33 +130,33 @@ async function tgGetUpdates(offset) {
 
 // ── Send prompt ───────────────────────────────────────────────────────────────
 
-async function sendPrompt() {
-  if (!CHAT_ID) { console.error('TELEGRAM_CHAT_ID not set'); process.exit(1); }
+async function sendPrompt(force = false) {
+  if (!CHAT_ID) throw new Error('TELEGRAM_CHAT_ID not set');
   const state = loadState();
   const today = new Date().toISOString().split('T')[0];
-  if (state.lastPromptSent && state.lastPromptSent.startsWith(today)) {
-    console.log('[gratitude] Already sent today, skipping');
-    return;
+  if (!force && state.lastPromptSent && state.lastPromptSent.startsWith(today)) {
+    return { skipped: true, reason: 'Already sent today' };
   }
   const prompt = pickPrompt(state);
   const result = await tgSend(`✍️ *Daily Gratitude Prompt*\n\n${prompt}`, CHAT_ID);
-  if (!result.ok) { console.error('Telegram error:', JSON.stringify(result)); process.exit(1); }
+  if (!result.ok) throw new Error('Telegram error: ' + JSON.stringify(result));
   state.lastPromptSent = new Date().toISOString();
   state.lastPrompt     = prompt;
   state.updateOffset   = state.updateOffset || 0;
   saveState(state);
   console.log(`[gratitude] Prompt sent: "${prompt.slice(0, 60)}"`);
+  return { sent: true, prompt };
 }
 
 // ── Check replies ─────────────────────────────────────────────────────────────
 
 async function checkReplies() {
-  if (!CHAT_ID) { console.error('TELEGRAM_CHAT_ID not set'); return; }
+  if (!CHAT_ID) throw new Error('TELEGRAM_CHAT_ID not set');
   const state = loadState();
-  if (!state.lastPromptSent) { console.log('[gratitude] No prompt sent yet'); return; }
+  if (!state.lastPromptSent) return { created: 0, reason: 'No prompt sent yet' };
 
   const data = await tgGetUpdates(state.updateOffset || 0);
-  if (!data.ok) { console.error('Telegram error:', data); return; }
+  if (!data.ok) throw new Error('Telegram error: ' + JSON.stringify(data));
 
   let newOffset = state.updateOffset || 0;
   let created   = 0;
@@ -153,9 +175,7 @@ async function checkReplies() {
     const updateId = update.update_id;
     if ((state.processedUpdates || []).includes(updateId)) continue;
 
-    console.log(`[gratitude] Processing: "${msg.text.slice(0, 80)}"`);
     await appendEntry(msg.text, state.lastPrompt);
-
     state.processedUpdates = [...(state.processedUpdates || []), updateId];
     if (state.processedUpdates.length > 500) state.processedUpdates = state.processedUpdates.slice(-500);
     created++;
@@ -163,15 +183,15 @@ async function checkReplies() {
 
   state.updateOffset = newOffset;
   saveState(state);
-  console.log(`[gratitude] Done — ${created} post(s) created`);
+  console.log(`[gratitude] Check done — ${created} new entry(s)`);
+  return { created };
 }
 
 // ── Append entry ──────────────────────────────────────────────────────────────
 
 async function appendEntry(rawText, prompt) {
   const dateStr = new Date().toISOString().split('T')[0];
-  let entries = [];
-  try { entries = JSON.parse(fs.readFileSync(GRATITUDE_FILE, 'utf8')); } catch {}
+  const entries = loadEntries();
   entries.push({ date: dateStr, prompt, response: rawText });
   fs.mkdirSync(path.dirname(GRATITUDE_FILE), { recursive: true });
   fs.writeFileSync(GRATITUDE_FILE, JSON.stringify(entries, null, 2) + '\n', 'utf8');
@@ -182,8 +202,8 @@ async function appendEntry(rawText, prompt) {
 
 if (require.main === module) {
   const cmd = process.argv[2];
-  if      (cmd === 'send')  sendPrompt().catch(e => { console.error(e); process.exit(1); });
-  else if (cmd === 'check') checkReplies().catch(e => { console.error(e); process.exit(1); });
+  if      (cmd === 'send')  sendPrompt().then(r => console.log(r)).catch(e => { console.error(e); process.exit(1); });
+  else if (cmd === 'check') checkReplies().then(r => console.log(r)).catch(e => { console.error(e); process.exit(1); });
   else if (cmd === 'test')  appendEntry(process.argv.slice(3).join(' ') || 'the light through the window this morning', 'What made you smile today?')
     .then(() => console.log('Test entry appended')).catch(console.error);
   else {
@@ -192,4 +212,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { appendEntry, loadState };
+module.exports = { appendEntry, loadState, loadEntries, deleteEntry, sendPrompt, checkReplies };

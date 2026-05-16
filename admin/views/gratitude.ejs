@@ -1,0 +1,93 @@
+<%
+  pageTitle = 'Gratitude';
+-%>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <div>
+    <h1>Gratitude</h1>
+  </div>
+  <div class="header-actions">
+    <a href="<%= blogUrl %>/gratitude" target="_blank" class="btn">View entries ↗</a>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<%/* ── State card ──────────────────────────────────────────────────────────── */%>
+<section class="card" style="margin-bottom:1rem">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <div>
+      <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem">Last prompt sent</div>
+      <% if (state.lastPromptSent) { %>
+        <div style="font-size:.9rem;margin-bottom:.25rem"><%= new Date(state.lastPromptSent).toLocaleString() %></div>
+        <div style="font-size:.85rem;color:var(--muted);font-style:italic">"<%= state.lastPrompt %>"</div>
+      <% } else { %>
+        <div style="color:var(--muted);font-size:.9rem">No prompt sent yet</div>
+      <% } %>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <form method="POST" action="/gratitude-prompts/check">
+        <button type="submit" class="btn">Check replies</button>
+      </form>
+      <form method="POST" action="/gratitude-prompts/send">
+        <input type="hidden" name="force" value="0">
+        <button type="submit" class="btn btn-primary">Send prompt</button>
+      </form>
+      <form method="POST" action="/gratitude-prompts/send" onsubmit="return confirm('Force-send even if already sent today?')">
+        <input type="hidden" name="force" value="1">
+        <button type="submit" class="btn">Force send</button>
+      </form>
+    </div>
+  </div>
+  <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">
+    <%= entries.length %> entries · <%= prompts.length %> prompts in rotation
+  </div>
+</section>
+
+<%/* ── Entries ──────────────────────────────────────────────────────────────── */%>
+<section class="card" style="margin-bottom:1rem" id="entries">
+  <h3 style="margin-bottom:.75rem">Entries</h3>
+  <% if (entries.length === 0) { %>
+    <p class="muted">No entries yet.</p>
+  <% } else { %>
+    <% entries.forEach(function(e, i) { %>
+    <div style="padding:.75rem 0;border-bottom:1px solid var(--border);display:flex;gap:1rem;align-items:flex-start">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:.2rem">
+          <%= e.date %><% if (e.prompt) { %> · <em><%= e.prompt %></em><% } %>
+        </div>
+        <div style="font-size:.9rem;white-space:pre-wrap"><%= e.response %></div>
+      </div>
+      <form method="POST" action="/gratitude-prompts/entries/delete/<%= entries.length - 1 - i %>"
+            onsubmit="return confirm('Delete this entry?')" style="flex-shrink:0">
+        <button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </div>
+    <% }) %>
+  <% } %>
+</section>
+
+<%/* ── Prompts ──────────────────────────────────────────────────────────────── */%>
+<section class="card" id="prompts">
+  <h3 style="margin-bottom:.75rem">Prompts</h3>
+  <form method="POST" action="/gratitude-prompts/add" style="display:flex;gap:.5rem;margin-bottom:1rem">
+    <input type="text" name="text" placeholder="Add a new prompt…" required style="flex:1">
+    <button type="submit" class="btn btn-primary">Add</button>
+  </form>
+  <% if (prompts.length === 0) { %>
+    <p class="muted">No custom prompts — using built-in defaults.</p>
+  <% } else { %>
+    <% prompts.forEach(function(p, i) { %>
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid var(--border)">
+      <span style="flex:1;font-size:.9rem"><%= p %></span>
+      <a href="/gratitude-prompts/edit/<%= i %>" class="btn btn-sm">Edit</a>
+      <form method="POST" action="/gratitude-prompts/delete/<%= i %>"
+            onsubmit="return confirm('Delete this prompt?')" style="display:inline">
+        <button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </div>
+    <% }) %>
+  <% } %>
+</section>
+
+<%- include('partials/foot') %>
