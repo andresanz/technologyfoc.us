@@ -2,7 +2,8 @@
 require('dotenv').config();
 
 const express      = require('express');
-const session      = require('express-session');
+const cookieParser = require('cookie-parser');
+const crypto       = require('crypto');
 const flash        = require('connect-flash');
 const path         = require('path');
 
@@ -28,30 +29,30 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Session ──────────────────────────────────────────────────────────────────
-app.use(session({
-  secret:            process.env.SESSION_SECRET || 'changeme',
-  resave:            false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    maxAge:   30 * 24 * 60 * 60 * 1000, // 30 days
-  },
-}));
+// ── Cookie-based auth (survives restarts) ────────────────────────────────────
+app.use(cookieParser());
 
-app.use(flash());
+const AUTH_COOKIE  = '_admin';
+const AUTH_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
 
-// ── Auth guard ───────────────────────────────────────────────────────────────
+function makeToken() {
+  const secret = process.env.SESSION_SECRET || 'changeme';
+  return crypto.createHmac('sha256', secret).update('admin_auth').digest('hex');
+}
+
+app.authToken = makeToken; // expose for auth route
+
 function requireAuth(req, res, next) {
-  if (req.session.authenticated) return next();
+  if (req.cookies[AUTH_COOKIE] === makeToken()) return next();
   res.redirect('/login');
 }
+
+app.use(flash());
 
 // Make flash + user available to all views
 app.use((req, res, next) => {
   res.locals.flash     = req.flash();
-  res.locals.authed    = !!req.session.authenticated;
+  res.locals.authed    = req.cookies[AUTH_COOKIE] === makeToken();
   res.locals.adminUrl  = process.env.ADMIN_URL || '';
   res.locals.gitHash   = GIT_HASH;
   next();

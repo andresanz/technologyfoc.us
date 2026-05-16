@@ -2,7 +2,20 @@
 
 const express  = require('express');
 const bcrypt   = require('bcryptjs');
+const crypto   = require('crypto');
 const router   = express.Router();
+
+const AUTH_COOKIE  = '_admin';
+const AUTH_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
+
+function makeToken() {
+  const secret = process.env.SESSION_SECRET || 'changeme';
+  return crypto.createHmac('sha256', secret).update('admin_auth').digest('hex');
+}
+
+function isAuthed(req) {
+  return req.cookies && req.cookies[AUTH_COOKIE] === makeToken();
+}
 
 // Simple rate limiter — track failed attempts in memory
 const attempts = new Map(); // ip → { count, resetAt }
@@ -28,7 +41,7 @@ function recordFail(ip) {
 
 // GET /login
 router.get('/login', (req, res) => {
-  if (req.session.authenticated) return res.redirect('/write');
+  if (isAuthed(req)) return res.redirect('/write');
   res.render('login', { error: req.flash('error')[0] || null });
 });
 
@@ -37,7 +50,6 @@ router.post('/login', rateCheck, (req, res) => {
   const { password } = req.body;
   const stored       = process.env.ADMIN_PASSWORD || '';
 
-  // Support plain-text password in .env (auto-compare) OR bcrypt hash
   const ok = stored.startsWith('$2')
     ? bcrypt.compareSync(password, stored)
     : password === stored;
@@ -49,21 +61,25 @@ router.post('/login', rateCheck, (req, res) => {
   }
 
   attempts.delete(req.ip);
-  req.session.authenticated = true;
-  req.session.save(err => {
-    if (err) console.error('Session save error:', err);
-    res.redirect('/write');
+  res.cookie(AUTH_COOKIE, makeToken(), {
+    maxAge:   AUTH_MAX_AGE,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure:   process.env.NODE_ENV === 'production',
+    path:     '/',
   });
+  res.redirect('/write');
 });
 
 // POST /logout
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/login'));
+  res.clearCookie(AUTH_COOKIE, { path: '/' });
+  res.redirect('/login');
 });
 
 // Root redirect
 router.get('/', (req, res) => {
-  res.redirect(req.session.authenticated ? '/write' : '/login');
+  res.redirect(isAuthed(req) ? '/write' : '/login');
 });
 
 module.exports = router;
