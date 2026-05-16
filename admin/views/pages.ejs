@@ -27,30 +27,42 @@
 <% } else { %>
   <table class="post-table">
     <thead>
-      <tr><th>Title</th><th>Slug</th><th>Order</th><th>Nav</th><th>Status</th><th></th></tr>
+      <tr>
+        <th>Title</th>
+        <th data-sort="visibility" style="cursor:pointer;user-select:none">Visibility <span class="sort-icon">↕</span></th>
+        <th>Slug</th>
+        <th>Order</th>
+        <th>Nav</th>
+        <th data-sort="status" style="cursor:pointer;user-select:none">Status <span class="sort-icon">↕</span></th>
+        <th></th>
+      </tr>
     </thead>
     <tbody>
       <% pages.forEach(function(p) { %>
+        <% const dirParam = p.isPrivate ? '?dir=private-pages' : ''; %>
         <tr>
           <td>
-            <a href="/pages/edit/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>"><%= p.title %></a>
-            <% if (p.isPrivate) { %><span class="badge-private" style="margin-left:.35rem;">Private</span><% } %>
+            <a href="/pages/edit/<%= p.filename %><%= dirParam %>"><%= p.title %></a>
+            <% if (p.excerpt) { %><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem;"><%= p.excerpt.slice(0,120) %><%= p.excerpt.length > 120 ? '…' : '' %></div><% } %>
+          </td>
+          <td data-value="<%= p.isPrivate ? 'private' : 'public' %>">
+            <% if (p.isPrivate) { %><span class="badge-private">Private</span><% } else { %><span class="badge-public">Public</span><% } %>
           </td>
           <td><code><%= p.isPrivate ? '/private/' : '/' %><%= p.slug %></code></td>
           <td><%= p.order || '—' %></td>
           <td><%= (!p.isPrivate && p.nav !== false) ? '✓' : '' %></td>
-          <td>
+          <td data-value="<%= p.draft ? 'draft' : 'live' %>">
             <% if (p.draft) { %>
               <span class="badge-draft">Draft</span>
             <% } else { %>
               <span class="badge-live">Live</span>
             <% } %>
           </td>
-          <td>
-            <div class="row-actions">
-              <a href="/pages/edit/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>" class="btn btn-sm">Edit</a>
+          <td style="text-align:right">
+            <div class="row-actions" style="justify-content:flex-end">
+              <a href="/pages/edit/<%= p.filename %><%= dirParam %>" class="btn btn-sm">Edit</a>
               <a href="<%= site.url %><%= p.isPrivate ? '/private/' : '/' %><%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
-              <form method="POST" action="/pages/delete/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>"
+              <form method="POST" action="/pages/delete/<%= p.filename %><%= dirParam %>"
                     onsubmit="return confirm('Delete <%= p.title.replace(/'/g, "\\'") %>?')">
                 <button class="btn btn-sm btn-danger">Delete</button>
               </form>
@@ -61,4 +73,24 @@
     </tbody>
   </table>
 <% } %>
+
+<script>
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  let asc = true;
+  th.addEventListener('click', () => {
+    const col   = th.cellIndex;
+    const tbody = th.closest('table').querySelector('tbody');
+    const rows  = [...tbody.querySelectorAll('tr')];
+    rows.sort((a, b) => {
+      const av = (a.cells[col].dataset.value || a.cells[col].textContent).trim();
+      const bv = (b.cells[col].dataset.value || b.cells[col].textContent).trim();
+      return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    asc = !asc;
+    th.querySelector('.sort-icon').textContent = asc ? '↕' : '↑';
+    rows.forEach(r => tbody.appendChild(r));
+  });
+});
+</script>
+
 <%- include('partials/foot') %>
