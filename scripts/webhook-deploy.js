@@ -36,10 +36,8 @@ function deploy(payload) {
 
   // pull
   try {
-    const dirty = execSync(`git -C ${APP_DIR} diff --quiet HEAD; echo $?`, { stdio: 'pipe', shell: true }).toString().trim() !== '0';
-    if (dirty) execSync(`git -C ${APP_DIR} stash`, { stdio: 'pipe' });
-    execSync(`git -C ${APP_DIR} pull --rebase origin ${branch} --quiet`, { stdio: 'pipe' });
-    if (dirty) execSync(`git -C ${APP_DIR} stash drop`, { stdio: 'pipe' });
+    execSync(`git -C ${APP_DIR} fetch origin --quiet`, { stdio: 'pipe' });
+    execSync(`git -C ${APP_DIR} reset --hard origin/${branch} --quiet`, { stdio: 'pipe' });
   } catch (e) {
     const err = (e.stderr || Buffer.alloc(0)).toString().trim();
     console.error('[deploy] git pull failed:', err);
