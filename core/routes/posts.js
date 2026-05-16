@@ -63,7 +63,7 @@ module.exports = function createPostsRouter(postsLib, pagesLib) {
     res.redirect(`${adminUrl}/posts/${domain}/edit/${encodeURIComponent(fname)}`);
   });
 
-  router.get('/post/:slug', (req, res) => {
+  router.get(['/post/:slug', '/posts/:slug'], (req, res) => {
     const post = postsLib.getBySlug(req.params.slug);
     if (!post) {
       return res.status(404).render('error', {
