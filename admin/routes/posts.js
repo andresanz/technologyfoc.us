@@ -28,15 +28,14 @@ router.get('/', (req, res) => {
   let posts = [...publicPosts, ...privatePosts]
     .sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.mtime - a.mtime));
 
-  // Filter by status tab
-  const status = req.query.status || 'published';
-  if (status === 'drafts') {
-    posts = posts.filter(p => p.draft);
-  } else {
-    posts = posts.filter(p => !p.draft);
-  }
+  const status     = req.query.status     || 'published';
+  const visibility = req.query.visibility || 'all';
+  if (status === 'drafts') posts = posts.filter(p =>  p.draft);
+  else                     posts = posts.filter(p => !p.draft);
+  if (visibility === 'public')  posts = posts.filter(p => !p.isPrivate);
+  if (visibility === 'private') posts = posts.filter(p =>  p.isPrivate);
 
-  res.render('posts', { site, posts, status, flash: req.flash() });
+  res.render('posts', { site, posts, status, visibility, flash: req.flash() });
 });
 
 // GET /posts/tags — list all tags with counts

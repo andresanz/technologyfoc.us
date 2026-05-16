@@ -4,7 +4,7 @@
 <%- include('partials/head') %>
 <div class="page-header">
   <div>
-    <h1>Posts — <span class="muted"><%= site.title %></span></h1>
+    <h1>Posts <span class="muted">— <%= site.title %></span></h1>
   </div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
     <a href="/posts/tags" class="btn">Tags</a>
@@ -14,13 +14,17 @@
 </div>
 <%- include('partials/flash') %>
 
-<div style="display:flex;gap:.5rem;margin-bottom:1rem;">
-  <a href="/posts?status=published" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
-  <a href="/posts?status=drafts" class="btn<%= status === 'drafts' ? ' btn-primary' : '' %>">Drafts</a>
+<div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+  <a href="/posts?status=published&visibility=<%= visibility %>" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
+  <a href="/posts?status=drafts&visibility=<%= visibility %>"    class="btn<%= status === 'drafts'    ? ' btn-primary' : '' %>">Drafts</a>
+  <span style="width:1px;background:var(--border);margin:0 .25rem"></span>
+  <a href="/posts?status=<%= status %>&visibility=all"     class="btn<%= visibility === 'all'     ? ' btn-primary' : '' %>">All</a>
+  <a href="/posts?status=<%= status %>&visibility=public"  class="btn<%= visibility === 'public'  ? ' btn-primary' : '' %>">Public</a>
+  <a href="/posts?status=<%= status %>&visibility=private" class="btn<%= visibility === 'private' ? ' btn-primary' : '' %>">Private</a>
 </div>
 
 <% if (posts.length === 0) { %>
-  <p class="empty">No <%= status === 'drafts' ? 'drafts' : 'published posts' %>. <% if (status !== 'drafts') { %><a href="/posts/new">Write one →</a><% } %></p>
+  <p class="empty">No <%= status === 'drafts' ? 'drafts' : 'published posts' %>.<% if (status !== 'drafts') { %> <a href="/posts/new">Write one →</a><% } %></p>
 <% } else { %>
   <table class="post-table">
     <thead>
@@ -32,29 +36,27 @@
         <tr>
           <td>
             <a href="/posts/edit/<%= post.filename %><%= dirParam %>"><%= post.title %></a>
-            <% if (post.isPrivate) { %><span class="badge" style="background:#7c3aed;color:#fff;margin-left:.35rem;">Private</span><% } %>
+            <% if (post.isPrivate) { %><span class="badge-private" style="margin-left:.35rem;">Private</span><% } %>
           </td>
           <td class="muted"><%= post.dateStr %></td>
           <td><% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %></td>
           <td>
             <% if (post.draft) { %>
-              <span class="badge badge-draft">Draft</span>
+              <span class="badge-draft">Draft</span>
             <% } else { %>
-              <span class="badge badge-live">Live</span>
+              <span class="badge-live">Live</span>
             <% } %>
           </td>
-          <td class="row-actions">
-            <a href="/posts/edit/<%= post.filename %><%= dirParam %>" class="btn btn-sm">Edit</a>
-            <% if (!post.isPrivate) { %>
-              <a href="<%= site.url %>/post/<%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
-            <% } else { %>
-              <a href="<%= site.url %>/private/<%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
-            <% } %>
-            <form method="POST" action="/posts/delete/<%= post.filename %>"
-                  onsubmit="return confirm('Delete <%= post.title.replace(/'/g, "\\'") %>?')">
-              <input type="hidden" name="dir" value="<%= post.isPrivate ? 'private-posts' : 'posts' %>">
-              <button class="btn btn-sm btn-danger">Delete</button>
-            </form>
+          <td>
+            <div class="row-actions">
+              <a href="/posts/edit/<%= post.filename %><%= dirParam %>" class="btn btn-sm">Edit</a>
+              <a href="<%= site.url %><%= post.isPrivate ? '/private/' : '/post/' %><%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
+              <form method="POST" action="/posts/delete/<%= post.filename %>"
+                    onsubmit="return confirm('Delete <%= post.title.replace(/'/g, "\\'") %>?')">
+                <input type="hidden" name="dir" value="<%= post.isPrivate ? 'private-posts' : 'posts' %>">
+                <button class="btn btn-sm btn-danger">Delete</button>
+              </form>
+            </div>
           </td>
         </tr>
       <% }) %>

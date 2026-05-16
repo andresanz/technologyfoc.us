@@ -6,19 +6,19 @@
   <div>
     <h1>Pages <span class="muted">— <%= site.title %></span></h1>
   </div>
-  <div class="header-actions">
-    <a href="/pages/new" class="btn btn-primary">New page</a>
-    <a href="/pages/new?dir=private-pages" class="btn">New private page</a>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <a href="/pages/new" class="btn btn-primary">+ Public page</a>
+    <a href="/pages/new?dir=private-pages" class="btn">+ Private page</a>
   </div>
 </div>
 <%- include('partials/flash') %>
 
 <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
   <a href="/pages?status=published&visibility=<%= visibility %>" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
-  <a href="/pages?status=drafts&visibility=<%= visibility %>" class="btn<%= status === 'drafts' ? ' btn-primary' : '' %>">Drafts</a>
+  <a href="/pages?status=drafts&visibility=<%= visibility %>"    class="btn<%= status === 'drafts'    ? ' btn-primary' : '' %>">Drafts</a>
   <span style="width:1px;background:var(--border);margin:0 .25rem"></span>
-  <a href="/pages?status=<%= status %>&visibility=all" class="btn<%= visibility === 'all' ? ' btn-primary' : '' %>">All</a>
-  <a href="/pages?status=<%= status %>&visibility=public" class="btn<%= visibility === 'public' ? ' btn-primary' : '' %>">Public</a>
+  <a href="/pages?status=<%= status %>&visibility=all"     class="btn<%= visibility === 'all'     ? ' btn-primary' : '' %>">All</a>
+  <a href="/pages?status=<%= status %>&visibility=public"  class="btn<%= visibility === 'public'  ? ' btn-primary' : '' %>">Public</a>
   <a href="/pages?status=<%= status %>&visibility=private" class="btn<%= visibility === 'private' ? ' btn-primary' : '' %>">Private</a>
 </div>
 
@@ -27,20 +27,16 @@
 <% } else { %>
   <table class="post-table">
     <thead>
-      <tr>
-        <th>Title</th>
-        <th>Slug</th>
-        <th>Order</th>
-        <th>Nav</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
+      <tr><th>Title</th><th>Slug</th><th>Order</th><th>Nav</th><th>Status</th><th></th></tr>
     </thead>
     <tbody>
       <% pages.forEach(function(p) { %>
         <tr>
-          <td><strong><%= p.title %></strong><% if (p.isPrivate) { %> <span class="badge-private">Private</span><% } %></td>
-          <td><code><%= p.isPrivate ? '/private/pages/' : '/' %><%= p.slug %></code></td>
+          <td>
+            <a href="/pages/edit/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>"><%= p.title %></a>
+            <% if (p.isPrivate) { %><span class="badge-private" style="margin-left:.35rem;">Private</span><% } %>
+          </td>
+          <td><code><%= p.isPrivate ? '/private/' : '/' %><%= p.slug %></code></td>
           <td><%= p.order || '—' %></td>
           <td><%= (!p.isPrivate && p.nav !== false) ? '✓' : '' %></td>
           <td>
@@ -55,7 +51,7 @@
               <a href="/pages/edit/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>" class="btn btn-sm">Edit</a>
               <a href="<%= site.url %><%= p.isPrivate ? '/private/' : '/' %><%= p.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
               <form method="POST" action="/pages/delete/<%= p.filename %><%= p.isPrivate ? '?dir=private-pages' : '' %>"
-                    onsubmit="return confirm('Delete \'<%= p.title %>\'?')">
+                    onsubmit="return confirm('Delete <%= p.title.replace(/'/g, "\\'") %>?')">
                 <button class="btn btn-sm btn-danger">Delete</button>
               </form>
             </div>
