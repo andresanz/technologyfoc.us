@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#f9f7f4">
-  <title>Write</title>
+  <title>New post</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -212,7 +212,7 @@
   <div class="nav-spacer"></div>
   <button class="nav-btn" onclick="submitDraft()" id="draftBtn">Draft</button>
   <button class="nav-publish" id="publishBtn" onclick="submitPost()">
-    <span id="publishLabel">Publish</span>
+    <span id="publishLabel">Post</span>
     <span class="spin" id="publishSpin"></span>
   </button>
 </nav>
@@ -302,7 +302,7 @@ function autoResize(el) {
 }
 const titleEl = document.getElementById('titleInput');
 const bodyEl  = document.getElementById('bodyInput');
-titleEl.addEventListener('input', () => autoResize(titleEl));
+titleEl.addEventListener('input', () => { autoResize(titleEl); document.title = titleEl.value.trim() || 'New post'; });
 bodyEl.addEventListener('input',  () => autoResize(bodyEl));
 
 // ── Markdown helpers ───────────────────────────────────────────────────────────
