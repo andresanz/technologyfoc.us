@@ -485,6 +485,7 @@ router.post('/nav', async (req, res) => {
   const site    = req.site;
   const navFile = path.join(site.dir, 'content', 'nav.json');
   try {
+    console.log('[nav POST] useHomeNav=%s nav=%s homeNav=%s', req.body.useHomeNav, (req.body.nav||'').slice(0,40), (req.body.homeNav||'').slice(0,40));
     const nav        = JSON.parse(req.body.nav     || '[]');
     const useHomeNav = req.body.useHomeNav === '1';
     const homeNav    = useHomeNav ? JSON.parse(req.body.homeNav || '[]') : undefined;
