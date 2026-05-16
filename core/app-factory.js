@@ -169,7 +169,7 @@ function createApp(siteDir) {
 
   // ── Search ────────────────────────────────────────────────────────────────
   if (process.env.ENABLE_SEARCH !== 'false') app.get('/search', (req, res) => {
-    const q       = (req.query.q || '').trim();
+    const q       = (Array.isArray(req.query.q) ? req.query.q[0] : req.query.q || '').trim();
     const results = q.length >= 2 ? postsLib.search(q) : [];
     res.render('search', {
       site:      app.locals.siteConfig(),
