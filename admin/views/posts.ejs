@@ -45,7 +45,7 @@
             <% if (post.excerpt) { %><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem;"><%= post.excerpt.slice(0,120) %><%= post.excerpt.length > 120 ? '…' : '' %></div><% } %>
           </td>
           <td data-value="<%= post.isPrivate ? 'private' : 'public' %>">
-            <% if (post.isPrivate) { %><span class="badge-private">Private</span><% } else { %><span style="font-size:.78rem;color:var(--muted)">Public</span><% } %>
+            <% if (post.isPrivate) { %><span class="badge-private">Private</span><% } else { %><span class="badge-public">Public</span><% } %>
           </td>
           <td class="muted"><%= post.dateStr %></td>
           <td><% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %></td>
