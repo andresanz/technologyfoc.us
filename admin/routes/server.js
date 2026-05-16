@@ -485,10 +485,9 @@ router.post('/nav', async (req, res) => {
   const site    = req.site;
   const navFile = path.join(site.dir, 'content', 'nav.json');
   try {
-    const nav        = JSON.parse(req.body.nav     || '[]');
-    const useHomeNav = !!req.body.useHomeNav;
-    const homeNav    = useHomeNav ? JSON.parse(req.body.homeNav || '[]') : undefined;
-    const out        = useHomeNav ? { nav, homeNav } : nav;
+    const nav      = JSON.parse(req.body.nav     || '[]');
+    const homeNav  = JSON.parse(req.body.homeNav || '[]');
+    const out      = homeNav.length ? { nav, homeNav } : nav;
     fs.mkdirSync(path.dirname(navFile), { recursive: true });
     fs.writeFileSync(navFile, JSON.stringify(out, null, 2), 'utf8');
     await site.bustCache().catch(() => {});

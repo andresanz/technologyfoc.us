@@ -21,7 +21,7 @@
 
   <section class="card">
     <h3 style="margin-bottom:.75rem">All pages nav</h3>
-    <table class="nav-table" id="navTable">
+    <table class="nav-table">
       <thead><tr>
         <th style="width:2rem"></th>
         <th>Label</th><th>URL</th>
@@ -49,38 +49,31 @@
   </section>
 
   <section class="card" style="margin-top:1rem">
-    <div style="margin-bottom:.75rem;display:flex;align-items:center;gap:1rem">
-      <h3 style="margin:0">Home page nav</h3>
-      <div style="display:flex;align-items:center;gap:.4rem;font-size:.875rem;color:var(--muted);cursor:pointer" onclick="document.getElementById('enableHomeNav').click()">
-        <input type="checkbox" id="enableHomeNav" name="useHomeNav" value="1" <%= hasHomeNav ? 'checked' : '' %> onclick="event.stopPropagation();toggleHomeNav(this.checked)" style="width:16px;height:16px;margin:0;cursor:pointer;flex-shrink:0">
-        <span>Different from all-pages nav</span>
-      </div>
-    </div>
-    <div id="homeNavSection" style="<%= hasHomeNav ? '' : 'display:none' %>">
-      <table class="nav-table" id="homeNavTable">
-        <thead><tr>
-          <th style="width:2rem"></th>
-          <th>Label</th><th>URL</th>
-          <th style="width:5rem;text-align:center">Enabled</th>
-          <th style="width:5rem;text-align:center">New tab</th>
-          <th style="width:3rem"></th>
-        </tr></thead>
-        <tbody id="homeNavBody">
-          <% homeNavItems.forEach(function(item) { %>
-          <tr class="nav-row" draggable="true">
-            <td class="drag-handle" title="Drag to reorder">⠿</td>
-            <td><input type="text" class="nav-label" value="<%= item.label %>" placeholder="Label"></td>
-            <td><input type="text" class="nav-url"   value="<%= item.url %>"   placeholder="/path or https://…"></td>
-            <td style="text-align:center"><input type="checkbox" class="nav-enabled" <%= item.enabled !== false ? 'checked' : '' %>></td>
-            <td style="text-align:center"><input type="checkbox" class="nav-newtab" <%= item.newTab ? 'checked' : '' %>></td>
-            <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-      <div style="margin-top:1rem;display:flex;gap:.5rem">
-        <button type="button" class="btn" onclick="addRow('homeNavBody')">+ Add item</button>
-      </div>
+    <h3 style="margin-bottom:.25rem">Home page nav</h3>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem">Leave empty to use the all-pages nav on the home page.</p>
+    <table class="nav-table">
+      <thead><tr>
+        <th style="width:2rem"></th>
+        <th>Label</th><th>URL</th>
+        <th style="width:5rem;text-align:center">Enabled</th>
+        <th style="width:5rem;text-align:center">New tab</th>
+        <th style="width:3rem"></th>
+      </tr></thead>
+      <tbody id="homeNavBody">
+        <% homeNavItems.forEach(function(item) { %>
+        <tr class="nav-row" draggable="true">
+          <td class="drag-handle" title="Drag to reorder">⠿</td>
+          <td><input type="text" class="nav-label" value="<%= item.label %>" placeholder="Label"></td>
+          <td><input type="text" class="nav-url"   value="<%= item.url %>"   placeholder="/path or https://…"></td>
+          <td style="text-align:center"><input type="checkbox" class="nav-enabled" <%= item.enabled !== false ? 'checked' : '' %>></td>
+          <td style="text-align:center"><input type="checkbox" class="nav-newtab" <%= item.newTab ? 'checked' : '' %>></td>
+          <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <div style="margin-top:1rem;display:flex;gap:.5rem">
+      <button type="button" class="btn" onclick="addRow('homeNavBody')">+ Add item</button>
     </div>
   </section>
 </form>
@@ -147,10 +140,6 @@ function resetDefaults() {
   defaults.forEach(d => addRow('navBody', d.label, d.url));
 }
 
-function toggleHomeNav(on) {
-  document.getElementById('homeNavSection').style.display = on ? '' : 'none';
-}
-
 // ── Serialize to JSON before submit ──────────────────────────────────────────
 function serializeRows(tbodyId) {
   return [...document.getElementById(tbodyId).querySelectorAll('.nav-row')].map(row => ({
@@ -162,8 +151,8 @@ function serializeRows(tbodyId) {
 }
 
 function serializeNav() {
-  try { document.getElementById('navJson').value = JSON.stringify(serializeRows('navBody')); } catch(e) { console.error('navBody error', e); }
-  try { document.getElementById('homeNavJson').value = JSON.stringify(serializeRows('homeNavBody')); } catch(e) { console.error('homeNavBody error', e); }
+  document.getElementById('navJson').value     = JSON.stringify(serializeRows('navBody'));
+  document.getElementById('homeNavJson').value = JSON.stringify(serializeRows('homeNavBody'));
 }
 </script>
 
