@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 const express      = require('express');
+const session      = require('express-session');
 const cookieParser = require('cookie-parser');
 const crypto       = require('crypto');
 const flash        = require('connect-flash');
@@ -28,6 +29,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Session (for flash messages only — auth uses cookie) ─────────────────────
+app.use(session({
+  secret:            process.env.SESSION_SECRET || 'changeme',
+  resave:            false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, sameSite: 'lax' },
+}));
 
 // ── Cookie-based auth (survives restarts) ────────────────────────────────────
 app.use(cookieParser());
