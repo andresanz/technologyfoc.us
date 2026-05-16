@@ -77,19 +77,21 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('th[data-sort]').forEach(function(th) {
-    let asc = true;
+    th.dataset.asc = '1';
+    th.style.cursor = 'pointer';
     th.addEventListener('click', function() {
+      const asc   = th.dataset.asc === '1';
       const col   = th.cellIndex;
       const tbody = th.closest('table').querySelector('tbody');
-      const rows  = Array.from(tbody.querySelectorAll('tr'));
+      const rows  = Array.from(tbody.rows);
       rows.sort(function(a, b) {
         const av = (a.cells[col].getAttribute('data-value') || a.cells[col].textContent).trim();
         const bv = (b.cells[col].getAttribute('data-value') || b.cells[col].textContent).trim();
         return asc ? av.localeCompare(bv) : bv.localeCompare(av);
       });
       rows.forEach(function(r) { tbody.appendChild(r); });
+      th.dataset.asc = asc ? '0' : '1';
       th.querySelector('.sort-icon').textContent = asc ? '↓' : '↑';
-      asc = !asc;
     });
   });
 });
