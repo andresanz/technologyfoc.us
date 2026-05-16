@@ -71,6 +71,7 @@ function createApp(siteDir) {
   const privatePostsLib  = require('./lib/posts')(privatePostsDir);
   const pagesLib         = require('./lib/pages')(pagesDir);
   const privatePagesLib  = require('./lib/pages')(privatePagesDir);
+  const gratitudeFile    = path.join(siteDir, 'content', 'gratitude.json');
 
   const { processShortcodes } = require('./lib/shortcodes');
   const PER_PAGE = parseInt(process.env.PER_PAGE) || 5;
@@ -166,7 +167,6 @@ function createApp(siteDir) {
   });
 
   // ── /gratitude — consolidated journal page ────────────────────────────────
-  const gratitudeFile = path.join(siteDir, 'content', 'gratitude.json');
   app.get('/gratitude', (req, res) => {
     let entries = [];
     try { entries = JSON.parse(fs.readFileSync(gratitudeFile, 'utf8')); } catch {}
