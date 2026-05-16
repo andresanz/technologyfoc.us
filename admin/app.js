@@ -26,20 +26,18 @@ app.set('view cache', false);
 // ── Static ───────────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Body parsing ─────────────────────────────────────────────────────────────
+// ── Body + cookie parsing ─────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// ── Session (for flash messages only — auth uses cookie) ─────────────────────
+// ── Session (for flash messages only — auth uses signed cookie) ───────────────
 app.use(session({
   secret:            process.env.SESSION_SECRET || 'changeme',
   resave:            false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: { httpOnly: true, sameSite: 'lax' },
 }));
-
-// ── Cookie-based auth (survives restarts) ────────────────────────────────────
-app.use(cookieParser());
 
 const AUTH_COOKIE  = '_admin';
 const AUTH_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
