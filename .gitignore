@@ -1,4 +1,5 @@
 node_modules/
+content/nav.json
 analytics.db
 analytics.db-shm
 analytics.db-wal
