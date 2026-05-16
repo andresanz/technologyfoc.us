@@ -196,6 +196,8 @@ main.container:has(.home-page) { padding-top: 0; }
 
 /* ── Post body (rendered markdown) ──────────────────────────────────────── */
 .post-body { max-width: var(--max-w); margin-top: 20px; }
+.post-body.has-cover > p:first-child > img:only-child,
+.post-body.has-cover > img:first-child { display: none; }
 
 .post-body h1,
 .post-body h2,

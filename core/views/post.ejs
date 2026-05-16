@@ -19,7 +19,7 @@
     <% } %>
   </header>
 
-  <div class="post-body">
+  <div class="post-body<%= post.coverImage ? ' has-cover' : '' %>">
     <%- post.html %>
   </div>
 

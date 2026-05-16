@@ -30,7 +30,7 @@
       <tr>
         <th>Title</th>
         <th data-sort="visibility" style="cursor:pointer;user-select:none">Visibility <span class="sort-icon">↕</span></th>
-        <th>Date</th>
+        <th data-sort="date" style="cursor:pointer;user-select:none">Date <span class="sort-icon">↕</span></th>
         <th>Tags</th>
         <th data-sort="status" style="cursor:pointer;user-select:none">Status <span class="sort-icon">↕</span></th>
         <th></th>
@@ -47,7 +47,7 @@
           <td data-value="<%= post.isPrivate ? 'private' : 'public' %>">
             <% if (post.isPrivate) { %><span class="badge-private">Private</span><% } else { %><span class="badge-public">Public</span><% } %>
           </td>
-          <td class="muted"><%= post.dateStr %></td>
+          <td class="muted" data-value="<%= new Date(post.date).toISOString() %>"><%= post.dateStr %></td>
           <td><% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %></td>
           <td>
             <% if (post.draft) { %>
