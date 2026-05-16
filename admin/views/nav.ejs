@@ -50,10 +50,10 @@
   </section>
 
   <section class="card" style="margin-top:1rem">
-    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
-      <h3 style="margin:0">Home page nav</h3>
-      <label style="display:flex;align-items:center;gap:.4rem;font-size:.875rem;cursor:pointer">
-        <input type="checkbox" id="enableHomeNav" <%= hasHomeNav ? 'checked' : '' %> onchange="toggleHomeNav(this.checked)">
+    <div style="margin-bottom:.75rem">
+      <h3 style="margin:0 0 .4rem">Home page nav</h3>
+      <label style="display:inline-flex;align-items:center;gap:.4rem;font-size:.875rem;cursor:pointer;font-weight:normal">
+        <input type="checkbox" id="enableHomeNav" <%= hasHomeNav ? 'checked' : '' %> onchange="toggleHomeNav(this.checked)" style="width:auto;margin:0">
         Different from all-pages nav
       </label>
     </div>
