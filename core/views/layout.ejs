@@ -27,7 +27,6 @@
       <nav id="siteNav">
         <% if (locals.navLoaded) { %>
           <% (locals.nav || []).forEach(function(item) { %><a href="<%= item.url %>"<%= item.newTab ? ' target="_blank" rel="noopener"' : '' %>><%= item.label %></a><% }) %>
-          <% if (site.search) { %><a href="/search" aria-label="Search">Search</a><% } %>
         <% } else { %>
           <a href="<%= locals.postsPath || '/' %>">Posts</a>
           <% if (locals.pages) { pages.forEach(function(p) { %>
@@ -35,7 +34,6 @@
           <% }) } %>
           <a href="/tags">Tags</a>
           <a href="/feed/rss">RSS</a>
-          <% if (site.search) { %><a href="/search" aria-label="Search">Search</a><% } %>
         <% } %>
       </nav>
     </div>
