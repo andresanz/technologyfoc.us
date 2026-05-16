@@ -164,8 +164,9 @@ function serializeRows(tbodyId) {
 }
 
 function serializeNav() {
-  document.getElementById('navJson').value     = JSON.stringify(serializeRows('navBody'));
-  document.getElementById('homeNavJson').value = JSON.stringify(serializeRows('homeNavBody'));
+  document.getElementById('navJson').value        = JSON.stringify(serializeRows('navBody'));
+  document.getElementById('homeNavJson').value    = JSON.stringify(serializeRows('homeNavBody'));
+  document.getElementById('useHomeNavInput').value = document.getElementById('enableHomeNav').checked ? '1' : '0';
 }
 </script>
 
