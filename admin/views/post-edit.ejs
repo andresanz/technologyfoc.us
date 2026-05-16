@@ -96,16 +96,13 @@
         <div style="margin-top:1rem;">
           <div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem;">Visibility</div>
           <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-            <label id="visTogglePub" style="flex:1;display:flex;align-items:center;justify-content:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;background:<%= !isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= !isPrivate ? '#fff' : 'var(--text)' %>;">
-              <input type="radio" name="visibility" value="public" style="display:none;" <%= !isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePub').style.background='var(--accent,#2563eb)';document.getElementById('visTogglePub').style.color='#fff';document.getElementById('visTogglePriv').style.background='var(--surface)';document.getElementById('visTogglePriv').style.color='var(--text)';">
-              Public
-            </label>
-            <label id="visTogglePriv" style="flex:1;display:flex;align-items:center;justify-content:center;padding:.4rem 0;font-size:.85rem;cursor:pointer;border-left:1px solid var(--border);background:<%= isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= isPrivate ? '#fff' : 'var(--text)' %>;">
-              <input type="radio" name="visibility" value="private" style="display:none;" <%= isPrivate ? 'checked' : '' %> onchange="document.getElementById('visTogglePriv').style.background='var(--accent,#2563eb)';document.getElementById('visTogglePriv').style.color='#fff';document.getElementById('visTogglePub').style.background='var(--surface)';document.getElementById('visTogglePub').style.color='var(--text)';">
-              Private
-            </label>
+            <button type="button" id="visTogglePub" onclick="setVisibility('public')"
+              style="flex:1;padding:.4rem 0;font-size:.85rem;cursor:pointer;border:none;background:<%= !isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= !isPrivate ? '#fff' : 'var(--text)' %>;">Public</button>
+            <button type="button" id="visTogglePriv" onclick="setVisibility('private')"
+              style="flex:1;padding:.4rem 0;font-size:.85rem;cursor:pointer;border:none;border-left:1px solid var(--border);background:<%= isPrivate ? 'var(--accent,#2563eb)' : 'var(--surface)' %>;color:<%= isPrivate ? '#fff' : 'var(--text)' %>;">Private</button>
           </div>
         </div>
+        <input type="hidden" name="visibility" id="visInput" value="<%= isPrivate ? 'private' : 'public' %>">
         <input type="hidden" name="originalVisibility" value="<%= isPrivate ? 'private' : 'public' %>">
       </section>
 
@@ -326,6 +323,17 @@ draft: true
 
 <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <script>
+// ── Visibility toggle ────────────────────────────────────────────────────────
+function setVisibility(v) {
+  document.getElementById('visInput').value = v;
+  const pub  = document.getElementById('visTogglePub');
+  const priv = document.getElementById('visTogglePriv');
+  pub.style.background  = v === 'public'  ? 'var(--accent,#2563eb)' : 'var(--surface)';
+  pub.style.color       = v === 'public'  ? '#fff' : 'var(--text)';
+  priv.style.background = v === 'private' ? 'var(--accent,#2563eb)' : 'var(--surface)';
+  priv.style.color      = v === 'private' ? '#fff' : 'var(--text)';
+}
+
 // ── Markdown help drawer ────────────────────────────────────────────────────
 const mdHelp        = document.getElementById('mdHelp');
 const mdHelpOverlay = document.getElementById('mdHelpOverlay');
