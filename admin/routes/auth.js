@@ -9,13 +9,17 @@ const AUTH_COOKIE  = '_admin';
 const AUTH_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
 
 function makeToken() {
-  const secret = process.env.SESSION_SECRET || 'changeme';
-  return crypto.createHmac('sha256', secret).update('admin_auth').digest('hex');
+  return crypto.createHmac('sha256', process.env.SESSION_SECRET || 'changeme')
+               .update('admin_auth').digest('hex');
 }
 
-function isAuthed(req) {
-  return req.cookies && req.cookies[AUTH_COOKIE] === makeToken();
+function getAuthCookie(req) {
+  const raw = req.headers.cookie || '';
+  const match = raw.split(';').map(s => s.trim()).find(s => s.startsWith(AUTH_COOKIE + '='));
+  return match ? match.slice(AUTH_COOKIE.length + 1) : null;
 }
+
+function isAuthed(req) { return getAuthCookie(req) === makeToken(); }
 
 // Simple rate limiter — track failed attempts in memory
 const attempts = new Map(); // ip → { count, resetAt }
