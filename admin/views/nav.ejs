@@ -10,12 +10,12 @@
   </div>
   <div class="header-actions">
     <a href="<%= site.url %>" target="_blank" class="btn">View site ↗</a>
-    <button form="nav-form" type="submit" class="btn btn-primary">Save nav</button>
+    <button type="button" class="btn btn-primary" onclick="serializeNav(); document.getElementById('nav-form').submit()">Save nav</button>
   </div>
 </div>
 <%- include('partials/flash') %>
 
-<form id="nav-form" method="POST" action="/server/nav" onsubmit="serializeNav()">
+<form id="nav-form" method="POST" action="/server/nav">
   <input type="hidden" name="nav" id="navJson">
   <input type="hidden" name="homeNav" id="homeNavJson">
   <input type="hidden" name="useHomeNav" id="useHomeNavInput" value="<%= hasHomeNav ? '1' : '0' %>">

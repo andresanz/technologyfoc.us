@@ -13,9 +13,13 @@
 </div>
 <%- include('partials/flash') %>
 
-<div style="display:flex;gap:.5rem;margin-bottom:1rem;">
-  <a href="/pages?status=published" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
-  <a href="/pages?status=drafts" class="btn<%= status === 'drafts' ? ' btn-primary' : '' %>">Drafts</a>
+<div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+  <a href="/pages?status=published&visibility=<%= visibility %>" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
+  <a href="/pages?status=drafts&visibility=<%= visibility %>" class="btn<%= status === 'drafts' ? ' btn-primary' : '' %>">Drafts</a>
+  <span style="width:1px;background:var(--border);margin:0 .25rem"></span>
+  <a href="/pages?status=<%= status %>&visibility=all" class="btn<%= visibility === 'all' ? ' btn-primary' : '' %>">All</a>
+  <a href="/pages?status=<%= status %>&visibility=public" class="btn<%= visibility === 'public' ? ' btn-primary' : '' %>">Public</a>
+  <a href="/pages?status=<%= status %>&visibility=private" class="btn<%= visibility === 'private' ? ' btn-primary' : '' %>">Private</a>
 </div>
 
 <% if (pages.length === 0) { %>

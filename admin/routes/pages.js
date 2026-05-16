@@ -15,15 +15,15 @@ router.get('/', (req, res) => {
   const publicPages  = postsLib.list(site.pagesDir).map(p => ({ ...p, isPrivate: false }));
   const privatePages = site.privatePagesDir ? postsLib.list(site.privatePagesDir).map(p => ({ ...p, isPrivate: true })) : [];
 
-  const status = req.query.status || 'published';
+  const status     = req.query.status     || 'published';
+  const visibility = req.query.visibility || 'all';
   let pages = [...publicPages, ...privatePages];
-  if (status === 'drafts') {
-    pages = pages.filter(p => p.draft);
-  } else {
-    pages = pages.filter(p => !p.draft);
-  }
+  if (status === 'drafts') pages = pages.filter(p => p.draft);
+  else                     pages = pages.filter(p => !p.draft);
+  if (visibility === 'public')  pages = pages.filter(p => !p.isPrivate);
+  if (visibility === 'private') pages = pages.filter(p =>  p.isPrivate);
 
-  res.render('pages', { site, pages, status, flash: req.flash() });
+  res.render('pages', { site, pages, status, visibility, flash: req.flash() });
 });
 
 // GET /pages/new
