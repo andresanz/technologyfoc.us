@@ -57,7 +57,7 @@ main.container:has(.home-page) { padding-top: 0; }
 .home-page .post-body > .shortcode-posts { margin-top: 0; }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
-.site-header { padding: 1rem 0; border-bottom: 1px solid var(--border); }
+.site-header { padding: 1rem 0; }
 .site-header .container {
   display: flex;
   align-items: center;
