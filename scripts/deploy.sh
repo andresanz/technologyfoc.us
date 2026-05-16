@@ -16,11 +16,9 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"; }
 cd "$APP_DIR"
 
 BEFORE=$(git rev-parse HEAD)
-DIRTY=$(git diff --quiet HEAD 2>/dev/null; echo $?)
-[ "$DIRTY" = "1" ] && git stash --quiet
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git pull --rebase origin "$BRANCH" --quiet
-[ "$DIRTY" = "1" ] && git stash pop --quiet 2>/dev/null || true
+git fetch origin --quiet
+git reset --hard origin/"$BRANCH" --quiet
 AFTER=$(git rev-parse HEAD)
 
 if [ "$BEFORE" = "$AFTER" ]; then
