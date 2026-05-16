@@ -4,6 +4,7 @@ const express  = require('express');
 const fs       = require('fs');
 const path     = require('path');
 const { loadState, loadEntries, deleteEntry, sendPrompt, checkReplies } = require('../services/gratitude');
+const { getNextFireTime } = require('../services/gratitude-scheduler');
 const router   = express.Router();
 
 const PROMPTS_FILE = path.join(__dirname, '..', 'data', 'gratitude-prompts.json');
@@ -22,7 +23,7 @@ router.get('/', (req, res) => {
   const state   = loadState();
   const entries = loadEntries().reverse();
   const prompts = load();
-  res.render('gratitude', { state, entries, prompts, blogUrl: BLOG_URL, flash: req.flash() });
+  res.render('gratitude', { state, entries, prompts, blogUrl: BLOG_URL, nextFireTime: getNextFireTime(), flash: req.flash() });
 });
 
 // POST /send — trigger prompt now

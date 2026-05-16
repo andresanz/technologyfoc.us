@@ -41,6 +41,7 @@
   </div>
   <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">
     <%= entries.length %> entries · <%= prompts.length %> prompts in rotation
+    <% if (nextFireTime) { %> · Next auto-send: <%= new Date(nextFireTime).toLocaleString([], { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) %><% } %>
   </div>
 </section>
 

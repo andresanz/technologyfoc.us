@@ -127,25 +127,5 @@ app.use((err, req, res, _next) => {
 const PORT = process.env.ADMIN_PORT || process.env.PORT || 4000;
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`Blog admin running on http://127.0.0.1:${PORT}`);
-  scheduleGratitude();
+  require('./services/gratitude-scheduler').schedule();
 });
-
-// ── Gratitude scheduler — random time between 9:00pm and 9:59pm daily ────────
-function scheduleGratitude() {
-  const now   = new Date();
-  const next  = new Date();
-  next.setHours(21, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
-  if (next <= now) next.setDate(next.getDate() + 1); // already past tonight's window, aim for tomorrow
-  const ms = next - now;
-  console.log(`Gratitude prompt scheduled for ${next.toLocaleTimeString()}`);
-  setTimeout(async () => {
-    try {
-      const { sendPrompt } = require('./services/gratitude');
-      const result = await sendPrompt();
-      console.log('Gratitude prompt:', result);
-    } catch (e) {
-      console.error('Gratitude scheduler error:', e.message);
-    }
-    scheduleGratitude(); // reschedule for tomorrow
-  }, ms);
-}
