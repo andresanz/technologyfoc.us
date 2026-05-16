@@ -45,6 +45,13 @@ module.exports = function createPrivateRouter(postsLib, pagesLib, gratitudeFile)
     res.render('private-post', { post, site: req.app.locals.siteConfig() });
   });
 
+  // GET /private/pages — page list
+  router.get('/pages', (req, res) => {
+    if (!authed(req)) return res.redirect('/private');
+    const pages = pagesLib.getNavPages();
+    res.render('private-pages', { pages, site: req.app.locals.siteConfig() });
+  });
+
   // GET /private/gratitude — journal entries
   router.get('/gratitude', (req, res) => {
     if (!authed(req)) return res.redirect('/private');

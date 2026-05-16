@@ -1,0 +1,29 @@
+<%
+  locals.pageTitle = 'Private pages';
+  locals.canonical = '/private/pages';
+-%>
+<%- include('layout') %>
+
+<div class="page-header">
+  <h1>Private pages</h1>
+  <p style="font-size:.875rem;color:var(--muted)"><a href="/private/logout">Sign out</a></p>
+</div>
+
+<div class="post-list">
+  <% if (pages.length === 0) { %>
+    <p class="empty">No private pages yet.</p>
+  <% } else { %>
+    <% pages.forEach(function(page) { %>
+      <article class="post-card">
+        <div class="post-card-body">
+          <h2><a href="/private/<%= page.slug %>"><%= page.title %></a></h2>
+          <% var ex = page.excerpt || ''; var truncated = ex.length > 140 ? ex.slice(0, 137) + '…' : ex; %>
+          <% if (truncated) { %><p class="excerpt"><%= truncated %></p><% } %>
+          <a href="/private/<%= page.slug %>" class="read-more">View →</a>
+        </div>
+      </article>
+    <% }) %>
+  <% } %>
+</div>
+
+<%- include('layout-end') %>
