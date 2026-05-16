@@ -36,6 +36,7 @@
           <td>
             <a href="/posts/edit/<%= post.filename %><%= dirParam %>"><%= post.title %></a>
             <% if (post.isPrivate) { %><span class="badge-private" style="margin-left:.35rem;">Private</span><% } %>
+            <% if (post.excerpt) { %><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem;"><%= post.excerpt.slice(0,120) %><%= post.excerpt.length > 120 ? '…' : '' %></div><% } %>
           </td>
           <td class="muted"><%= post.dateStr %></td>
           <td><% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %></td>
@@ -46,8 +47,8 @@
               <span class="badge-live">Live</span>
             <% } %>
           </td>
-          <td>
-            <div class="row-actions">
+          <td style="text-align:right">
+            <div class="row-actions" style="justify-content:flex-end">
               <a href="/posts/edit/<%= post.filename %><%= dirParam %>" class="btn btn-sm">Edit</a>
               <a href="<%= site.url %><%= post.isPrivate ? '/private/posts/' : '/posts/' %><%= post.slug %>" target="_blank" class="btn btn-sm">View ↗</a>
               <form method="POST" action="/posts/delete/<%= post.filename %>"
