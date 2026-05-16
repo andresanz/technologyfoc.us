@@ -36,6 +36,7 @@ body {
   min-height:  100vh;
   display:     flex;
   flex-direction: column;
+  padding-top: 57px;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -57,7 +58,7 @@ main.container:has(.home-page) { padding-top: 0; }
 .home-page .post-body > .shortcode-posts { margin-top: 0; }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
-.site-header { padding: 1rem 0; position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); }
+.site-header { padding: 1rem 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); }
 .site-header .container {
   display: flex;
   align-items: center;
