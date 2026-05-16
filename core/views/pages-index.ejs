@@ -1,0 +1,28 @@
+<%
+  locals.pageTitle = 'Pages';
+  locals.canonical = '/pages';
+-%>
+<%- include('layout') %>
+
+<div class="page-header-simple">
+  <h1>Pages</h1>
+</div>
+
+<% if (!pages || !pages.length) { %>
+  <p style="color:var(--muted,#888);font-style:italic;">No pages yet.</p>
+<% } else { %>
+  <div class="post-list">
+    <% pages.forEach(function(page) { %>
+      <article class="post-card">
+        <div class="post-card-body">
+          <h2><a href="/<%= page.slug %>"><%= page.title %></a></h2>
+          <% var ex = page.excerpt || ''; var truncated = ex.length > 140 ? ex.slice(0, 137) + '…' : ex; %>
+          <% if (truncated) { %><p class="excerpt"><%= truncated %></p><% } %>
+          <a href="/<%= page.slug %>" class="read-more">View →</a>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('layout-end') %>

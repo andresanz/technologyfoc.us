@@ -167,6 +167,12 @@ function createApp(siteDir) {
   });
 
 
+  // ── Pages index ──────────────────────────────────────────────────────────
+  app.get('/pages', (req, res) => {
+    const pages = pagesLib.getNavPages().filter(p => p.slug !== 'home');
+    res.render('pages-index', { site: app.locals.siteConfig(), pages });
+  });
+
   // ── Search ────────────────────────────────────────────────────────────────
   if (process.env.ENABLE_SEARCH !== 'false') app.get('/search', (req, res) => {
     const q       = (Array.isArray(req.query.q) ? req.query.q[0] : req.query.q || '').trim();
