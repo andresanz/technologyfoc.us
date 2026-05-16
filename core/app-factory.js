@@ -166,16 +166,6 @@ function createApp(siteDir) {
     res.redirect(back);
   });
 
-  // ── /gratitude — consolidated journal page ────────────────────────────────
-  app.get('/gratitude', (req, res) => {
-    let entries = [];
-    try { entries = JSON.parse(fs.readFileSync(gratitudeFile, 'utf8')); } catch {}
-    entries = entries.slice().reverse(); // newest first
-    res.render('gratitude', { site: app.locals.siteConfig(), entries, nav: res.locals.nav, navLoaded: res.locals.navLoaded, pages: res.locals.pages });
-  });
-
-
-
 
   // ── Search ────────────────────────────────────────────────────────────────
   if (process.env.ENABLE_SEARCH !== 'false') app.get('/search', (req, res) => {

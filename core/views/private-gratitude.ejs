@@ -4,25 +4,54 @@
 -%>
 <%- include('layout') %>
 
-<div class="page-header">
+<div class="page-header-simple">
   <h1>Gratitude</h1>
   <p style="font-size:.875rem;color:var(--muted)"><a href="/private/logout">Sign out</a></p>
 </div>
 
-<% if (entries.length === 0) { %>
-  <p class="empty">No entries yet.</p>
+<% if (!entries || !entries.length) { %>
+  <p style="color:var(--muted,#888);font-style:italic;">No entries yet.</p>
 <% } else { %>
-  <div class="post-list">
+  <div class="gratitude-list">
     <% entries.forEach(function(e) { %>
-      <article style="padding:1.25rem 0;border-bottom:1px solid var(--border)">
-        <div class="post-meta" style="margin-bottom:.5rem">
-          <time><%= e.date %></time>
-          <% if (e.prompt) { %><span style="color:var(--muted)"> · <%= e.prompt %></span><% } %>
-        </div>
-        <p style="white-space:pre-wrap;margin:0"><%= e.response %></p>
-      </article>
+      <div class="gratitude-entry">
+        <div class="gratitude-date"><%= new Date(e.date).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) %></div>
+        <% if (e.prompt) { %><div class="gratitude-prompt"><%= e.prompt %></div><% } %>
+        <div class="gratitude-response"><%= e.response %></div>
+      </div>
     <% }) %>
   </div>
 <% } %>
+
+<style>
+.page-header-simple { margin-bottom: 2.5rem; }
+.page-header-simple h1 { margin: 0 0 .35rem; }
+
+.gratitude-list { display: flex; flex-direction: column; gap: 2rem; }
+
+.gratitude-entry {
+  border-left: 3px solid var(--accent, #2563eb);
+  padding: .75rem 0 .75rem 1.25rem;
+}
+.gratitude-date {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted, #888);
+  margin-bottom: .5rem;
+}
+.gratitude-prompt {
+  font-style: italic;
+  color: var(--muted, #888);
+  font-size: .9rem;
+  margin-bottom: .5rem;
+}
+.gratitude-response {
+  font-size: 1rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+</style>
 
 <%- include('layout-end') %>
