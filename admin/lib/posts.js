@@ -18,7 +18,7 @@ function list(postsDir) {
         const date     = data.date ? new Date(String(data.date).replace(/^(\d{4}-\d{2}-\d{2})$/, '$1T12:00:00')) : stat.mtime;
         return {
           filename: f,
-          slug:     data.slug || path.basename(f, '.md'),
+          slug:     data.slug || slugify(data.title || path.basename(f, '.md')),
           title:    data.title || path.basename(f, '.md'),
           date,
           mtime:    stat.mtime,
@@ -45,7 +45,7 @@ function read(postsDir, filename) {
 
   return {
     filename,
-    slug:    data.slug    || path.basename(filename, '.md'),
+    slug:    data.slug    || slugify(data.title || path.basename(filename, '.md')),
     title:   data.title   || '',
     date:    date.toISOString().split('T')[0],  // YYYY-MM-DD for <input type=date>
     tags:    Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ''),
