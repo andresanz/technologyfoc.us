@@ -485,17 +485,17 @@ router.post('/nav', async (req, res) => {
   const site    = req.site;
   const navFile = path.join(site.dir, 'content', 'nav.json');
   try {
-    const nav      = JSON.parse(req.body.nav     || '[]');
-    const homeNav  = JSON.parse(req.body.homeNav || '[]');
-    const out      = homeNav.length ? { nav, homeNav } : nav;
+    const body    = req.body;
+    const nav     = Array.isArray(body.nav)     ? body.nav     : JSON.parse(body.nav     || '[]');
+    const homeNav = Array.isArray(body.homeNav) ? body.homeNav : JSON.parse(body.homeNav || '[]');
+    const out     = homeNav.length ? { nav, homeNav } : nav;
     fs.mkdirSync(path.dirname(navFile), { recursive: true });
     fs.writeFileSync(navFile, JSON.stringify(out, null, 2), 'utf8');
     await site.bustCache().catch(() => {});
-    req.flash('success', 'Nav saved');
+    res.json({ ok: true });
   } catch (e) {
-    req.flash('error', `Failed to save nav: ${e.message}`);
+    res.status(500).json({ error: e.message });
   }
-  res.redirect('/server/nav');
 });
 
 module.exports = router;
