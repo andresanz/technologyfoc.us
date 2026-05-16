@@ -140,9 +140,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 .status-failed   { background: #fef2f2; color: var(--danger);  }
 .badge-live    { background: #f0fdf4; color: var(--success); padding: .15em .6em; border-radius: 999px; font-size: .75rem; }
 .badge-draft   { background: #fffbeb; color: var(--warning); padding: .15em .6em; border-radius: 999px; font-size: .75rem; }
-.badge-private, .badge-public { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: .15em .6em; font-size: .75rem; font-weight: 500; display: inline-block; min-width: 4rem; text-align: center; }
-.badge-private { color: var(--muted); }
-.badge-public  { color: var(--accent); border-color: var(--accent); opacity: .5; }
+.badge-private, .badge-public { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: .15em .6em; font-size: .75rem; font-weight: 500; display: inline-block; min-width: 4rem; text-align: center; color: var(--muted); }
 
 /* ── Login ───────────────────────────────────────────────────────────────── */
 .login-body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
