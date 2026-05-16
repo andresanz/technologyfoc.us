@@ -486,7 +486,7 @@ router.post('/nav', async (req, res) => {
   const navFile = path.join(site.dir, 'content', 'nav.json');
   try {
     const nav        = JSON.parse(req.body.nav     || '[]');
-    const useHomeNav = req.body.useHomeNav === '1';
+    const useHomeNav = !!req.body.useHomeNav;
     const homeNav    = useHomeNav ? JSON.parse(req.body.homeNav || '[]') : undefined;
     const out        = useHomeNav ? { nav, homeNav } : nav;
     fs.mkdirSync(path.dirname(navFile), { recursive: true });
