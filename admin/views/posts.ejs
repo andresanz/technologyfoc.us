@@ -27,7 +27,14 @@
 <% } else { %>
   <table class="post-table">
     <thead>
-      <tr><th>Title</th><th>Date</th><th>Tags</th><th>Status</th><th></th></tr>
+      <tr>
+        <th>Title</th>
+        <th data-sort="visibility" style="cursor:pointer;user-select:none">Visibility <span class="sort-icon">↕</span></th>
+        <th>Date</th>
+        <th>Tags</th>
+        <th data-sort="status" style="cursor:pointer;user-select:none">Status <span class="sort-icon">↕</span></th>
+        <th></th>
+      </tr>
     </thead>
     <tbody>
       <% posts.forEach(function(post) { %>
@@ -35,8 +42,10 @@
         <tr>
           <td>
             <a href="/posts/edit/<%= post.filename %><%= dirParam %>"><%= post.title %></a>
-            <% if (post.isPrivate) { %><span class="badge-private" style="margin-left:.35rem;">Private</span><% } %>
             <% if (post.excerpt) { %><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem;"><%= post.excerpt.slice(0,120) %><%= post.excerpt.length > 120 ? '…' : '' %></div><% } %>
+          </td>
+          <td data-value="<%= post.isPrivate ? 'private' : 'public' %>">
+            <% if (post.isPrivate) { %><span class="badge-private">Private</span><% } else { %><span style="font-size:.78rem;color:var(--muted)">Public</span><% } %>
           </td>
           <td class="muted"><%= post.dateStr %></td>
           <td><% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %></td>
@@ -63,4 +72,22 @@
     </tbody>
   </table>
 <% } %>
+<script>
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  let asc = true;
+  th.addEventListener('click', () => {
+    const col   = th.cellIndex;
+    const tbody = th.closest('table').querySelector('tbody');
+    const rows  = [...tbody.querySelectorAll('tr')];
+    rows.sort((a, b) => {
+      const av = (a.cells[col].dataset.value || a.cells[col].textContent).trim();
+      const bv = (b.cells[col].dataset.value || b.cells[col].textContent).trim();
+      return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    asc = !asc;
+    th.querySelector('.sort-icon').textContent = asc ? '↕' : (asc === false ? '↑' : '↓');
+    rows.forEach(r => tbody.appendChild(r));
+  });
+});
+</script>
 <%- include('partials/foot') %>
