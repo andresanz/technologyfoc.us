@@ -135,7 +135,7 @@ function createApp(siteDir) {
   if (fs.existsSync(siteRoutesFile)) app.use('/', require(siteRoutesFile));
 
   app.use('/',        require('./routes/posts')(postsLib, pagesLib));
-  app.use('/private', require('./routes/private')(privatePostsLib, privatePagesLib));
+  app.use('/private', require('./routes/private')(privatePostsLib, privatePagesLib, gratitudeFile));
   app.use('/upload',  require('./routes/upload')());
   app.use('/feed',    require('./routes/feed')(postsLib));
 
