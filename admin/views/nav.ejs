@@ -50,12 +50,12 @@
   </section>
 
   <section class="card" style="margin-top:1rem">
-    <div style="margin-bottom:.75rem">
-      <h3 style="margin:0 0 .4rem">Home page nav</h3>
-      <label style="display:inline-flex;align-items:center;gap:.4rem;font-size:.875rem;cursor:pointer;font-weight:normal">
-        <input type="checkbox" id="enableHomeNav" <%= hasHomeNav ? 'checked' : '' %> onchange="toggleHomeNav(this.checked)" style="width:auto;margin:0">
-        Different from all-pages nav
-      </label>
+    <div style="margin-bottom:.75rem;display:flex;align-items:center;gap:1rem">
+      <h3 style="margin:0">Home page nav</h3>
+      <div style="display:flex;align-items:center;gap:.4rem;font-size:.875rem;color:var(--muted);cursor:pointer" onclick="document.getElementById('enableHomeNav').click()">
+        <input type="checkbox" id="enableHomeNav" <%= hasHomeNav ? 'checked' : '' %> onclick="event.stopPropagation();toggleHomeNav(this.checked)" style="width:16px;height:16px;margin:0;cursor:pointer;flex-shrink:0">
+        <span>Different from all-pages nav</span>
+      </div>
     </div>
     <div id="homeNavSection" style="<%= hasHomeNav ? '' : 'display:none' %>">
       <table class="nav-table" id="homeNavTable">
@@ -164,9 +164,11 @@ function serializeRows(tbodyId) {
 }
 
 function serializeNav() {
-  document.getElementById('navJson').value        = JSON.stringify(serializeRows('navBody'));
-  document.getElementById('homeNavJson').value    = JSON.stringify(serializeRows('homeNavBody'));
-  document.getElementById('useHomeNavInput').value = document.getElementById('enableHomeNav').checked ? '1' : '0';
+  try {
+    document.getElementById('navJson').value         = JSON.stringify(serializeRows('navBody'));
+    document.getElementById('homeNavJson').value     = JSON.stringify(serializeRows('homeNavBody'));
+    document.getElementById('useHomeNavInput').value = document.getElementById('enableHomeNav').checked ? '1' : '0';
+  } catch(e) { alert('Nav save error: ' + e.message); return false; }
 }
 </script>
 
