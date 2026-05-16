@@ -3,21 +3,21 @@
 -%>
 <%- include('partials/head') %>
 
-<div class="page-header">
-  <div>
-    <a href="/server" class="back-link">← Server</a>
-    <h1>Navigation <span class="muted">— <%= site.title %></span></h1>
-  </div>
-  <div class="header-actions">
-    <a href="<%= site.url %>" target="_blank" class="btn">View site ↗</a>
-    <button type="button" class="btn btn-primary" onclick="serializeNav(); document.getElementById('nav-form').submit()">Save nav</button>
-  </div>
-</div>
-<%- include('partials/flash') %>
-
-<form id="nav-form" method="POST" action="/server/nav">
+<form method="POST" action="/server/nav" onsubmit="serializeNav()">
   <input type="hidden" name="nav" id="navJson">
   <input type="hidden" name="homeNav" id="homeNavJson">
+
+  <div class="page-header">
+    <div>
+      <a href="/server" class="back-link">← Server</a>
+      <h1>Navigation <span class="muted">— <%= site.title %></span></h1>
+    </div>
+    <div class="header-actions">
+      <a href="<%= site.url %>" target="_blank" class="btn">View site ↗</a>
+      <button type="submit" class="btn btn-primary">Save nav</button>
+    </div>
+  </div>
+  <%- include('partials/flash') %>
 
   <section class="card">
     <h3 style="margin-bottom:.75rem">All pages nav</h3>
@@ -140,11 +140,11 @@ function resetDefaults() {
   defaults.forEach(d => addRow('navBody', d.label, d.url));
 }
 
-// ── Serialize to JSON before submit ──────────────────────────────────────────
+// ── Serialize rows into hidden inputs before submit ───────────────────────────
 function serializeRows(tbodyId) {
   return [...document.getElementById(tbodyId).querySelectorAll('.nav-row')].map(row => ({
     label:   row.querySelector('.nav-label').value.trim(),
-    url:     (row.querySelector('.nav-url').value.trim() || '/'),
+    url:     row.querySelector('.nav-url').value.trim() || '/',
     enabled: row.querySelector('.nav-enabled').checked,
     newTab:  row.querySelector('.nav-newtab').checked,
   })).filter(i => i.label);
