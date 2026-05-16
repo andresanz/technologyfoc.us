@@ -75,20 +75,22 @@
 <% } %>
 
 <script>
-document.querySelectorAll('th[data-sort]').forEach(th => {
-  let asc = true;
-  th.addEventListener('click', () => {
-    const col   = th.cellIndex;
-    const tbody = th.closest('table').querySelector('tbody');
-    const rows  = [...tbody.querySelectorAll('tr')];
-    rows.sort((a, b) => {
-      const av = (a.cells[col].dataset.value || a.cells[col].textContent).trim();
-      const bv = (b.cells[col].dataset.value || b.cells[col].textContent).trim();
-      return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('th[data-sort]').forEach(function(th) {
+    let asc = true;
+    th.addEventListener('click', function() {
+      const col   = th.cellIndex;
+      const tbody = th.closest('table').querySelector('tbody');
+      const rows  = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort(function(a, b) {
+        const av = (a.cells[col].getAttribute('data-value') || a.cells[col].textContent).trim();
+        const bv = (b.cells[col].getAttribute('data-value') || b.cells[col].textContent).trim();
+        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+      });
+      rows.forEach(function(r) { tbody.appendChild(r); });
+      th.querySelector('.sort-icon').textContent = asc ? '↓' : '↑';
+      asc = !asc;
     });
-    asc = !asc;
-    th.querySelector('.sort-icon').textContent = asc ? '↕' : '↑';
-    rows.forEach(r => tbody.appendChild(r));
   });
 });
 </script>
