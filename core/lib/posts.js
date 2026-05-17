@@ -60,6 +60,7 @@ module.exports = function createPostsLib(postsDir) {
         draft:      data.draft     || false,
         raw:        content,
         _filepath:  filepath,
+        _filename:  path.basename(filepath),
       };
     } catch (err) {
       console.error(`Error loading ${filepath}:`, err.message);

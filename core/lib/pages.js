@@ -47,6 +47,7 @@ module.exports = function createPagesLib(pagesDir) {
         draft:     data.draft || false,
         raw:       content,
         _filepath: filepath,
+        _filename: require('path').basename(filepath),
       };
     } catch (err) {
       console.error(`Error loading page ${filepath}:`, err.message);

@@ -1,8 +1,7 @@
 <%
   locals.pageTitle    = page.slug === 'home' ? null : page.title;
   locals.canonical    = page.slug === 'home' ? '/' : '/' + page.slug;
-  var _pageFile = page._filepath ? require('path').basename(page._filepath) : (page.slug + '.md');
-  locals.adminEditUrl = (locals.adminUrl || '') + '/pages/edit/' + encodeURIComponent(_pageFile);
+  locals.adminEditUrl = (locals.adminUrl || '') + '/pages/edit/' + encodeURIComponent(page._filename || page.slug + '.md');
 -%>
 <%- include('layout') %>
 
