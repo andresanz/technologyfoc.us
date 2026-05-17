@@ -5,8 +5,10 @@ const { spawn, execSync } = require('child_process');
 const fs         = require('fs');
 const router     = express.Router();
 
-const BUCKET      = process.env.BACKUP_BUCKET || 'andresanz-com-server02';
-const MAC_BUCKET  = 'sanz';
+const BUCKET         = process.env.BACKUP_BUCKET || 'andresanz-com-server02';
+const CONTENT_BUCKET = process.env.CONTENT_BACKUP_BUCKET || 'andresanz-com';
+const CONTENT_PREFIX = 'backups/content';
+const MAC_BUCKET     = 'sanz';
 const MAC_PREFIX  = 'MacbookAir/Backups/';
 const STATUS_LOG = '/var/log/blog-backup-status.log';
 const FLAG_FILE  = '/tmp/blog-backup-running';
@@ -80,13 +82,13 @@ function listBackups() {
 function listContentBackups() {
   try {
     const out = run(
-      `aws s3api list-objects-v2 --bucket ${BUCKET} --prefix content-backups/ ` +
+      `aws s3api list-objects-v2 --bucket ${CONTENT_BUCKET} --prefix ${CONTENT_PREFIX}/ ` +
       `--query 'sort_by(Contents, &LastModified)[].[Key,Size,LastModified]' --output text`
     );
-    if (!out) return [];
+    if (!out || out === 'None') return [];
     return out.split('\n').filter(Boolean).reverse().map(line => {
       const [key, size, modified] = line.split('\t');
-      const name = key.replace('content-backups/', '');
+      const name = key.replace(`${CONTENT_PREFIX}/`, '');
       const kb   = (parseInt(size) / 1024).toFixed(1);
       return { key, name, kb, modified: new Date(modified).toLocaleString() };
     });
@@ -147,11 +149,12 @@ router.post('/run', (req, res) => {
 // GET /server/backups/download?key=... — presigned download URL for a server backup
 router.get('/download', (req, res) => {
   const { key } = req.query;
-  if (!key || (!key.startsWith('backups/') && !key.startsWith('content-backups/'))) {
-    return res.status(400).send('Invalid key');
-  }
+  if (!key) return res.status(400).send('Invalid key');
+  const isContent = key.startsWith(`${CONTENT_PREFIX}/`);
+  if (!key.startsWith('backups/') && !isContent) return res.status(400).send('Invalid key');
+  const bucket = isContent ? CONTENT_BUCKET : BUCKET;
   try {
-    const url = run(`aws s3 presign "s3://${BUCKET}/${key}" --expires-in 300`);
+    const url = run(`aws s3 presign "s3://${bucket}/${key}" --expires-in 300`);
     res.redirect(url);
   } catch (e) { res.status(500).send(e.message); }
 });
@@ -190,11 +193,12 @@ router.get('/log', (req, res) => {
 // POST /server/backups/delete — delete a server backup
 router.post('/delete', (req, res) => {
   const { key } = req.body;
-  if (!key || (!key.startsWith('backups/') && !key.startsWith('content-backups/'))) {
-    return res.status(400).send('Invalid key');
-  }
+  if (!key) return res.status(400).send('Invalid key');
+  const isContent = key.startsWith(`${CONTENT_PREFIX}/`);
+  if (!key.startsWith('backups/') && !isContent) return res.status(400).send('Invalid key');
+  const bucket = isContent ? CONTENT_BUCKET : BUCKET;
   try {
-    run(`aws s3 rm s3://${BUCKET}/${key}`);
+    run(`aws s3 rm s3://${bucket}/${key}`);
     req.flash('success', `Deleted ${key}`);
   } catch (e) {
     req.flash('error', e.message);
