@@ -56,8 +56,8 @@ function stop() {
 
 function getNextFireTime() { return nextFireTime; }
 
-// Best-effort cleanup so intervals don't keep the process alive past shutdown.
-process.on('SIGTERM', stop);
-process.on('SIGINT',  stop);
+// Clean up timers and exit so systemd doesn't have to SIGKILL us.
+process.on('SIGTERM', () => { stop(); process.exit(0); });
+process.on('SIGINT',  () => { stop(); process.exit(0); });
 
 module.exports = { schedule, getNextFireTime, stop };
