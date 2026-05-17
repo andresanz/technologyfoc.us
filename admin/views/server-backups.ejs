@@ -1,227 +1,261 @@
 <%
   pageTitle = 'Backups · Server';
+  function pillClass(daysSince) {
+    if (daysSince == null) return 'pill-muted';
+    if (daysSince > 7) return 'pill-fail';
+    if (daysSince > 2) return 'pill-warn';
+    return 'pill-ok';
+  }
+  function ago(date) {
+    if (!date) return '—';
+    const d = (Date.now() - new Date(date)) / 86400000;
+    if (d < 1)  return Math.round(d * 24) + 'h ago';
+    if (d < 30) return Math.round(d) + 'd ago';
+    return Math.round(d / 30) + 'mo ago';
+  }
 -%>
 <%- include('partials/head') %>
 
 <style>
-.backup-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-.backup-table th { text-align: left; padding: .6rem .75rem; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
-.backup-table td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-.backup-table tr:hover td { background: var(--surface2); }
-.status-ok   { color: var(--success); font-weight: 600; }
-.status-fail { color: var(--danger);  font-weight: 600; }
-.log-box { background: #0d1117; color: #c9d1d9; border-radius: var(--radius); padding: 1rem; font-family: var(--mono); font-size: .75rem; line-height: 1.6; max-height: 340px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 1rem; display: none; }
-.spinner-inline { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,.15); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: .4rem; }
+.bk-section { margin-bottom: 2rem; }
+.bk-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; margin-bottom: .6rem; flex-wrap: wrap;
+}
+.bk-head h2 {
+  font-size: 1rem; font-weight: 600; margin: 0;
+  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+}
+.bk-meta { font-size: .72rem; color: var(--muted); font-weight: 400; }
+.bk-actions { display: flex; gap: .4rem; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .7rem; font-weight: 600; padding: .15em .6em;
+  border-radius: 999px; line-height: 1.5;
+}
+.pill::before { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; }
+.pill-ok    { background:#dcfce7; color:#15803d; } .pill-ok::before    { background:#16a34a; }
+.pill-warn  { background:#fef9c3; color:#92400e; } .pill-warn::before  { background:#d97706; }
+.pill-fail  { background:#fee2e2; color:#991b1b; } .pill-fail::before  { background:#dc2626; }
+.pill-muted { background:var(--border); color:var(--muted); } .pill-muted::before { background:var(--muted); }
+
+.bk-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.bk-table th {
+  text-align: left; padding: .45rem .75rem; color: var(--muted);
+  font-weight: 600; font-size: .68rem; text-transform: uppercase;
+  letter-spacing: .05em; border-bottom: 1px solid var(--border);
+}
+.bk-table td { padding: .55rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.bk-table tr:last-child td { border-bottom: none; }
+.bk-table tr:hover td { background: var(--surface-2); }
+.bk-table .key { font-family: var(--mono); font-size: .76rem; word-break: break-all; }
+.bk-table .num { color: var(--muted); white-space: nowrap; }
+.bk-empty { padding: 1.5rem 1rem; color: var(--muted); font-size: .85rem; text-align: center; }
+
+.log-box {
+  background: #0d1117; color: #c9d1d9; border-radius: var(--radius);
+  padding: .8rem 1rem; font-family: var(--mono); font-size: .72rem;
+  line-height: 1.6; max-height: 280px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-all;
+  margin-top: .6rem; display: none;
+}
+.spinner-inline {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid rgba(0,0,0,.15); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .7s linear infinite;
+  vertical-align: middle; margin-right: .35rem;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <div class="page-header">
-  <div>
-    
-    <h1>Backups</h1>
-  </div>
-  <div class="header-actions">
-    <button class="btn" onclick="toggleLog()">View log</button>
-    <form method="POST" action="/server/backups/run" id="backupForm" onsubmit="startBackup()">
-      <button class="btn btn-primary" id="backupBtn">
-        <% if (running) { %><span class="spinner-inline"></span>Running…<% } else { %>Back up now<% } %>
-      </button>
-    </form>
-  </div>
+  <h1>Backups</h1>
 </div>
 
 <%- include('partials/flash') %>
 
 <% if (running) { %>
-<div class="alert alert-info" id="runningBanner">
+<div class="alert alert-info" style="margin-bottom:1rem">
   <span class="spinner-inline"></span> Backup running — page will refresh when done…
 </div>
 <% } %>
 
-<!-- Status strip -->
-<div class="card" style="margin-bottom:1rem; padding:.75rem 1rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap">
-  <div>
-    <span style="font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em">Last backup</span><br>
-    <% if (last) {
-         const ok = last.includes(' OK');
-         const parts = last.split(' ');
-    %>
-      <span class="<%= ok ? 'status-ok' : 'status-fail' %>"><%= ok ? '✓' : '✗' %></span>
-      <%= parts[0] %> &nbsp;·&nbsp; <%= parts[1] %>
+<%/* ── 1. Full server backups ─────────────────────────────────────────── */%>
+<% const latestSrv = backups[0]; const srvAgo = latestSrv ? ago(latestSrv.modified) : null; %>
+<section class="bk-section">
+  <div class="bk-head">
+    <h2>
+      Server snapshots
+      <span class="pill <%= last && last.includes(' OK') ? 'pill-ok' : last ? 'pill-fail' : 'pill-muted' %>">
+        <%= last ? (last.includes(' OK') ? 'OK' : 'FAILED') : 'never' %>
+      </span>
+      <span class="bk-meta"><%= bucket %> · <%= backups.length %> archive<%= backups.length !== 1 ? 's' : '' %> · keeps 30 · daily 2am</span>
+    </h2>
+    <div class="bk-actions">
+      <button class="btn btn-sm" onclick="toggleLog('logBox','/server/backups/log')">Log</button>
+      <form method="POST" action="/server/backups/run" onsubmit="startBackup()" style="display:inline">
+        <button class="btn btn-sm btn-primary" id="backupBtn">
+          <% if (running) { %><span class="spinner-inline"></span>Running…<% } else { %>Back up now<% } %>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <% if (backups.length === 0) { %>
+      <div class="bk-empty">No backups yet.</div>
     <% } else { %>
-      <span style="color:var(--muted)">Never run</span>
+    <table class="bk-table">
+      <thead><tr><th>When</th><th>Size</th><th>File</th><th></th></tr></thead>
+      <tbody>
+        <% backups.forEach(b => { %>
+        <tr>
+          <td class="num"><%= b.modified %></td>
+          <td class="num"><%= b.mb %> MB</td>
+          <td class="key"><a href="/server/backups/download?key=<%= encodeURIComponent(b.key) %>"><%= b.name %></a></td>
+          <td style="text-align:right">
+            <form method="POST" action="/server/backups/delete" style="display:inline"
+                  onsubmit="return confirm('Delete this backup?')">
+              <input type="hidden" name="key" value="<%= b.key %>">
+              <button class="btn btn-sm btn-danger">✕</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
     <% } %>
   </div>
-  <div style="margin-left:auto; font-size:.8rem; color:var(--muted)">
-    Bucket: <code><%= bucket %></code> &nbsp;·&nbsp; Retains last 30
-  </div>
-</div>
+  <div class="log-box" id="logBox">Loading…</div>
+</section>
 
-<!-- Backup list -->
-<div class="card" style="padding:0; overflow:hidden">
-  <% if (backups.length === 0) { %>
-    <p class="empty" style="padding:2rem 1rem">No backups yet. Click "Back up now" to create the first one.</p>
-  <% } else { %>
-  <table class="backup-table">
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>Size</th>
-        <th>S3 key</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% backups.forEach((b) => { %>
-      <tr>
-        <td><%= b.modified %></td>
-        <td><%= b.mb %> MB</td>
-        <td style="font-size:.78rem"><a href="/server/backups/download?key=<%= encodeURIComponent(b.key) %>"><%= b.name %></a></td>
-        <td>
-          <form method="POST" action="/server/backups/delete" style="display:inline"
-                onsubmit="return confirm('Delete this backup?')">
-            <input type="hidden" name="key" value="<%= b.key %>">
-            <button class="btn btn-sm btn-danger">Delete</button>
-          </form>
-        </td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% } %>
-</div>
-
-<!-- Log viewer -->
-<div class="log-box" id="logBox">Loading…</div>
-
-<!-- Content backups -->
-<div class="section-header" style="margin-top:2rem;display:flex;align-items:center;justify-content:space-between">
-  <h2>Content Backups <span style="font-size:.75rem;font-weight:400;color:var(--muted)">/content → s3://andresanz-com/backups/content · every 6h · keeps 60</span></h2>
-  <form method="POST" action="/server/backups/content/run" style="display:inline">
-    <button class="btn btn-sm btn-primary">Back up content now</button>
-  </form>
-</div>
-<div class="card" style="padding:0; overflow:hidden">
-  <% if (!contentBackups || contentBackups.length === 0) { %>
-    <p class="empty" style="padding:2rem 1rem">No content backups yet.</p>
-  <% } else { %>
-  <table class="backup-table">
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>Size</th>
-        <th>S3 key</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% contentBackups.forEach((b) => { %>
-      <tr>
-        <td><%= b.modified %></td>
-        <td><%= b.kb %> KB</td>
-        <td style="font-size:.78rem"><a href="/server/backups/download?key=<%= encodeURIComponent(b.key) %>"><%= b.name %></a></td>
-        <td>
-          <form method="POST" action="/server/backups/delete" style="display:inline"
-                onsubmit="return confirm('Delete this backup?')">
-            <input type="hidden" name="key" value="<%= b.key %>">
-            <button class="btn btn-sm btn-danger">Delete</button>
-          </form>
-        </td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% } %>
-</div>
-
-<!-- Local volume backups -->
-<div class="section-header" style="margin-top:2rem">
-  <h2>Volume Backups <span style="font-size:.75rem;font-weight:400;color:var(--muted)">/mnt/volume01</span></h2>
-  <button class="btn" onclick="toggleLocalLog()">View log</button>
-</div>
-<div class="card" style="padding:0; overflow:hidden">
-  <% if (!localBackups || localBackups.length === 0) { %>
-    <p class="empty" style="padding:2rem 1rem">No local backups yet — cron runs at 2am and 2pm.</p>
-  <% } else { %>
-  <table class="backup-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Files</th>
-        <th>Size</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% localBackups.forEach(b => { %>
-      <tr>
-        <td><a href="/server/backups/local/<%= b.date %>"><%= b.date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') %></a></td>
-        <td style="color:var(--muted)"><%= b.files %></td>
-        <td><%= b.mb %> MB</td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% } %>
-</div>
-<div class="log-box" id="localLogBox">Loading…</div>
-
-<!-- Mac backups -->
-<div class="section-header" style="margin-top:2rem">
-  <h2>Mac Backups <span style="font-size:.75rem;font-weight:400;color:var(--muted)">sanz / MacbookAir/Backups · runs daily at 2am</span></h2>
-</div>
-<div class="card" style="padding:0;overflow:hidden">
-  <% if (!macBackups || macBackups.length === 0) { %>
-    <p class="empty" style="padding:2rem 1rem">No Mac backups found in S3.</p>
-  <% } else { %>
-  <%
-    const latestMac = macBackups[0];
-    const latestDate = latestMac ? new Date(latestMac.modified) : null;
-    const daysSince = latestDate ? Math.floor((Date.now() - latestDate) / 86400000) : null;
-  %>
-  <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-    <div>
-      <span style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Last backup</span><br>
-      <span class="<%= daysSince !== null && daysSince > 7 ? 'status-fail' : 'status-ok' %>">
-        <%= latestMac ? latestMac.modified : '—' %>
-      </span>
-      <% if (daysSince !== null && daysSince > 7) { %>
-        <span style="color:var(--danger);font-size:.8rem;margin-left:.5rem">(<%= daysSince %> days ago)</span>
-      <% } %>
+<%/* ── 2. Content backups ─────────────────────────────────────────────── */%>
+<% const latestCnt = contentBackups && contentBackups[0]; const cntAgo = latestCnt ? ago(latestCnt.modified) : null; %>
+<section class="bk-section">
+  <div class="bk-head">
+    <h2>
+      Content
+      <% if (latestCnt) { %><span class="pill pill-ok">last <%= cntAgo %></span><% } else { %><span class="pill pill-muted">never</span><% } %>
+      <span class="bk-meta">andresanz-com/backups/content · <%= (contentBackups||[]).length %> archive<%= (contentBackups||[]).length !== 1 ? 's' : '' %> · keeps 60 · every 6h</span>
+    </h2>
+    <div class="bk-actions">
+      <form method="POST" action="/server/backups/content/run" style="display:inline">
+        <button class="btn btn-sm btn-primary">Back up content now</button>
+      </form>
     </div>
-    <div style="margin-left:auto;font-size:.8rem;color:var(--muted)"><%= macBackups.length %> backup<%= macBackups.length !== 1 ? 's' : '' %></div>
   </div>
-  <table class="backup-table">
-    <thead><tr><th>File</th><th>Size</th><th>Date</th><th></th></tr></thead>
-    <tbody>
-      <% macBackups.forEach(b => { %>
-      <tr>
-        <td style="font-size:.78rem;word-break:break-all"><a href="/mac/snapshot/<%= encodeURIComponent(b.name) %>"><%= b.name %></a></td>
-        <td style="white-space:nowrap"><%= b.mb ? b.mb + ' MB' : '—' %></td>
-        <td style="font-size:.78rem;color:var(--muted);white-space:nowrap"><%= b.modified %></td>
-        <td>
-          <form method="POST" action="/server/backups/mac/delete" style="display:inline"
-                onsubmit="return confirm('Delete <%= b.name %>?')">
-            <input type="hidden" name="key" value="<%= b.key %>">
-            <button class="btn btn-sm btn-danger">✕</button>
-          </form>
-        </td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% } %>
-</div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <% if (!contentBackups || contentBackups.length === 0) { %>
+      <div class="bk-empty">No content backups yet.</div>
+    <% } else { %>
+    <table class="bk-table">
+      <thead><tr><th>When</th><th>Size</th><th>File</th><th></th></tr></thead>
+      <tbody>
+        <% contentBackups.forEach(b => { %>
+        <tr>
+          <td class="num"><%= b.modified %></td>
+          <td class="num"><%= b.kb %> KB</td>
+          <td class="key"><a href="/server/backups/download?key=<%= encodeURIComponent(b.key) %>"><%= b.name %></a></td>
+          <td style="text-align:right">
+            <form method="POST" action="/server/backups/delete" style="display:inline"
+                  onsubmit="return confirm('Delete this backup?')">
+              <input type="hidden" name="key" value="<%= b.key %>">
+              <button class="btn btn-sm btn-danger">✕</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</section>
+
+<%/* ── 3. Volume backups ──────────────────────────────────────────────── */%>
+<section class="bk-section">
+  <div class="bk-head">
+    <h2>
+      Volume
+      <span class="bk-meta">/mnt/volume01 · <%= (localBackups||[]).length %> day<%= (localBackups||[]).length !== 1 ? 's' : '' %></span>
+    </h2>
+    <div class="bk-actions">
+      <button class="btn btn-sm" onclick="toggleLog('localLogBox','/server/backups/log?src=local')">Log</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <% if (!localBackups || localBackups.length === 0) { %>
+      <div class="bk-empty">No volume backups yet.</div>
+    <% } else { %>
+    <table class="bk-table">
+      <thead><tr><th>Date</th><th>Files</th><th>Size</th></tr></thead>
+      <tbody>
+        <% localBackups.forEach(b => { %>
+        <tr>
+          <td><a href="/server/backups/local/<%= b.date %>"><%= b.date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') %></a></td>
+          <td class="num"><%= b.files %></td>
+          <td class="num"><%= b.mb %> MB</td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+  <div class="log-box" id="localLogBox">Loading…</div>
+</section>
+
+<%/* ── 4. Mac backups ─────────────────────────────────────────────────── */%>
+<%
+  const latestMac = macBackups && macBackups[0];
+  const macDaysSince = latestMac ? Math.floor((Date.now() - new Date(latestMac.modified)) / 86400000) : null;
+%>
+<section class="bk-section">
+  <div class="bk-head">
+    <h2>
+      Mac
+      <span class="pill <%= pillClass(macDaysSince) %>">
+        <%= latestMac ? ago(latestMac.modified) : 'never' %>
+      </span>
+      <span class="bk-meta">sanz/MacbookAir/Backups · <%= (macBackups||[]).length %> snapshot<%= (macBackups||[]).length !== 1 ? 's' : '' %> · daily 2am</span>
+    </h2>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <% if (!macBackups || macBackups.length === 0) { %>
+      <div class="bk-empty">No Mac backups found in S3.</div>
+    <% } else { %>
+    <table class="bk-table">
+      <thead><tr><th>Snapshot</th><th>When</th><th></th></tr></thead>
+      <tbody>
+        <% macBackups.forEach(b => { %>
+        <tr>
+          <td class="key"><a href="/mac/snapshot/<%= encodeURIComponent(b.name) %>"><%= b.name %></a></td>
+          <td class="num"><%= b.modified %></td>
+          <td style="text-align:right">
+            <form method="POST" action="/server/backups/mac/delete" style="display:inline"
+                  onsubmit="return confirm('Delete <%= b.name %>?')">
+              <input type="hidden" name="key" value="<%= b.key %>">
+              <button class="btn btn-sm btn-danger">✕</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</section>
 
 <script>
 const LAST_STATUS = <%- JSON.stringify(last || null) %>;
-
-// If backup is running (or was just triggered), poll until done
 let pollInterval = null;
 
 function startPolling() {
   if (pollInterval) return;
-  document.getElementById('backupBtn').innerHTML = '<span class="spinner-inline"></span>Running…';
-  document.getElementById('backupBtn').disabled = true;
+  const btn = document.getElementById('backupBtn');
+  if (btn) { btn.innerHTML = '<span class="spinner-inline"></span>Running…'; btn.disabled = true; }
   pollInterval = setInterval(async () => {
     try {
       const r = await fetch('/server/backups/status');
@@ -234,44 +268,21 @@ function startPolling() {
   }, 2000);
 }
 
-<% if (running) { %>
-startPolling();
-<% } %>
+<% if (running) { %>startPolling();<% } %>
+function startBackup() { setTimeout(startPolling, 500); }
 
-function startBackup() {
-  setTimeout(startPolling, 500);
-}
-
-async function toggleLog() {
-  const box = document.getElementById('logBox');
+async function toggleLog(boxId, url) {
+  const box = document.getElementById(boxId);
   if (box.style.display === 'block') { box.style.display = 'none'; return; }
   box.style.display = 'block';
   box.textContent = 'Loading…';
   try {
-    const r = await fetch('/server/backups/log');
+    const r = await fetch(url);
     if (!r.ok) { box.textContent = 'Error: ' + r.status + ' ' + r.statusText; return; }
     const d = await r.json();
     box.textContent = d.log || '(log is empty)';
     box.scrollTop = box.scrollHeight;
-  } catch (e) {
-    box.textContent = 'Failed to load log: ' + e.message;
-  }
-}
-
-async function toggleLocalLog() {
-  const box = document.getElementById('localLogBox');
-  if (box.style.display === 'block') { box.style.display = 'none'; return; }
-  box.style.display = 'block';
-  box.textContent = 'Loading…';
-  try {
-    const r = await fetch('/server/backups/log?src=local');
-    if (!r.ok) { box.textContent = 'Error: ' + r.status + ' ' + r.statusText; return; }
-    const d = await r.json();
-    box.textContent = d.log || '(log is empty)';
-    box.scrollTop = box.scrollHeight;
-  } catch (e) {
-    box.textContent = 'Failed to load log: ' + e.message;
-  }
+  } catch (e) { box.textContent = 'Failed to load log: ' + e.message; }
 }
 </script>
 
