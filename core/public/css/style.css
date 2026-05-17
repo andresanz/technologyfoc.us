@@ -117,6 +117,35 @@ main.container:has(.home-page) { padding-top: 0; }
 .home-page .post-body > *:first-child { margin-top: 0; }
 .home-page .post-body > .shortcode-posts { margin-top: 0; }
 
+/* ── Home avatar — borderless, tight crop, responsive ───────────────────── */
+.home-avatar {
+  width: 160px; height: 185px;
+  float: left;
+  margin: .25rem 1.5rem .75rem 0;
+  overflow: hidden;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.home-avatar img {
+  width: 230px;
+  margin: -22px 0 0 -32px;
+  display: block;
+  border: none !important;
+  box-shadow: none !important;
+  max-width: none;
+}
+@media (max-width: 560px) {
+  .home-avatar {
+    float: none;
+    margin: 0 auto 1rem;
+    width: 200px; height: 220px;
+  }
+  .home-avatar img {
+    width: 280px;
+    margin: -25px 0 0 -38px;
+  }
+}
+
 /* ── Header — sticky, hides on scroll-down, returns on scroll-up ─────────── */
 .site-header {
   position: relative;
