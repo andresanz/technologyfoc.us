@@ -5,10 +5,16 @@ const { spawn, execSync } = require('child_process');
 const fs         = require('fs');
 const router     = express.Router();
 
-const BUCKET         = process.env.BACKUP_BUCKET || 'andresanz-com-server02';
-const CONTENT_BUCKET = process.env.CONTENT_BACKUP_BUCKET || 'andresanz-com';
-const CONTENT_PREFIX = 'backups/content';
-const MAC_BUCKET     = 'sanz';
+// Unified backup bucket — server-config/, server-content/, mac/, michele/
+const BACKUP_BUCKET  = process.env.BACKUP_BUCKET || 'sanz-backups';
+const BUCKET         = BACKUP_BUCKET;
+const CONFIG_PREFIX  = 'server-config';
+const CONTENT_BUCKET = BACKUP_BUCKET;
+const CONTENT_PREFIX = 'server-content';
+const MAC_BUCKET     = BACKUP_BUCKET;
+const MAC_PREFIX_NEW = 'mac/';
+// Legacy Mac prefix — kept for read during migration grace period
+const LEGACY_MAC_BUCKET = 'sanz';
 const MAC_PREFIX  = 'MacbookAir/Backups/';
 const STATUS_LOG = '/var/log/blog-backup-status.log';
 const FLAG_FILE  = '/tmp/blog-backup-running';
@@ -45,35 +51,47 @@ function listLocalBackups() {
   } catch { return []; }
 }
 
-function listMacBackups() {
+function listMacFrom(bucket, prefix) {
   try {
     const out = run(
-      `aws s3api list-objects-v2 --bucket ${MAC_BUCKET} --prefix "${MAC_PREFIX}" --delimiter "/" ` +
+      `aws s3api list-objects-v2 --bucket ${bucket} --prefix "${prefix}" --delimiter "/" ` +
       `--query 'CommonPrefixes[].Prefix' --output text`
     );
     if (!out || out === 'None') return [];
-    return out.split('\t').filter(Boolean).reverse()
-      .map(prefix => {
-        const name = prefix.replace(MAC_PREFIX, '').replace(/\/$/, '');
+    return out.split('\t').filter(Boolean)
+      .map(p => {
+        const name = p.replace(prefix, '').replace(/\/$/, '');
         const m = name.match(/^(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})$/);
         if (!m) return null;
-        return { key: prefix, name, modified: m[1] + ' ' + m[2].replace(/-/g, ':') };
+        return {
+          key: p,
+          bucket,
+          name,
+          modified: m[1] + ' ' + m[2].replace(/-/g, ':'),
+          source: bucket === MAC_BUCKET ? 'new' : 'legacy',
+        };
       })
       .filter(Boolean);
   } catch { return []; }
 }
 
+function listMacBackups() {
+  const newer = listMacFrom(MAC_BUCKET, MAC_PREFIX_NEW);
+  const legacy = listMacFrom(LEGACY_MAC_BUCKET, MAC_PREFIX);
+  return [...newer, ...legacy].sort((a, b) => b.modified.localeCompare(a.modified));
+}
+
 function listBackups() {
   try {
     const out = run(
-      `aws s3api list-objects-v2 --bucket ${BUCKET} --prefix backups/ ` +
+      `aws s3api list-objects-v2 --bucket ${BUCKET} --prefix ${CONFIG_PREFIX}/ ` +
       `--query 'sort_by(Contents, &LastModified)[].[Key,Size,LastModified]' --output text`
     );
-    if (!out) return [];
+    if (!out || out === 'None') return [];
     return out.split('\n').filter(Boolean).reverse().map(line => {
       const [key, size, modified] = line.split('\t');
-      const name = key.replace('backups/', '');
-      const mb   = (parseInt(size) / 1024 / 1024).toFixed(1);
+      const name = key.replace(`${CONFIG_PREFIX}/`, '');
+      const mb   = (parseInt(size) / 1024 / 1024).toFixed(2);
       return { key, name, mb, modified: new Date(modified).toLocaleString() };
     });
   } catch { return []; }
@@ -136,7 +154,7 @@ router.post('/run', (req, res) => {
   }
 
   const env = { ...awsEnv(), PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' };
-  const child = spawn('/usr/local/bin/blog-backup.sh', [], {
+  const child = spawn('/usr/local/bin/server-config-backup.sh', [], {
     detached: true,
     stdio:    'ignore',
     env,
@@ -146,15 +164,14 @@ router.post('/run', (req, res) => {
   res.redirect('/server/backups');
 });
 
-// GET /server/backups/download?key=... — presigned download URL for a server backup
+// GET /server/backups/download?key=... — presigned download URL
 router.get('/download', (req, res) => {
   const { key } = req.query;
   if (!key) return res.status(400).send('Invalid key');
-  const isContent = key.startsWith(`${CONTENT_PREFIX}/`);
-  if (!key.startsWith('backups/') && !isContent) return res.status(400).send('Invalid key');
-  const bucket = isContent ? CONTENT_BUCKET : BUCKET;
+  const ok = key.startsWith(`${CONFIG_PREFIX}/`) || key.startsWith(`${CONTENT_PREFIX}/`);
+  if (!ok) return res.status(400).send('Invalid key');
   try {
-    const url = run(`aws s3 presign "s3://${bucket}/${key}" --expires-in 300`);
+    const url = run(`aws s3 presign "s3://${BACKUP_BUCKET}/${key}" --expires-in 300`);
     res.redirect(url);
   } catch (e) { res.status(500).send(e.message); }
 });
@@ -190,15 +207,14 @@ router.get('/log', (req, res) => {
   res.json({ log });
 });
 
-// POST /server/backups/delete — delete a server backup
+// POST /server/backups/delete — delete a backup
 router.post('/delete', (req, res) => {
   const { key } = req.body;
   if (!key) return res.status(400).send('Invalid key');
-  const isContent = key.startsWith(`${CONTENT_PREFIX}/`);
-  if (!key.startsWith('backups/') && !isContent) return res.status(400).send('Invalid key');
-  const bucket = isContent ? CONTENT_BUCKET : BUCKET;
+  const ok = key.startsWith(`${CONFIG_PREFIX}/`) || key.startsWith(`${CONTENT_PREFIX}/`);
+  if (!ok) return res.status(400).send('Invalid key');
   try {
-    run(`aws s3 rm s3://${bucket}/${key}`);
+    run(`aws s3 rm s3://${BACKUP_BUCKET}/${key}`);
     req.flash('success', `Deleted ${key}`);
   } catch (e) {
     req.flash('error', e.message);
@@ -208,10 +224,11 @@ router.post('/delete', (req, res) => {
 
 // POST /server/backups/mac/delete — delete a Mac backup
 router.post('/mac/delete', (req, res) => {
-  const { key } = req.body;
+  const { key, bucket } = req.body;
   if (!key) return res.status(400).send('Invalid key');
+  const b = (bucket === LEGACY_MAC_BUCKET) ? LEGACY_MAC_BUCKET : MAC_BUCKET;
   try {
-    run(`aws s3 rm "s3://${MAC_BUCKET}/${key}" --recursive`);
+    run(`aws s3 rm "s3://${b}/${key}" --recursive`);
     req.flash('success', `Deleted ${key}`);
   } catch (e) {
     req.flash('error', e.message);

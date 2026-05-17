@@ -86,11 +86,9 @@
 <section class="bk-section">
   <div class="bk-head">
     <h2>
-      Server snapshots
-      <span class="pill <%= last && last.includes(' OK') ? 'pill-ok' : last ? 'pill-fail' : 'pill-muted' %>">
-        <%= last ? (last.includes(' OK') ? 'OK' : 'FAILED') : 'never' %>
-      </span>
-      <span class="bk-meta"><%= bucket %> · <%= backups.length %> archive<%= backups.length !== 1 ? 's' : '' %> · keeps 30 · daily 2am</span>
+      Server config
+      <% if (backups.length) { %><span class="pill pill-ok">last <%= ago(backups[0].modified) %></span><% } else { %><span class="pill pill-muted">never</span><% } %>
+      <span class="bk-meta"><%= bucket %>/server-config · <%= backups.length %> archive<%= backups.length !== 1 ? 's' : '' %> · keeps 30 · daily 2am</span>
     </h2>
     <div class="bk-actions">
       <button class="btn btn-sm" onclick="toggleLog('logBox','/server/backups/log')">Log</button>
@@ -137,7 +135,7 @@
     <h2>
       Content
       <% if (latestCnt) { %><span class="pill pill-ok">last <%= cntAgo %></span><% } else { %><span class="pill pill-muted">never</span><% } %>
-      <span class="bk-meta">andresanz-com/backups/content · <%= (contentBackups||[]).length %> archive<%= (contentBackups||[]).length !== 1 ? 's' : '' %> · keeps 60 · every 6h</span>
+      <span class="bk-meta">sanz-backups/server-content · <%= (contentBackups||[]).length %> archive<%= (contentBackups||[]).length !== 1 ? 's' : '' %> · keeps 60 · every 6h</span>
     </h2>
     <div class="bk-actions">
       <form method="POST" action="/server/backups/content/run" style="display:inline">
@@ -218,7 +216,7 @@
       <span class="pill <%= pillClass(macDaysSince) %>">
         <%= latestMac ? ago(latestMac.modified) : 'never' %>
       </span>
-      <span class="bk-meta">sanz/MacbookAir/Backups · <%= (macBackups||[]).length %> snapshot<%= (macBackups||[]).length !== 1 ? 's' : '' %> · daily 2am</span>
+      <span class="bk-meta">sanz-backups/mac (+ legacy) · <%= (macBackups||[]).length %> snapshot<%= (macBackups||[]).length !== 1 ? 's' : '' %> · daily 2am</span>
     </h2>
   </div>
 
@@ -231,12 +229,16 @@
       <tbody>
         <% macBackups.slice(0, 10).forEach(b => { %>
         <tr>
-          <td class="key"><a href="/mac/snapshot/<%= encodeURIComponent(b.name) %>"><%= b.name %></a></td>
+          <td class="key">
+            <a href="/mac/snapshot/<%= encodeURIComponent(b.name) %>"><%= b.name %></a>
+            <% if (b.source === 'legacy') { %><span class="pill pill-warn" style="margin-left:.5rem;font-size:.65rem;padding:.05em .5em">legacy</span><% } %>
+          </td>
           <td class="num"><%= b.modified %></td>
           <td style="text-align:right">
             <form method="POST" action="/server/backups/mac/delete" style="display:inline"
                   onsubmit="return confirm('Delete <%= b.name %>?')">
               <input type="hidden" name="key" value="<%= b.key %>">
+              <input type="hidden" name="bucket" value="<%= b.bucket %>">
               <button class="btn btn-sm btn-danger">✕</button>
             </form>
           </td>
@@ -245,6 +247,20 @@
       </tbody>
     </table>
     <% } %>
+  </div>
+</section>
+
+<%/* ── 5. Michele (Windows) — placeholder ──────────────────────────── */%>
+<section class="bk-section">
+  <div class="bk-head">
+    <h2>
+      Michele
+      <span class="pill pill-muted">not configured</span>
+      <span class="bk-meta">sanz-backups/michele · restic via Windows Task Scheduler (TBD)</span>
+    </h2>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="bk-empty">Set up restic on Michele's laptop pointing to s3://sanz-backups/michele/.</div>
   </div>
 </section>
 
