@@ -57,10 +57,9 @@ module.exports = function createPostsRouter(postsLib, pagesLib) {
   router.get('/post/:slug/edit', (req, res) => {
     const post   = postsLib.getBySlug(req.params.slug);
     if (!post) return res.redirect('/');
-    const domain = (process.env.SITE_URL || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const adminUrl = process.env.ADMIN_URL || 'https://andresanz.com/admin';
+    const adminUrl = process.env.ADMIN_URL || 'https://admin.andresanz.com';
     const fname = require("path").basename(post._filepath);
-    res.redirect(`${adminUrl}/posts/${domain}/edit/${encodeURIComponent(fname)}`);
+    res.redirect(`${adminUrl}/posts/edit/${encodeURIComponent(fname)}`);
   });
 
   router.get(['/post/:slug', '/posts/:slug'], (req, res) => {

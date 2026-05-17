@@ -10,10 +10,9 @@ module.exports = function createPagesRouter(pagesLib, postsLib) {
   router.get('/:slug/edit', (req, res, next) => {
     const page = pagesLib.getBySlug(req.params.slug);
     if (!page) return next();
-    const domain   = (process.env.SITE_URL || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const adminUrl = process.env.ADMIN_URL || 'https://andresanz.com/admin';
+    const adminUrl = process.env.ADMIN_URL || 'https://admin.andresanz.com';
     const fname    = require('path').basename(page._filepath || (page.slug + '.md'));
-    res.redirect(`${adminUrl}/pages/${domain}/edit/${encodeURIComponent(fname)}`);
+    res.redirect(`${adminUrl}/pages/edit/${encodeURIComponent(fname)}`);
   });
 
   // GET /:slug — render a page (skip 'home' — handled at / in app-factory)

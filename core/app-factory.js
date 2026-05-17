@@ -162,14 +162,12 @@ function createApp(siteDir) {
   // ── Home page edit shortcut ───────────────────────────────────────────────
   app.get('/home/edit', (req, res) => {
     const home     = pagesLib.getBySlug('home');
-    const domain   = (process.env.SITE_URL || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const adminUrl = process.env.ADMIN_URL || 'https://andresanz.com/admin';
+    const adminUrl = process.env.ADMIN_URL || 'https://admin.andresanz.com';
     if (home) {
       const fname = require('path').basename(home._filepath || 'home.md');
-      return res.redirect(`${adminUrl}/pages/${domain}/edit/${encodeURIComponent(fname)}`);
+      return res.redirect(`${adminUrl}/pages/edit/${encodeURIComponent(fname)}`);
     }
-    // No home page — go to posts list
-    res.redirect(`${adminUrl}/posts/${domain}`);
+    res.redirect(`${adminUrl}/posts`);
   });
 
   // ── Edit mode toggle (sets cookie, redirects back) ────────────────────────
