@@ -8,7 +8,7 @@
   <meta name="description" content="<%= locals.pageDesc || site.description %>">
   <link rel="canonical" href="<%= site.url %><%= locals.canonical || '' %>">
   <link rel="alternate" type="application/rss+xml" title="<%= site.title %>" href="<%= site.url %>/feed/rss">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<%- encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#2563eb"/><text x="16" y="23.5" font-family="system-ui,sans-serif" font-size="19" font-weight="700" fill="white" text-anchor="middle">${site.title.charAt(0).toUpperCase()}</text></svg>`) %>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<%- encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#b04a2f"/><text x="16" y="23.5" font-family="system-ui,sans-serif" font-size="19" font-weight="700" fill="white" text-anchor="middle">${site.title.charAt(0).toUpperCase()}</text></svg>`) %>">
   <link rel="stylesheet" href="/css/style.css?v=<%= cssVer %>">
   <link rel="stylesheet" href="/css/highlight.css?v=<%= cssVer %>">
   <link rel="stylesheet" href="/css/custom.css?v=<%= cssVer %>">
@@ -39,10 +39,55 @@
     </div>
   </header>
   <script>
-    document.getElementById('navToggle').addEventListener('click', function() {
-      this.classList.toggle('open');
-      document.getElementById('siteNav').classList.toggle('open');
+  (function() {
+    var header  = document.querySelector('.site-header');
+    var toggle  = document.getElementById('navToggle');
+    var nav     = document.getElementById('siteNav');
+    var lastY   = 0;
+    var ticking = false;
+
+    // Hamburger open/close
+    toggle.addEventListener('click', function() {
+      var open = nav.classList.toggle('open');
+      toggle.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open);
     });
+
+    // Close nav when a link is clicked
+    nav.addEventListener('click', function(e) {
+      if (e.target.tagName === 'A') {
+        nav.classList.remove('open');
+        toggle.classList.remove('open');
+      }
+    });
+
+    // Close nav on outside click
+    document.addEventListener('click', function(e) {
+      if (!header.contains(e.target)) {
+        nav.classList.remove('open');
+        toggle.classList.remove('open');
+      }
+    });
+
+    // Hide header on scroll-down, show on scroll-up
+    window.addEventListener('scroll', function() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function() {
+        var y = window.scrollY;
+        header.classList.toggle('header-scrolled', y > 10);
+        if (y > lastY && y > 80) {
+          header.classList.add('header-hidden');
+          nav.classList.remove('open');
+          toggle.classList.remove('open');
+        } else {
+          header.classList.remove('header-hidden');
+        }
+        lastY   = y;
+        ticking = false;
+      });
+    }, { passive: true });
+  })();
   </script>
 
   <!-- Admin edit bar (only shown when _admin_edit cookie is set) -->

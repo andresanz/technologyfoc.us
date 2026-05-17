@@ -157,56 +157,108 @@ main.container:has(.home-page) { padding-top: 0; }
 .home-page .post-body > *:first-child { margin-top: 0; }
 .home-page .post-body > .shortcode-posts { margin-top: 0; }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
-.site-header { padding: var(--s-4) 0; }
+/* ── Header — sticky, hides on scroll-down, returns on scroll-up ─────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.site-header.header-hidden {
+  transform: translateY(-100%);
+}
+.site-header.header-scrolled {
+  box-shadow: 0 1px 12px rgba(0,0,0,0.08);
+}
+
 .site-header .container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: var(--s-4);
+  min-height: 56px;
+  padding-top: var(--s-2);
+  padding-bottom: var(--s-2);
 }
+
 .site-title {
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: var(--fs-lg);
   color: var(--text);
   text-decoration: none;
+  flex-shrink: 0;
 }
 .site-title:hover { text-decoration: none; color: var(--text); }
-.site-header nav { display: flex; gap: var(--s-5); font-family: var(--font-ui); }
-.site-header nav a { color: var(--muted); font-size: var(--fs-sm); }
-.site-header nav a:hover { color: var(--text); text-decoration: none; }
 
-/* ── Hamburger ───────────────────────────────────────────────────────────── */
+/* ── Hamburger (mobile default — hidden on wider screens) ────────────────── */
 .nav-toggle {
-  display: none;
+  display: flex;
   flex-direction: column;
   justify-content: space-between;
   width: 1.5rem; height: 1.1rem;
   background: none; border: none; cursor: pointer; padding: 0;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 .nav-toggle span {
   display: block; width: 100%; height: 2px;
   background: var(--text); border-radius: 2px;
-  transition: transform 0.2s, opacity 0.2s;
+  transition: transform 0.22s, opacity 0.22s;
 }
 .nav-toggle.open span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
 .nav-toggle.open span:nth-child(2) { opacity: 0; }
 .nav-toggle.open span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
 
-@media (max-width: 600px) {
-  .site-header .container { flex-wrap: wrap; padding-bottom: 0; }
-  .nav-toggle { display: flex; margin-left: auto; }
+/* ── Nav — mobile default: hidden drawer below header ────────────────────── */
+.site-header nav {
+  display: none;
+  flex-direction: column;
+  gap: 0;
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  font-family: var(--font-ui);
+  padding: var(--s-2) 0;
+}
+.site-header nav.open { display: flex; }
+.site-header nav a {
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-base);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.site-header nav a:last-child { border-bottom: none; }
+.site-header nav a:hover { color: var(--text); text-decoration: none; background: var(--surface); }
+
+/* ── Tablet+ — inline nav, no hamburger ─────────────────────────────────── */
+@media (min-width: 640px) {
+  .nav-toggle { display: none; }
   .site-header nav {
-    display: none; flex-direction: column; gap: 0;
-    width: 100%; padding: var(--s-2) 0 0;
+    display: flex;
+    flex-direction: row;
+    position: static;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    gap: var(--s-5);
   }
-  .site-header nav.open { display: flex; }
   .site-header nav a {
-    padding: var(--s-2) 0; font-size: var(--fs-base);
-    border-top: 1px solid var(--border);
+    padding: 0;
+    font-size: var(--fs-sm);
+    color: var(--muted);
+    border: none;
+    min-height: auto;
   }
+  .site-header nav a:hover { background: none; }
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
