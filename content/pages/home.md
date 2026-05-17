@@ -4,7 +4,7 @@ date: '2026-05-15'
 slug: home
 ---
 
-<div style="width:185px;height:210px;float:left;margin:0 1.5rem 1rem 0;overflow:hidden;border-radius:6px;flex-shrink:0"><img src="/images/1778803631000-profile.jpg" style="width:265px;margin:-22px 0 0 -22px;display:block;border:none;box-shadow:none"></div>
+<div style="width:145px;height:165px;float:left;margin:0 1.25rem 1rem 0;overflow:hidden;border-radius:6px;flex-shrink:0"><img src="/images/1778803631000-profile.jpg" style="width:205px;margin:-17px 0 0 -17px;display:block;border:none;box-shadow:none"></div>
 
 Hi! I'm André, a Director-level leader and enterprise cyber risk executive with 20+ years driving vulnerability remediation, regulatory readiness, and operational risk reduction across healthcare and financial services. I have a proven record coordinating zero-day response within 72 hours, closing high-severity events with zero missed deadlines, and translating technical risk into board-level action.
 
