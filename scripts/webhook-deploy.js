@@ -56,6 +56,14 @@ function deploy(payload) {
     return;
   }
 
+  // grab deploy metadata after pull
+  let shortHash = '', deployNum = '', commitMsg = '';
+  try {
+    shortHash  = execSync(`git -C ${APP_DIR} rev-parse --short HEAD`,      { stdio: 'pipe' }).toString().trim();
+    deployNum  = execSync(`git -C ${APP_DIR} rev-list --count HEAD`,       { stdio: 'pipe' }).toString().trim();
+    commitMsg  = execSync(`git -C ${APP_DIR} log -1 --format=%s`,          { stdio: 'pipe' }).toString().trim();
+  } catch {}
+
   const lines = [];
 
   // npm install if package.json changed
@@ -87,7 +95,8 @@ function deploy(payload) {
 
   telegram(
     `🚀 <b>andresanz.com</b> deployed by ${pusher} (${branch})\n` +
-    `${files.length} file(s)\n\n` +
+    `#${deployNum} · <code>${shortHash}</code> · ${files.length} file(s)\n` +
+    `<i>${commitMsg}</i>\n\n` +
     lines.join('\n')
   );
 }
