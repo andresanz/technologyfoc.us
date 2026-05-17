@@ -127,7 +127,7 @@
 /* ── Reset & base ────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { font-size: 17px; }
+html { font-size: 18px; }
 
 body {
   font-family: var(--font);
@@ -431,7 +431,7 @@ main.container:has(.home-page) { padding-top: 0; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  html { font-size: 16px; }
+  html { font-size: 17px; }
   .post-header h1 { font-size: var(--fs-2xl); }
   .post-card-body { padding: var(--s-4); }
 }
