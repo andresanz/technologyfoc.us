@@ -4,6 +4,16 @@ const fs     = require('fs');
 const path   = require('path');
 const matter = require('gray-matter');
 
+// ── Filename safety ──────────────────────────────────────────────────────────
+// Reject anything that isn't a plain `<safe-chars>.md` basename. Blocks path
+// traversal (../, absolute paths) and weird names (control chars, NUL, etc.).
+const SAFE_FILENAME = /^[a-zA-Z0-9._-]+\.md$/;
+function assertSafeFilename(filename) {
+  if (typeof filename !== 'string' || !SAFE_FILENAME.test(filename) || filename.includes('..')) {
+    throw new Error(`Unsafe filename: ${filename}`);
+  }
+}
+
 // ── List all posts for a site ─────────────────────────────────────────────────
 function list(postsDir) {
   if (!fs.existsSync(postsDir)) return [];
@@ -35,6 +45,7 @@ function list(postsDir) {
 
 // ── Read a single post (raw) ─────────────────────────────────────────────────
 function read(postsDir, filename) {
+  if (!SAFE_FILENAME.test(filename || '') || filename.includes('..')) return null;
   const filepath = path.join(postsDir, filename);
   if (!fs.existsSync(filepath)) return null;
 
@@ -58,6 +69,7 @@ function read(postsDir, filename) {
 
 // ── Write (create or update) a post ─────────────────────────────────────────
 function write(postsDir, filename, { title, slug, date, tags, excerpt, image, draft, body }) {
+  assertSafeFilename(filename);
   if (!fs.existsSync(postsDir)) fs.mkdirSync(postsDir, { recursive: true });
 
   const fm = {
@@ -80,6 +92,7 @@ function write(postsDir, filename, { title, slug, date, tags, excerpt, image, dr
 
 // ── Delete a post ─────────────────────────────────────────────────────────────
 function remove(postsDir, filename) {
+  assertSafeFilename(filename);
   const filepath = path.join(postsDir, filename);
   if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
 }

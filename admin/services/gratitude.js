@@ -98,7 +98,10 @@ function loadState() {
 }
 
 function saveState(s) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2) + '\n');
+  // Write-temp-then-rename to avoid corruption if the process is killed mid-write.
+  const tmp = STATE_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(s, null, 2) + '\n');
+  fs.renameSync(tmp, STATE_FILE);
 }
 
 function pickPrompt(state) {
@@ -114,18 +117,30 @@ function pickPrompt(state) {
 
 // ── Telegram helpers ──────────────────────────────────────────────────────────
 
+async function tgFetch(url, init = {}, timeoutMs = 15000) {
+  const ctl = new AbortController();
+  const to  = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { ...init, signal: ctl.signal });
+    if (!r.ok) throw new Error(`Telegram HTTP ${r.status}`);
+    const json = await r.json();
+    if (!json.ok) throw new Error('Telegram error: ' + JSON.stringify(json));
+    return json;
+  } finally {
+    clearTimeout(to);
+  }
+}
+
 async function tgSend(text, chatId) {
-  const r = await fetch(`${TGAPI}/sendMessage`, {
+  return tgFetch(`${TGAPI}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId || CHAT_ID, text, parse_mode: 'Markdown' }),
   });
-  return r.json();
 }
 
 async function tgGetUpdates(offset) {
-  const r = await fetch(`${TGAPI}/getUpdates?offset=${offset}&timeout=0&limit=20`);
-  return r.json();
+  return tgFetch(`${TGAPI}/getUpdates?offset=${offset}&timeout=0&limit=20`);
 }
 
 // ── Send prompt ───────────────────────────────────────────────────────────────
@@ -138,8 +153,7 @@ async function sendPrompt(force = false) {
     return { skipped: true, reason: 'Already sent today' };
   }
   const prompt = pickPrompt(state);
-  const result = await tgSend(`✍️ *Daily Gratitude Prompt*\n\n${prompt}`, CHAT_ID);
-  if (!result.ok) throw new Error('Telegram error: ' + JSON.stringify(result));
+  await tgSend(`✍️ *Daily Gratitude Prompt*\n\n${prompt}`, CHAT_ID);
   state.lastPromptSent = new Date().toISOString();
   state.lastPrompt     = prompt;
   state.updateOffset   = state.updateOffset || 0;
@@ -156,7 +170,6 @@ async function checkReplies() {
   if (!state.lastPromptSent) return { created: 0, reason: 'No prompt sent yet' };
 
   const data = await tgGetUpdates(state.updateOffset || 0);
-  if (!data.ok) throw new Error('Telegram error: ' + JSON.stringify(data));
 
   let newOffset = state.updateOffset || 0;
   let created   = 0;

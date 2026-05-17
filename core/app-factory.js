@@ -78,30 +78,44 @@ function createApp(siteDir) {
 
   const navFile = path.join(siteDir, 'content', 'nav.json');
 
+  // Cache parsed nav.json — re-read only when the file's mtime changes.
+  let navCache = { mtime: 0, parsed: null };
+  function loadNav() {
+    let stat;
+    try { stat = fs.statSync(navFile); } catch { navCache = { mtime: 0, parsed: null }; return null; }
+    const mtime = stat.mtimeMs;
+    if (navCache.mtime === mtime && navCache.parsed) return navCache.parsed;
+    try {
+      const raw   = JSON.parse(fs.readFileSync(navFile, 'utf8'));
+      const isObj = raw && !Array.isArray(raw);
+      const parsed = {
+        allNav:     isObj ? (raw.nav        || []) : raw,
+        homeNav:    isObj ? (raw.homeNav    || null) : null,
+        privateNav: isObj ? (raw.privateNav || null) : null,
+      };
+      navCache = { mtime, parsed };
+      return parsed;
+    } catch {
+      navCache = { mtime, parsed: null };
+      return null;
+    }
+  }
+
   // Inject nav into every view
   app.use((req, res, next) => {
     const hasHome        = !!pagesLib.getBySlug('home');
     res.locals.pages     = pagesLib.getNavPages().filter(p => p.slug !== 'home');
     res.locals.postsPath = hasHome ? '/posts' : '/';
 
-    // Use nav.json if present, else auto-generate
-    if (fs.existsSync(navFile)) {
-      try {
-        const raw        = JSON.parse(fs.readFileSync(navFile, 'utf8'));
-        const isObj      = raw && !Array.isArray(raw);
-        const allNav     = isObj ? (raw.nav        || []) : raw;
-        const homeNav    = isObj ? (raw.homeNav    || null) : null;
-        const privateNav = isObj ? (raw.privateNav || null) : null;
-        const isHome     = req.path === '/';
-        const isPrivate  = req.path.startsWith('/private');
-        let items = allNav;
-        if (isHome    && homeNav)    items = homeNav;
-        if (isPrivate && privateNav) items = privateNav;
-        res.locals.nav       = items.filter(i => i.enabled !== false);
-        res.locals.navLoaded = true;
-      } catch {
-        res.locals.nav = null; res.locals.navLoaded = false;
-      }
+    const parsed = loadNav();
+    if (parsed) {
+      const isHome    = req.path === '/';
+      const isPrivate = req.path.startsWith('/private');
+      let items = parsed.allNav;
+      if (isHome    && parsed.homeNav)    items = parsed.homeNav;
+      if (isPrivate && parsed.privateNav) items = parsed.privateNav;
+      res.locals.nav       = items.filter(i => i.enabled !== false);
+      res.locals.navLoaded = true;
     } else {
       res.locals.nav = null; res.locals.navLoaded = false;
     }

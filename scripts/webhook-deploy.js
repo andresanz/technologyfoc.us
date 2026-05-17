@@ -4,10 +4,16 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 
 const PORT           = parseInt(process.env.DEPLOY_PORT   || '4101');
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET         || '';
+const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET         || '';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN     || '';
 const TELEGRAM_CHAT  = process.env.TELEGRAM_CHAT_ID       || '';
 const APP_DIR        = process.env.APP_DIR                 || '/var/www/andresanz.com';
+const ALLOWED_BRANCHES = (process.env.DEPLOY_BRANCHES || 'main').split(',').map(s => s.trim()).filter(Boolean);
+
+if (!GITHUB_WEBHOOK_SECRET) {
+  console.error('[webhook-deploy] FATAL: GITHUB_WEBHOOK_SECRET not set — refusing to start');
+  process.exit(1);
+}
 
 const SERVICES = ['andresanz', 'andresanz-admin'];
 
@@ -31,6 +37,11 @@ function deploy(payload) {
   const files   = [...new Set(commits.flatMap(c =>
     [...(c.added||[]), ...(c.modified||[]), ...(c.removed||[])]
   ))];
+
+  if (!ALLOWED_BRANCHES.includes(branch)) {
+    console.log(`[deploy] ignoring branch=${branch} (not in ${ALLOWED_BRANCHES.join(',')})`);
+    return;
+  }
 
   console.log(`[deploy] branch=${branch} pusher=${pusher} files=${files.length}`);
 
@@ -82,8 +93,7 @@ function deploy(payload) {
 }
 
 function verify(body, sig) {
-  if (!WEBHOOK_SECRET) return true;
-  const expected = 'sha256=' + crypto.createHmac('sha256', WEBHOOK_SECRET).update(body).digest('hex');
+  const expected = 'sha256=' + crypto.createHmac('sha256', GITHUB_WEBHOOK_SECRET).update(body).digest('hex');
   try { return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig || '')); }
   catch { return false; }
 }

@@ -12,6 +12,13 @@ const GIT_HASH = (() => {
   catch { return ''; }
 })();
 
+// Accept SESSION_SECRET (new name) or COOKIE_SECRET (legacy name in .env).
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.COOKIE_SECRET;
+if (!SESSION_SECRET || SESSION_SECRET === 'changeme') {
+  console.error('[admin] FATAL: SESSION_SECRET/COOKIE_SECRET not set — refusing to start');
+  process.exit(1);
+}
+
 const app = express();
 
 // Trust the nginx reverse proxy so secure cookies work over HTTPS
@@ -31,7 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Session (for flash only) ──────────────────────────────────────────────────
 app.use(session({
-  secret:            process.env.SESSION_SECRET || 'changeme',
+  secret:            SESSION_SECRET,
   resave:            false,
   saveUninitialized: true,
   cookie:            { httpOnly: true, sameSite: 'lax' },
@@ -43,7 +50,7 @@ const AUTH_COOKIE  = '_admin';
 const AUTH_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
 
 function makeToken() {
-  return crypto.createHmac('sha256', process.env.SESSION_SECRET || 'changeme')
+  return crypto.createHmac('sha256', SESSION_SECRET)
                .update('admin_auth').digest('hex');
 }
 

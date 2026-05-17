@@ -2,6 +2,30 @@
 
 let nextFireTime = null;
 let timer        = null;
+let pollTimer    = null;
+
+function clearPoll() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+function startPoll() {
+  // Cancel any prior poll before starting a new one — prevents leaks if the
+  // scheduler fires again before the previous 2-hour window completes.
+  clearPoll();
+  let attempts = 0;
+  pollTimer = setInterval(async () => {
+    attempts++;
+    try {
+      const { checkReplies } = require('./gratitude');
+      const r = await checkReplies();
+      console.log(`Gratitude check replies: ${r.created} new`);
+      if (r.created > 0 || attempts >= 12) clearPoll();
+    } catch (e) {
+      console.error('Gratitude check error:', e.message);
+      if (attempts >= 12) clearPoll();
+    }
+  }, 10 * 60 * 1000);
+}
 
 function schedule() {
   const now  = new Date();
@@ -12,24 +36,10 @@ function schedule() {
   if (timer) clearTimeout(timer);
   timer = setTimeout(async () => {
     try {
-      const { sendPrompt, checkReplies } = require('./gratitude');
+      const { sendPrompt } = require('./gratitude');
       const result = await sendPrompt();
       console.log('Gratitude prompt:', result);
-      if (result.sent) {
-        // Poll for reply every 10 min for 2 hours
-        let attempts = 0;
-        const poll = setInterval(async () => {
-          attempts++;
-          try {
-            const r = await checkReplies();
-            console.log(`Gratitude check replies: ${r.created} new`);
-            if (r.created > 0 || attempts >= 12) clearInterval(poll);
-          } catch (e) {
-            console.error('Gratitude check error:', e.message);
-            if (attempts >= 12) clearInterval(poll);
-          }
-        }, 10 * 60 * 1000);
-      }
+      if (result.sent) startPoll();
     } catch (e) {
       console.error('Gratitude scheduler error:', e.message);
     }
@@ -38,6 +48,16 @@ function schedule() {
   console.log(`Gratitude prompt scheduled for ${next.toLocaleTimeString()}`);
 }
 
+function stop() {
+  if (timer) { clearTimeout(timer); timer = null; }
+  clearPoll();
+  nextFireTime = null;
+}
+
 function getNextFireTime() { return nextFireTime; }
 
-module.exports = { schedule, getNextFireTime };
+// Best-effort cleanup so intervals don't keep the process alive past shutdown.
+process.on('SIGTERM', stop);
+process.on('SIGINT',  stop);
+
+module.exports = { schedule, getNextFireTime, stop };

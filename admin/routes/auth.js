@@ -9,7 +9,8 @@ const AUTH_COOKIE  = '_admin';
 const AUTH_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
 
 function makeToken() {
-  return crypto.createHmac('sha256', process.env.SESSION_SECRET || 'changeme')
+  // Validated at admin/app.js startup; if missing we never get here.
+  return crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.COOKIE_SECRET)
                .update('admin_auth').digest('hex');
 }
 
