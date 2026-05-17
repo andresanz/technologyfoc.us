@@ -102,13 +102,13 @@ function getStats() {
   const f2bJails = [];
   try {
     const jailList = run('fail2ban-client status 2>/dev/null');
-    const names = (jailList.match(/Jail list:s+(.+)/) || ['',''])[1].split(',').map(s=>s.trim()).filter(Boolean);
+    const names = (jailList.match(/Jail list:\s+(.+)/) || ['',''])[1].split(',').map(s=>s.trim()).filter(Boolean);
     for (const jail of names) {
       try {
         const out = run(`fail2ban-client status ${jail} 2>/dev/null`);
-        const banned  = parseInt((out.match(/Currently banned:s+(\d+)/) || [0,0])[1]);
-        const total   = parseInt((out.match(/Total banned:s+(\d+)/)     || [0,0])[1]);
-        const failed  = parseInt((out.match(/Currently failed:s+(\d+)/) || [0,0])[1]);
+        const banned  = parseInt((out.match(/Currently banned:\s+(\d+)/) || [0,0])[1]);
+        const total   = parseInt((out.match(/Total banned:\s+(\d+)/)     || [0,0])[1]);
+        const failed  = parseInt((out.match(/Currently failed:\s+(\d+)/) || [0,0])[1]);
         f2bJails.push({ jail, banned, total, failed });
       } catch {}
     }
