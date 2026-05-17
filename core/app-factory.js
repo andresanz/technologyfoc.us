@@ -87,12 +87,16 @@ function createApp(siteDir) {
     // Use nav.json if present, else auto-generate
     if (fs.existsSync(navFile)) {
       try {
-        const raw     = JSON.parse(fs.readFileSync(navFile, 'utf8'));
-        const isObj   = raw && !Array.isArray(raw);
-        const allNav  = isObj ? (raw.nav  || []) : raw;
-        const homeNav = isObj ? (raw.homeNav || null) : null;
-        const isHome  = req.path === '/';
-        const items   = (isHome && homeNav) ? homeNav : allNav;
+        const raw        = JSON.parse(fs.readFileSync(navFile, 'utf8'));
+        const isObj      = raw && !Array.isArray(raw);
+        const allNav     = isObj ? (raw.nav        || []) : raw;
+        const homeNav    = isObj ? (raw.homeNav    || null) : null;
+        const privateNav = isObj ? (raw.privateNav || null) : null;
+        const isHome     = req.path === '/';
+        const isPrivate  = req.path.startsWith('/private');
+        let items = allNav;
+        if (isHome    && homeNav)    items = homeNav;
+        if (isPrivate && privateNav) items = privateNav;
         res.locals.nav       = items.filter(i => i.enabled !== false);
         res.locals.navLoaded = true;
       } catch {

@@ -466,18 +466,18 @@ router.get('/health', (req, res) => {
 router.get('/nav', (req, res) => {
   const site    = req.site;
   const navFile = path.join(site.dir, 'content', 'nav.json');
-  let navItems = [], homeNavItems = [], hasHomeNav = false;
+  let navItems = [], homeNavItems = [], privateNavItems = [];
   try {
     const raw = JSON.parse(fs.readFileSync(navFile, 'utf8'));
     if (Array.isArray(raw)) {
       navItems = raw;
     } else {
-      navItems     = raw.nav     || [];
-      homeNavItems = raw.homeNav || [];
-      hasHomeNav   = 'homeNav' in raw;
+      navItems        = raw.nav        || [];
+      homeNavItems    = raw.homeNav    || [];
+      privateNavItems = raw.privateNav || [];
     }
   } catch {}
-  res.render('nav', { site, navItems, homeNavItems, hasHomeNav, flash: req.flash() });
+  res.render('nav', { site, navItems, homeNavItems, privateNavItems, flash: req.flash() });
 });
 
 // ── POST /server/nav ──────────────────────────────────────────────────────────
@@ -486,9 +486,10 @@ router.post('/nav', async (req, res) => {
   const navFile = path.join(site.dir, 'content', 'nav.json');
   try {
     const body    = req.body;
-    const nav     = Array.isArray(body.nav)     ? body.nav     : JSON.parse(body.nav     || '[]');
-    const homeNav = Array.isArray(body.homeNav) ? body.homeNav : JSON.parse(body.homeNav || '[]');
-    const out     = homeNav.length ? { nav, homeNav } : nav;
+    const nav        = Array.isArray(body.nav)        ? body.nav        : JSON.parse(body.nav        || '[]');
+    const homeNav    = Array.isArray(body.homeNav)    ? body.homeNav    : JSON.parse(body.homeNav    || '[]');
+    const privateNav = Array.isArray(body.privateNav) ? body.privateNav : JSON.parse(body.privateNav || '[]');
+    const out = (homeNav.length || privateNav.length) ? { nav, ...(homeNav.length && { homeNav }), ...(privateNav.length && { privateNav }) } : nav;
     fs.mkdirSync(path.dirname(navFile), { recursive: true });
     fs.writeFileSync(navFile, JSON.stringify(out, null, 2), 'utf8');
     await site.bustCache().catch(() => {});
