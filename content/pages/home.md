@@ -4,7 +4,7 @@ date: '2026-05-15'
 slug: home
 ---
 
-<div class="home-avatar"><img src="/images/1778803631000-profile.jpg" alt="André Sanz"></div>
+![André Sanz](/images/1778803631000-profile.jpg)
 
 Hi! I'm André, a Director-level leader and enterprise cyber risk executive with 20+ years driving vulnerability remediation, regulatory readiness, and operational risk reduction across healthcare and financial services. I have a proven record coordinating zero-day response within 72 hours, closing high-severity events with zero missed deadlines, and translating technical risk into board-level action.
 
