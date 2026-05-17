@@ -164,13 +164,7 @@ main.container:has(.home-page) { padding-top: 0; }
   z-index: 100;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-.site-header.header-hidden {
-  transform: translateY(-100%);
-}
-.site-header.header-scrolled {
-  box-shadow: 0 1px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
 }
 
 .site-header .container {

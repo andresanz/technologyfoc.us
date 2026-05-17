@@ -40,11 +40,9 @@
   </header>
   <script>
   (function() {
-    var header  = document.querySelector('.site-header');
-    var toggle  = document.getElementById('navToggle');
-    var nav     = document.getElementById('siteNav');
-    var lastY   = 0;
-    var ticking = false;
+    var header = document.querySelector('.site-header');
+    var toggle = document.getElementById('navToggle');
+    var nav    = document.getElementById('siteNav');
 
     // Hamburger open/close
     toggle.addEventListener('click', function() {
@@ -69,23 +67,10 @@
       }
     });
 
-    // Hide header on scroll-down, show on scroll-up
+    // Close nav if user scrolls (mobile UX)
     window.addEventListener('scroll', function() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function() {
-        var y = window.scrollY;
-        header.classList.toggle('header-scrolled', y > 10);
-        if (y > lastY && y > 80) {
-          header.classList.add('header-hidden');
-          nav.classList.remove('open');
-          toggle.classList.remove('open');
-        } else {
-          header.classList.remove('header-hidden');
-        }
-        lastY   = y;
-        ticking = false;
-      });
+      nav.classList.remove('open');
+      toggle.classList.remove('open');
     }, { passive: true });
   })();
   </script>
