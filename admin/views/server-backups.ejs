@@ -23,15 +23,15 @@
   gap: 1rem; margin-bottom: .6rem; flex-wrap: wrap;
 }
 .bk-head h2 {
-  font-size: 1rem; font-weight: 600; margin: 0;
+  font-size: 1.15rem; font-weight: 600; margin: 0;
   display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
 }
-.bk-meta { font-size: .72rem; color: var(--muted); font-weight: 400; }
+.bk-meta { font-size: .82rem; color: var(--muted); font-weight: 400; }
 .bk-actions { display: flex; gap: .4rem; }
 
 .pill {
   display: inline-flex; align-items: center; gap: .35rem;
-  font-size: .7rem; font-weight: 600; padding: .15em .6em;
+  font-size: .78rem; font-weight: 600; padding: .2em .7em;
   border-radius: 999px; line-height: 1.5;
 }
 .pill::before { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; }
@@ -40,18 +40,18 @@
 .pill-fail  { background:#fee2e2; color:#991b1b; } .pill-fail::before  { background:#dc2626; }
 .pill-muted { background:var(--border); color:var(--muted); } .pill-muted::before { background:var(--muted); }
 
-.bk-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.bk-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
 .bk-table th {
-  text-align: left; padding: .45rem .75rem; color: var(--muted);
-  font-weight: 600; font-size: .68rem; text-transform: uppercase;
+  text-align: left; padding: .55rem .85rem; color: var(--muted);
+  font-weight: 600; font-size: .76rem; text-transform: uppercase;
   letter-spacing: .05em; border-bottom: 1px solid var(--border);
 }
-.bk-table td { padding: .55rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.bk-table td { padding: .65rem .85rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .bk-table tr:last-child td { border-bottom: none; }
 .bk-table tr:hover td { background: var(--surface-2); }
-.bk-table .key { font-family: var(--mono); font-size: .76rem; word-break: break-all; }
+.bk-table .key { font-family: var(--mono); font-size: .88rem; word-break: break-all; }
 .bk-table .num { color: var(--muted); white-space: nowrap; }
-.bk-empty { padding: 1.5rem 1rem; color: var(--muted); font-size: .85rem; text-align: center; }
+.bk-empty { padding: 1.75rem 1rem; color: var(--muted); font-size: .95rem; text-align: center; }
 
 .log-box {
   background: #0d1117; color: #c9d1d9; border-radius: var(--radius);
@@ -109,7 +109,7 @@
     <table class="bk-table">
       <thead><tr><th>When</th><th>Size</th><th>File</th><th></th></tr></thead>
       <tbody>
-        <% backups.forEach(b => { %>
+        <% backups.slice(0, 10).forEach(b => { %>
         <tr>
           <td class="num"><%= b.modified %></td>
           <td class="num"><%= b.mb %> MB</td>
@@ -153,7 +153,7 @@
     <table class="bk-table">
       <thead><tr><th>When</th><th>Size</th><th>File</th><th></th></tr></thead>
       <tbody>
-        <% contentBackups.forEach(b => { %>
+        <% contentBackups.slice(0, 10).forEach(b => { %>
         <tr>
           <td class="num"><%= b.modified %></td>
           <td class="num"><%= b.kb %> KB</td>
@@ -192,7 +192,7 @@
     <table class="bk-table">
       <thead><tr><th>Date</th><th>Files</th><th>Size</th></tr></thead>
       <tbody>
-        <% localBackups.forEach(b => { %>
+        <% localBackups.slice(0, 10).forEach(b => { %>
         <tr>
           <td><a href="/server/backups/local/<%= b.date %>"><%= b.date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') %></a></td>
           <td class="num"><%= b.files %></td>
@@ -229,7 +229,7 @@
     <table class="bk-table">
       <thead><tr><th>Snapshot</th><th>When</th><th></th></tr></thead>
       <tbody>
-        <% macBackups.forEach(b => { %>
+        <% macBackups.slice(0, 10).forEach(b => { %>
         <tr>
           <td class="key"><a href="/mac/snapshot/<%= encodeURIComponent(b.name) %>"><%= b.name %></a></td>
           <td class="num"><%= b.modified %></td>
