@@ -26,7 +26,7 @@
           </a>
         <% } %>
         <div class="post-card-body">
-          <div class="post-meta">
+          <div class="post-kicker">
             <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
             <% post.tags.forEach(function(t) { %>
               <a href="/tag/<%= t %>" class="tag"><%= t %></a>
@@ -35,7 +35,7 @@
           <h2><a href="/post/<%= post.slug %>"><%= post.title %></a></h2>
           <% var ex = post.excerpt || ''; var truncated = ex.length > 140 ? ex.slice(0, 137) + '…' : ex; %>
           <% if (truncated) { %><p class="excerpt"><%= truncated %></p><% } %>
-          <a href="/post/<%= post.slug %>" class="read-more">Read more →</a>
+          <a href="/post/<%= post.slug %>" class="read-more">Read more <span class="read-more-arrow">→</span></a>
         </div>
       </article>
     <% }) %>

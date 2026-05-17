@@ -159,6 +159,7 @@ main.container:has(.home-page) { padding-top: 0; }
 
 /* ── Header — sticky, hides on scroll-down, returns on scroll-up ─────────── */
 .site-header {
+  position: relative;
   background: var(--bg);
   padding: var(--s-5) 0 0;
 }
@@ -282,13 +283,11 @@ main.container:has(.home-page) { padding-top: 0; }
 .post-list { display: flex; flex-direction: column; gap: var(--s-7); }
 
 .post-card {
-  border: none;
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.06);
-  transition: box-shadow 0.15s, transform 0.15s;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
-.post-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); transform: translateY(-2px); }
 
 .post-card .post-cover { display: block; }
 .post-card .post-cover img {
@@ -296,9 +295,41 @@ main.container:has(.home-page) { padding-top: 0; }
   margin: 0; border-radius: 0;
 }
 
-.post-card-body { padding: var(--s-5) var(--s-5) var(--s-5); background: var(--surface); }
+.post-card-body { padding: var(--s-5); }
 
-/* ── Post meta & tags ────────────────────────────────────────────────────── */
+/* ── Post kicker — date + tags above title ───────────────────────────────── */
+.post-kicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--s-2);
+}
+
+/* ── Tags ────────────────────────────────────────────────────────────────── */
+.tag {
+  display: inline-block;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+  font-size: var(--fs-xs);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+  text-decoration: none;
+}
+.tag:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+/* Keep post-meta for single post pages */
 .post-meta {
   display: flex;
   align-items: center;
@@ -309,25 +340,25 @@ main.container:has(.home-page) { padding-top: 0; }
   color: var(--muted);
   margin-bottom: var(--s-2);
 }
-.tag {
-  display: inline-block;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.1em 0.65em;
-  font-size: var(--fs-xs);
-  font-family: var(--font-ui);
-  color: var(--muted);
-  text-decoration: none;
-}
-.tag:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 
-.post-card h2 { font-size: var(--fs-lg); margin-bottom: var(--s-2); }
+.post-card h2 { font-size: var(--fs-xl); margin-bottom: var(--s-2); line-height: var(--lh-snug); }
 .post-body .post-card h2 { border-bottom: none; padding-bottom: 0; }
 .post-card h2 a { color: var(--text); }
 .post-card h2 a:hover { color: var(--accent); text-decoration: none; }
-.excerpt { color: var(--muted); font-size: var(--fs-sm); margin-bottom: var(--s-3); }
-.read-more { font-size: var(--fs-sm); font-weight: 500; }
+.excerpt { color: var(--muted); font-size: var(--fs-base); margin-bottom: var(--s-3); font-family: var(--font-ui); }
+.read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--fs-sm);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+.read-more:hover { color: var(--accent-h); text-decoration: none; }
+.read-more-arrow { transition: transform 0.15s ease; display: inline-block; }
+.read-more:hover .read-more-arrow { transform: translateX(4px); }
 
 .empty { color: var(--muted); }
 
@@ -380,19 +411,24 @@ main.container:has(.home-page) { padding-top: 0; }
 .post-body li { margin: var(--s-1) 0; }
 
 .post-body blockquote {
-  border-left: 3px solid var(--quote-bar);
-  padding: var(--s-2) var(--s-4);
-  margin: var(--s-5) 0;
+  border-left: 4px solid var(--quote-bar);
+  padding: var(--s-3) var(--s-5);
+  margin: var(--s-6) 0;
   color: var(--muted);
   background: var(--surface);
   border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic;
 }
+.post-body blockquote p { margin: 0; }
+.post-body blockquote p + p { margin-top: var(--s-3); }
 
 .post-body a { color: var(--accent); }
 
 .post-body img {
   border-radius: var(--radius);
-  margin: 0;
+  margin: var(--s-5) 0;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
 }
 
 /* Inline code */
