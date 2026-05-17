@@ -103,6 +103,7 @@ function createApp(siteDir) {
 
   // Inject nav into every view
   app.use((req, res, next) => {
+    res.locals.adminUrl  = process.env.ADMIN_URL || 'https://admin.andresanz.com';
     const hasHome        = !!pagesLib.getBySlug('home');
     res.locals.pages     = pagesLib.getNavPages().filter(p => p.slug !== 'home');
     res.locals.postsPath = hasHome ? '/posts' : '/';

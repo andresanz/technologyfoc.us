@@ -79,6 +79,7 @@ const sitesLib = require('./lib/sites');
 const SITE_DOMAIN = process.env.SITE_DOMAIN || 'andresanz.com';
 app.use((req, res, next) => {
   req.site = sitesLib.getSite(SITE_DOMAIN);
+  res.locals.siteUrl = req.site?.url || '';
   next();
 });
 

@@ -1,7 +1,9 @@
 <%
-  locals.pageTitle = post.title;
-  locals.pageDesc  = post.excerpt;
-  locals.canonical = '/post/' + post.slug;
+  locals.pageTitle    = post.title;
+  locals.pageDesc     = post.excerpt;
+  locals.canonical    = '/post/' + post.slug;
+  var _postFile = post._filepath ? require('path').basename(post._filepath) : (post.slug + '.md');
+  locals.adminEditUrl = (locals.adminUrl || '') + '/posts/edit/' + encodeURIComponent(_postFile) + (post._isPrivate ? '?dir=private-posts' : '');
 -%>
 <%- include('layout') %>
 
