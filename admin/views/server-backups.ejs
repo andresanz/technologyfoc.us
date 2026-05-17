@@ -94,6 +94,46 @@
 <!-- Log viewer -->
 <div class="log-box" id="logBox">Loading…</div>
 
+<!-- Content backups -->
+<div class="section-header" style="margin-top:2rem;display:flex;align-items:center;justify-content:space-between">
+  <h2>Content Backups <span style="font-size:.75rem;font-weight:400;color:var(--muted)">/content → s3 · every 6h · keeps 60</span></h2>
+  <form method="POST" action="/server/backups/content/run" style="display:inline">
+    <button class="btn btn-sm btn-primary">Back up content now</button>
+  </form>
+</div>
+<div class="card" style="padding:0; overflow:hidden">
+  <% if (!contentBackups || contentBackups.length === 0) { %>
+    <p class="empty" style="padding:2rem 1rem">No content backups yet.</p>
+  <% } else { %>
+  <table class="backup-table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Size</th>
+        <th>S3 key</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% contentBackups.forEach((b) => { %>
+      <tr>
+        <td><%= b.modified %></td>
+        <td><%= b.kb %> KB</td>
+        <td style="font-size:.78rem"><a href="/server/backups/download?key=<%= encodeURIComponent(b.key) %>"><%= b.name %></a></td>
+        <td>
+          <form method="POST" action="/server/backups/delete" style="display:inline"
+                onsubmit="return confirm('Delete this backup?')">
+            <input type="hidden" name="key" value="<%= b.key %>">
+            <button class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
 <!-- Local volume backups -->
 <div class="section-header" style="margin-top:2rem">
   <h2>Volume Backups <span style="font-size:.75rem;font-weight:400;color:var(--muted)">/mnt/volume01</span></h2>

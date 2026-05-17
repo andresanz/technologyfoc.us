@@ -77,6 +77,22 @@ function listBackups() {
   } catch { return []; }
 }
 
+function listContentBackups() {
+  try {
+    const out = run(
+      `aws s3api list-objects-v2 --bucket ${BUCKET} --prefix content-backups/ ` +
+      `--query 'sort_by(Contents, &LastModified)[].[Key,Size,LastModified]' --output text`
+    );
+    if (!out) return [];
+    return out.split('\n').filter(Boolean).reverse().map(line => {
+      const [key, size, modified] = line.split('\t');
+      const name = key.replace('content-backups/', '');
+      const kb   = (parseInt(size) / 1024).toFixed(1);
+      return { key, name, kb, modified: new Date(modified).toLocaleString() };
+    });
+  } catch { return []; }
+}
+
 function lastStatus() {
   try {
     const lines = fs.readFileSync(STATUS_LOG, 'utf8').trim().split('\n');
@@ -90,12 +106,24 @@ function isRunning() {
 
 // GET /server/backups
 router.get('/', (req, res) => {
-  const backups      = listBackups();
-  const localBackups = listLocalBackups();
-  const macBackups   = listMacBackups();
-  const last         = lastStatus();
-  const running      = isRunning();
-  res.render('server-backups', { backups, localBackups, macBackups, last, bucket: BUCKET, running, flash: req.flash() });
+  const backups        = listBackups();
+  const contentBackups = listContentBackups();
+  const localBackups   = listLocalBackups();
+  const macBackups     = listMacBackups();
+  const last           = lastStatus();
+  const running        = isRunning();
+  res.render('server-backups', { backups, contentBackups, localBackups, macBackups, last, bucket: BUCKET, running, flash: req.flash() });
+});
+
+// POST /server/backups/content/run — fire content backup now
+router.post('/content/run', (req, res) => {
+  const env = { ...awsEnv(), PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' };
+  const child = spawn('/usr/local/bin/content-backup.sh', [], {
+    detached: true, stdio: 'ignore', env,
+  });
+  child.unref();
+  req.flash('success', 'Content backup started');
+  res.redirect('/server/backups');
 });
 
 // POST /server/backups/run — trigger manual backup (fire and forget)
@@ -119,7 +147,9 @@ router.post('/run', (req, res) => {
 // GET /server/backups/download?key=... — presigned download URL for a server backup
 router.get('/download', (req, res) => {
   const { key } = req.query;
-  if (!key || !key.startsWith('backups/')) return res.status(400).send('Invalid key');
+  if (!key || (!key.startsWith('backups/') && !key.startsWith('content-backups/'))) {
+    return res.status(400).send('Invalid key');
+  }
   try {
     const url = run(`aws s3 presign "s3://${BUCKET}/${key}" --expires-in 300`);
     res.redirect(url);
@@ -160,7 +190,9 @@ router.get('/log', (req, res) => {
 // POST /server/backups/delete — delete a server backup
 router.post('/delete', (req, res) => {
   const { key } = req.body;
-  if (!key || !key.startsWith('backups/')) return res.status(400).send('Invalid key');
+  if (!key || (!key.startsWith('backups/') && !key.startsWith('content-backups/'))) {
+    return res.status(400).send('Invalid key');
+  }
   try {
     run(`aws s3 rm s3://${BUCKET}/${key}`);
     req.flash('success', `Deleted ${key}`);
