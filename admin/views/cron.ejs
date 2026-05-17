@@ -1,0 +1,149 @@
+<% pageTitle = 'Cron Jobs' -%>
+<%- include('partials/head') %>
+
+<style>
+.cron-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.cron-table th { text-align: left; padding: .4rem .6rem; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.cron-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.cron-table tr:last-child td { border-bottom: none; }
+.cron-table .sched { font-family: monospace; white-space: nowrap; color: var(--accent); font-size: .8rem; }
+.cron-table .cmd   { font-family: monospace; word-break: break-all; font-size: .78rem; }
+.source-badge { display: inline-block; padding: .15em .55em; border-radius: 999px; font-size: .7rem; font-weight: 600; background: var(--border); color: var(--muted); white-space: nowrap; }
+.edit-row td { padding: .5rem .6rem; background: var(--surface); }
+.edit-row input[type=text] { width: 100%; font-family: monospace; font-size: .82rem; }
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Cron Jobs</h1>
+    <p class="muted" style="margin-top:.2rem;font-size:.82rem">User crontab + /etc/cron.d entries</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" id="addBtn">+ Add entry</button>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<%/* ── Add form (hidden by default) ─────────────────────────────────────── */%>
+<div id="addForm" style="display:none;margin-bottom:1rem">
+  <div class="card" style="padding:1rem">
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:.6rem">Enter a full cron line, e.g. <code>*/5 9-21 * * * node /path/to/script.js</code></p>
+    <form method="POST" action="/cron/add" style="display:flex;gap:.5rem;align-items:flex-start">
+      <input type="text" name="line" placeholder="* * * * * command" required
+        style="flex:1;font-family:monospace;font-size:.85rem">
+      <button type="submit" class="btn btn-primary">Add</button>
+      <button type="button" class="btn" id="addCancel">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<%/* ── User crontab ───────────────────────────────────────────────────────── */%>
+<div class="card" style="margin-bottom:1rem;padding:0;overflow:hidden">
+  <div style="padding:.6rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem">
+    <span style="font-size:.8rem;font-weight:600">User crontab</span>
+    <span class="source-badge">crontab -l</span>
+  </div>
+  <% if (userEntries.length === 0) { %>
+    <p style="padding:1rem;color:var(--muted);font-size:.85rem">No entries.</p>
+  <% } else { %>
+  <table class="cron-table">
+    <thead>
+      <tr>
+        <th style="width:160px">Schedule</th>
+        <th>Command</th>
+        <th style="width:100px"></th>
+      </tr>
+    </thead>
+    <tbody id="userCronBody">
+      <% userEntries.forEach(function(e) { %>
+      <tr data-index="<%= e.index %>" class="cron-entry-row">
+        <td class="sched"><%= e.schedule %></td>
+        <td class="cmd"><%= e.command %></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm edit-btn" data-index="<%= e.index %>" data-raw="<%= e.raw.replace(/"/g, '&quot;') %>">Edit</button>
+          <form method="POST" action="/cron/delete/<%= e.index %>" style="display:inline"
+                onsubmit="return confirm('Delete this entry?')">
+            <button class="btn btn-sm btn-danger">Del</button>
+          </form>
+        </td>
+      </tr>
+      <tr class="edit-row" id="editRow-<%= e.index %>" style="display:none">
+        <td colspan="3">
+          <form method="POST" action="/cron/update/<%= e.index %>" style="display:flex;gap:.5rem;align-items:center">
+            <input type="text" name="line" value="<%= e.raw %>" required style="flex:1">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            <button type="button" class="btn btn-sm cancel-edit" data-index="<%= e.index %>">Cancel</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<%/* ── /etc/cron.d ────────────────────────────────────────────────────────── */%>
+<% if (sysCronD.length > 0) { %>
+<div class="card" style="padding:0;overflow:hidden">
+  <div style="padding:.6rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem">
+    <span style="font-size:.8rem;font-weight:600">System cron.d</span>
+    <span class="source-badge">/etc/cron.d</span>
+    <span style="font-size:.72rem;color:var(--muted);margin-left:.25rem">read-only</span>
+  </div>
+  <table class="cron-table">
+    <thead>
+      <tr>
+        <th style="width:90px">File</th>
+        <th style="width:160px">Schedule</th>
+        <th style="width:60px">User</th>
+        <th>Command</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% sysCronD.forEach(function(e) { %>
+      <tr>
+        <td><span class="source-badge"><%= e.file %></span></td>
+        <td class="sched"><%= e.schedule %></td>
+        <td style="font-size:.78rem;color:var(--muted)"><%= e.user %></td>
+        <td class="cmd"><%= e.command %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<script>
+// Add form toggle
+document.getElementById('addBtn').addEventListener('click', function() {
+  document.getElementById('addForm').style.display = 'block';
+  this.style.display = 'none';
+  document.querySelector('#addForm input').focus();
+});
+document.getElementById('addCancel').addEventListener('click', function() {
+  document.getElementById('addForm').style.display = 'none';
+  document.getElementById('addBtn').style.display = '';
+});
+
+// Inline edit toggle
+document.querySelectorAll('.edit-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const idx = this.dataset.index;
+    document.querySelectorAll('.edit-row').forEach(r => r.style.display = 'none');
+    document.querySelectorAll('.cron-entry-row').forEach(r => r.style.display = '');
+    document.getElementById('editRow-' + idx).style.display = '';
+    this.closest('tr').style.display = 'none';
+    document.querySelector('#editRow-' + idx + ' input').focus();
+  });
+});
+document.querySelectorAll('.cancel-edit').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const idx = this.dataset.index;
+    document.getElementById('editRow-' + idx).style.display = 'none';
+    document.querySelector('.cron-entry-row[data-index="' + idx + '"]').style.display = '';
+  });
+});
+</script>
+
+<%- include('partials/foot') %>

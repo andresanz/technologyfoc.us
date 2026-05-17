@@ -109,6 +109,7 @@ app.use('/github',         requireAuth, require('./routes/github'));
 app.use('/links',         requireAuth, require('./routes/links'));
 app.use('/claude',        requireAuth, require('./routes/claude'));
 app.use('/volume',        requireAuth, require('./routes/volume'));
+app.use('/cron',          requireAuth, require('./routes/cron'));
 
 // ── Quick reference notes ─────────────────────────────────────────────────────
 const QUICKREF_FILE = path.join(__dirname, 'data', 'quickref-notes.txt');
