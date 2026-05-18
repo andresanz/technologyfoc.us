@@ -541,29 +541,4 @@ router.post('/nav', async (req, res) => {
   }
 });
 
-// ── GET /server/settings ──────────────────────────────────────────────────────
-router.get('/settings', (req, res) => {
-  res.render('server-settings', { site: req.site, flash: req.flash() });
-});
-
-// ── POST /server/settings ─────────────────────────────────────────────────────
-router.post('/settings', (req, res) => {
-  const { SITE_TITLE, SITE_DESCRIPTION, SITE_AUTHOR, SITE_URL, HIDE_AUTHOR, GA_ID } = req.body;
-  try {
-    sitesLib.saveSettings(req.site.domain, {
-      SITE_TITLE,
-      SITE_DESCRIPTION,
-      SITE_AUTHOR,
-      SITE_URL,
-      HIDE_AUTHOR: HIDE_AUTHOR === '1' ? 'true' : 'false',
-      GA_ID: GA_ID || '',
-    });
-    sitesLib.restartService(req.site.domain);
-    req.flash('success', 'Settings saved and service restarted');
-  } catch (e) {
-    req.flash('error', e.message);
-  }
-  res.redirect('/server/settings');
-});
-
 module.exports = router;
