@@ -13,6 +13,35 @@
 </div>
 <%- include('partials/flash') %>
 
+<%/* ── Telegram webhook status ──────────────────────────────────────────── */%>
+<section class="card" style="margin-bottom:1rem" id="webhookCard">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <div style="min-width:0;flex:1">
+      <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem">Telegram webhook</div>
+      <div id="webhookStatus" style="font-size:.88rem;color:var(--muted)">Loading…</div>
+    </div>
+    <div>
+      <a href="/webhook/telegram/setup" target="_blank" class="btn btn-sm">Re-register</a>
+    </div>
+  </div>
+</section>
+
+<script>
+fetch('/webhook/telegram/info').then(r => r.json()).then(d => {
+  const r = d.result || {};
+  const errors = r.last_error_date
+    ? ` · last error ${new Date(r.last_error_date * 1000).toLocaleString()}: ${r.last_error_message || ''}`
+    : '';
+  const url = r.url || '(none set)';
+  const ok  = r.url && !r.last_error_date;
+  const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ok ? '#16a34a' : '#dc2626'};margin-right:.4rem;vertical-align:middle"></span>`;
+  document.getElementById('webhookStatus').innerHTML =
+    dot + `<code style="font-size:.78rem">${url}</code> · pending: ${r.pending_update_count ?? 0}${errors}`;
+}).catch(e => {
+  document.getElementById('webhookStatus').textContent = 'Error: ' + e.message;
+});
+</script>
+
 <%/* ── State card ──────────────────────────────────────────────────────────── */%>
 <section class="card" style="margin-bottom:1rem">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
