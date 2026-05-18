@@ -302,7 +302,7 @@ main.container:has(.home-page) { padding-top: 0; }
   font-size: var(--fs-xs);
   font-family: var(--font-ui);
   color: var(--muted);
-  margin-bottom: var(--s-2);
+  margin-bottom: var(--s-4);
   padding-bottom: var(--s-3);
   border-bottom: 1px solid var(--border);
 }
