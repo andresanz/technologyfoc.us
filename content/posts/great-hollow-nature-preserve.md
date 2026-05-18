@@ -6,6 +6,7 @@ tags:
   - brewster
   - hiking
   - south
+  - bucees
 image: 'https://andresanz.com/images/1779073955532-c2a57060991a.jpeg'
 ---
 
