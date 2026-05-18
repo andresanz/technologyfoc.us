@@ -29,6 +29,7 @@ const CSS_VER   = (() => {
  */
 function createApp(siteDir) {
   const app = express();
+  app.disable('x-powered-by');
 
   // ── View engine — site views override core views ──────────────────────────
   app.set('view engine', 'ejs');
@@ -103,7 +104,6 @@ function createApp(siteDir) {
 
   // Inject nav into every view
   app.use((req, res, next) => {
-    res.locals.adminUrl  = process.env.ADMIN_URL || 'https://admin.andresanz.com';
     const hasHome        = !!pagesLib.getBySlug('home');
     res.locals.pages     = pagesLib.getNavPages().filter(p => p.slug !== 'home');
     res.locals.postsPath = hasHome ? '/posts' : '/';
@@ -159,6 +159,7 @@ function createApp(siteDir) {
   app.use('/upload',  require('./routes/upload')());
   app.use('/feed',    require('./routes/feed')(postsLib));
   app.use('/r',       require('./routes/shortlinks'));
+  app.use('/',        require('./routes/seo')(postsLib, pagesLib));
 
   // ── Home page edit shortcut ───────────────────────────────────────────────
   app.get('/home/edit', (req, res) => {

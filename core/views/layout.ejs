@@ -3,10 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><% if (locals.pageTitle) { %><%= pageTitle %> · <% } %><%= site.title %></title>
+<%
+  const _desc  = ((locals.pageDesc || site.description || '').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()).slice(0,155);
+  const _title = locals.pageTitle ? pageTitle + ' · ' + site.title : site.title;
+  const _url   = site.url + (locals.canonical || '');
+  const _img   = locals.ogImage ? (String(locals.ogImage).startsWith('http') ? locals.ogImage : site.url + locals.ogImage) : null;
+-%>
+  <title><%= _title %></title>
   <meta name="google" content="notranslate">
-  <meta name="description" content="<%= locals.pageDesc || site.description %>">
-  <link rel="canonical" href="<%= site.url %><%= locals.canonical || '' %>">
+  <meta name="description" content="<%= _desc %>">
+  <meta property="og:type"        content="<%= locals.ogType || 'website' %>">
+  <meta property="og:title"       content="<%= _title %>">
+  <meta property="og:description" content="<%= _desc %>">
+  <meta property="og:url"         content="<%= _url %>">
+  <meta property="og:site_name"   content="<%= site.title %>">
+  <% if (_img) { %><meta property="og:image" content="<%= _img %>">
+  <% } %><meta name="twitter:card"        content="<%= _img ? 'summary_large_image' : 'summary' %>">
+  <meta name="twitter:title"       content="<%= _title %>">
+  <meta name="twitter:description" content="<%= _desc %>">
+  <% if (_img) { %><meta name="twitter:image" content="<%= _img %>">
+  <% } %><link rel="canonical" href="<%= _url %>">
   <link rel="alternate" type="application/rss+xml" title="<%= site.title %>" href="<%= site.url %>/feed/rss">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<%- encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#b04a2f"/><text x="16" y="23.5" font-family="system-ui,sans-serif" font-size="19" font-weight="700" fill="white" text-anchor="middle">${site.title.charAt(0).toUpperCase()}</text></svg>`) %>">
   <link rel="preconnect" href="https://fonts.googleapis.com">

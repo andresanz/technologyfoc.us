@@ -1,8 +1,9 @@
 <%
-  locals.pageTitle    = post.title;
-  locals.pageDesc     = post.excerpt;
-  locals.canonical    = '/post/' + post.slug;
-  locals.adminEditUrl = (locals.adminUrl || '') + '/posts/edit/' + encodeURIComponent(post._filename || post.slug + '.md') + (post._isPrivate ? '?dir=private-posts' : '');
+  locals.pageTitle = post.title;
+  locals.pageDesc  = post.excerpt;
+  locals.canonical = '/post/' + post.slug;
+  locals.ogType    = 'article';
+  locals.ogImage   = post.coverImage || null;
 -%>
 <%- include('layout') %>
 

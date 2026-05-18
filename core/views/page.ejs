@@ -1,7 +1,7 @@
 <%
-  locals.pageTitle    = page.slug === 'home' ? null : page.title;
-  locals.canonical    = page.slug === 'home' ? '/' : '/' + page.slug;
-  locals.adminEditUrl = (locals.adminUrl || '') + '/pages/edit/' + encodeURIComponent(page._filename || page.slug + '.md');
+  locals.pageTitle = page.slug === 'home' ? null : page.title;
+  locals.canonical = page.slug === 'home' ? '/' : '/' + page.slug;
+  locals.ogType    = 'website';
 -%>
 <%- include('layout') %>
 
