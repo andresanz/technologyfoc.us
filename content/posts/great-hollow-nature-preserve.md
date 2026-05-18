@@ -5,6 +5,7 @@ slug: great-hollow-nature-preserve
 tags:
   - brewster
   - hiking
+  - south
 image: 'https://andresanz.com/images/1779073955532-c2a57060991a.jpeg'
 ---
 
