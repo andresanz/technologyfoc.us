@@ -1,5 +1,5 @@
 ---
-title: Great Hollow Nature Preserve 2
+title: Great Hollow Nature Preserve
 date: '2026-05-18'
 slug: great-hollow-nature-preserve
 tags:
