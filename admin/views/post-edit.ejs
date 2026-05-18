@@ -84,7 +84,7 @@
             <button type="button" class="btn btn-sm" id="useFirstImageBtn" title="Use first image from post body">↑ First</button>
             <button type="button" class="btn btn-sm" id="clearCoverBtn" title="Clear cover image" style="<%= post.image ? '' : 'display:none' %>">✕</button>
           </div>
-          <img id="coverPreview" src="<%= post.image || '' %>" alt="cover"
+          <img id="coverPreview" src="<%= post.image ? (post.image.startsWith('http') ? post.image : site.url + post.image) : '' %>" alt="cover"
                class="cover-preview" style="<%= post.image ? '' : 'display:none' %>">
         </label>
 
