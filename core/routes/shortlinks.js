@@ -4,10 +4,11 @@ const fs      = require('fs');
 const express = require('express');
 const router  = express.Router();
 
-const FILE = process.env.SHORTLINKS_FILE;
+const path = require('path');
+const FILE = process.env.SHORTLINKS_FILE
+  || path.join(__dirname, '..', '..', 'admin', 'data', 'shortlinks.json');
 
 router.get('/:code', (req, res) => {
-  if (!FILE) return res.status(404).render('error', { site: req.app.locals.siteConfig(), code: 404, message: 'Not found' });
 
   try {
     const links = JSON.parse(fs.readFileSync(FILE, 'utf8'));
