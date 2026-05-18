@@ -109,6 +109,7 @@ img { max-width: 100%; height: auto; display: block; }
   width: 100%;
   max-width: calc(var(--max-w) + var(--s-6));
   margin: 0 auto;
+  padding: 0 var(--s-4);
 }
 
 main.container { flex: 1; padding-top: var(--s-4); padding-bottom: 0; }
