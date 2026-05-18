@@ -5,8 +5,8 @@ const { execSync } = require('child_process');
 
 const PORT           = parseInt(process.env.DEPLOY_PORT   || '4101');
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET         || '';
-const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN     || '';
-const TELEGRAM_CHAT  = process.env.TELEGRAM_CHAT_ID       || '';
+const TELEGRAM_TOKEN = process.env.DEPLOY_TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT  = process.env.DEPLOY_TELEGRAM_CHAT_ID   || process.env.TELEGRAM_CHAT_ID   || '';
 const APP_DIR        = process.env.APP_DIR                 || '/var/www/andresanz.com';
 const ALLOWED_BRANCHES = (process.env.DEPLOY_BRANCHES || 'main').split(',').map(s => s.trim()).filter(Boolean);
 
