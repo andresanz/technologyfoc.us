@@ -438,8 +438,9 @@ main.container:has(.home-page) { padding-top: 0; }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--s-4);
-  margin-top: var(--s-8);
+  margin-top: var(--s-5);
   padding-top: var(--s-3);
+  padding-bottom: var(--s-3);
   border-top: 1px solid var(--border);
 }
 .back-link { font-size: var(--fs-sm); }
