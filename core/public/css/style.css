@@ -218,7 +218,6 @@ main.container:has(.home-page) { padding-top: 0; }
   color: var(--muted);
 }
 .site-footer .container {
-  border-top: 1px solid var(--border);
   padding-top: var(--s-3);
   text-align: center;
 }
