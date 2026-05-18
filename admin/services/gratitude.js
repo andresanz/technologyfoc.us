@@ -153,7 +153,7 @@ async function sendPrompt(force = false) {
     return { skipped: true, reason: 'Already sent today' };
   }
   const prompt = pickPrompt(state);
-  await tgSend(`✍️ *Daily Gratitude Prompt*\n\n${prompt}`, CHAT_ID);
+  await tgSend(`*Daily Gratitude Prompt*\n\n${prompt}`, CHAT_ID);
   state.lastPromptSent = new Date().toISOString();
   state.lastPrompt     = prompt;
   state.updateOffset   = state.updateOffset || 0;
