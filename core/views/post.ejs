@@ -9,13 +9,13 @@
 
 <article class="post">
   <header class="post-header">
+    <h1><%= post.title %></h1>
     <div class="post-meta">
       <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
       <% post.tags.forEach(function(t) { %>
         <a href="/tag/<%= t %>" class="tag"><%= t %></a>
       <% }) %>
     </div>
-    <h1><%= post.title %></h1>
     <% if (post.coverImage) { %>
       <img class="post-cover-full lb-img" src="<%= post.coverImage %>" alt="<%= post.title %>" style="cursor:zoom-in">
     <% } %>

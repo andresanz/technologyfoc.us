@@ -344,7 +344,7 @@ main.container:has(.home-page) { padding-top: 0; }
 .post-header h1 {
   font-size: var(--fs-3xl);
   line-height: var(--lh-tight);
-  margin: var(--s-2) 0 var(--s-4);
+  margin: 0 0 var(--s-2);
 }
 .post-cover-full {
   width: 100%; border-radius: 4px;
