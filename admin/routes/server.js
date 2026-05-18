@@ -479,16 +479,6 @@ router.post('/history/:hash/restore', (req, res) => {
   res.redirect(`/server/history/${req.params.hash}`);
 });
 
-// ── POST /server/deploy ───────────────────────────────────────────────────────
-router.post('/deploy', (req, res) => {
-  const script = require('path').join(__dirname, '../scripts/deploy.sh');
-  exec(`bash ${script}`, { timeout: 60000 }, (err, stdout, stderr) => {
-    const output = (stdout + stderr).trim();
-    req.flash(err ? 'error' : 'success', output || (err ? 'Deploy failed' : 'Already up to date'));
-    res.redirect('/server');
-  });
-});
-
 // ── GET /server/health ────────────────────────────────────────────────────────
 router.get('/health', (req, res) => {
   let health = null;
