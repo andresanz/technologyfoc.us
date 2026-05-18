@@ -1,0 +1,48 @@
+<%
+  pageTitle = 'Webhooks';
+-%>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <h1>Webhooks</h1>
+</div>
+
+<%- include('partials/flash') %>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:.6rem .85rem;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Status</th>
+        <th style="text-align:left;padding:.6rem .85rem;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Webhook</th>
+        <th style="text-align:left;padding:.6rem .85rem;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Direction</th>
+        <th style="text-align:left;padding:.6rem .85rem;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% webhooks.forEach(function(w) {
+        const color = w.status === 'ok' ? '#16a34a' : w.status === 'warning' ? '#ca8a04' : '#dc2626';
+      %>
+      <tr>
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:<%= color %>;margin-right:.4rem;vertical-align:middle"></span>
+          <span style="font-size:.8rem;text-transform:uppercase;letter-spacing:.05em"><%= w.status %></span>
+        </td>
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle">
+          <div style="font-weight:500"><%= w.label %></div>
+          <% if (w.url) { %><div style="font-size:.75rem;color:var(--muted);font-family:var(--mono);margin-top:.2rem;word-break:break-all"><%= w.url %></div><% } %>
+        </td>
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--muted);font-size:.85rem;text-transform:capitalize"><%= w.direction %></td>
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--muted);font-size:.85rem"><%= w.detail %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+  <a href="/webhook/telegram/setup" target="_blank" class="btn btn-sm">Re-register Telegram webhook</a>
+  <a href="/webhook/telegram/info" target="_blank" class="btn btn-sm">View raw Telegram info</a>
+</div>
+
+<%- include('partials/foot') %>
