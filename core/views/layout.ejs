@@ -54,6 +54,9 @@
           <a href="/tags">Tags</a>
           <a href="/feed/rss">RSS</a>
         <% } %>
+        <% if (locals.navExtra) { %>
+          <% (locals.navExtra || []).forEach(function(item) { %><a href="<%= item.url %>"<%= item.newTab ? ' target="_blank" rel="noopener"' : '' %>><%= item.label %></a><% }) %>
+        <% } %>
       </nav>
     </div>
   </header>
