@@ -111,7 +111,7 @@ img { max-width: 100%; height: auto; display: block; }
   margin: 0 auto;
 }
 
-main.container { flex: 1; padding-top: var(--s-4); padding-bottom: var(--s-2); }
+main.container { flex: 1; padding-top: var(--s-4); padding-bottom: 0; }
 main.container:has(.home-page) { padding-top: 0; }
 .home-page .post-body > *:first-child { margin-top: 0; }
 .home-page .post-body > .shortcode-posts { margin-top: 0; }
@@ -440,7 +440,6 @@ main.container:has(.home-page) { padding-top: 0; }
   gap: var(--s-4);
   margin-top: var(--s-5);
   padding-top: var(--s-3);
-  padding-bottom: var(--s-3);
   border-top: 1px solid var(--border);
 }
 .back-link { font-size: var(--fs-sm); }
