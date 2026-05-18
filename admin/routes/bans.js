@@ -16,7 +16,7 @@ function run(cmd) {
 
 function getJails() {
   const jails = [];
-  const raw = run('sudo sudo fail2ban-client status 2>/dev/null');
+  const raw = run('sudo fail2ban-client status 2>/dev/null');
   const names = (raw.match(/Jail list:\s+(.+)/) || ['',''])[1]
     .split(',').map(s => s.trim()).filter(Boolean);
 
