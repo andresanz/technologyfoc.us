@@ -44,6 +44,7 @@ function autoCommit(site, message) {
     if (dirty) {
       const safe = message.replace(/"/g, "'").replace(/\n/g, ' ');
       run(`git commit -m "${safe}"`, dir);
+      run('git push origin HEAD --quiet', dir);
     }
   } catch (e) {
     console.error('[git] autoCommit failed:', e.message);
