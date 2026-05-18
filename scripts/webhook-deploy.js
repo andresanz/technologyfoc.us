@@ -64,18 +64,17 @@ function deploy(payload) {
     commitMsg  = execSync(`git -C ${APP_DIR} log -1 --format=%s`,          { stdio: 'pipe' }).toString().trim();
   } catch {}
 
-  const lines = [];
+  const errors = [];
 
   // npm install if package.json changed
   const pkgChanged = files.some(f => f === 'package.json' || f === 'package-lock.json');
   if (pkgChanged) {
     try {
       execSync('npm install --omit=dev --silent', { cwd: APP_DIR, timeout: 120000, stdio: 'pipe' });
-      lines.push('📦 npm install');
       console.log('[deploy] npm install done');
     } catch (e) {
       const err = (e.stderr || Buffer.alloc(0)).toString().trim();
-      lines.push(`❌ npm install failed: ${err.slice(0, 200)}`);
+      errors.push(`npm install failed: ${err.slice(0, 200)}`);
       console.error('[deploy] npm install failed:', err);
     }
   }
@@ -84,20 +83,19 @@ function deploy(payload) {
   for (const svc of SERVICES) {
     try {
       execSync(`systemctl restart ${svc}.service`, { stdio: 'pipe' });
-      lines.push(`✅ ${svc}`);
       console.log(`[deploy] restarted ${svc}`);
     } catch (e) {
       const err = (e.stderr || Buffer.alloc(0)).toString().trim();
-      lines.push(`❌ ${svc}: ${err}`);
+      errors.push(`${svc} restart failed: ${err}`);
       console.error(`[deploy] restart failed: ${svc}`, err);
     }
   }
 
   telegram(
-    `🚀 <b>andresanz.com</b> deployed by ${pusher} (${branch})\n` +
+    `<b>andresanz.com</b> · ${branch} · ${pusher}\n` +
     `#${deployNum} · <code>${shortHash}</code> · ${files.length} file(s)\n` +
-    `<i>${commitMsg}</i>\n\n` +
-    lines.join('\n')
+    `<i>${commitMsg}</i>` +
+    (errors.length ? `\n\n${errors.join('\n')}` : '')
   );
 }
 
