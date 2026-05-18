@@ -348,7 +348,7 @@ main.container:has(.home-page) { padding-top: 0; }
 }
 
 /* ── Post body (rendered markdown) ──────────────────────────────────────── */
-.post-body { max-width: var(--max-w); margin-top: var(--s-5); }
+.post-body { margin-top: var(--s-5); }
 .post-body.has-cover > p:first-child > img:only-child,
 .post-body.has-cover > img:first-child { display: none; }
 
