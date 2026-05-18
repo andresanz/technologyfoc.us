@@ -68,14 +68,17 @@ function read(postsDir, filename) {
 }
 
 // ── Write (create or update) a post ─────────────────────────────────────────
-function write(postsDir, filename, { title, slug, date, tags, excerpt, image, draft, body }) {
+function write(postsDir, filename, { title, slug, date, tags, excerpt, image, draft, body, order, nav }) {
   assertSafeFilename(filename);
   if (!fs.existsSync(postsDir)) fs.mkdirSync(postsDir, { recursive: true });
 
+  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
   const fm = {
     title,
-    date:  date || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
+    ...(date !== undefined ? { date: date || today } : {}),
     slug:  slug || slugify(title),
+    ...(typeof order === 'number'  ? { order } : {}),
+    ...(typeof nav   === 'boolean' ? { nav }   : {}),
     ...(tags    ? { tags: tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) } : {}),
     ...(excerpt ? { excerpt } : {}),
     ...(image   ? { image }   : {}),

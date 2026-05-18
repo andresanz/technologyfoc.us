@@ -96,11 +96,16 @@ router.post('/edit/:filename', async (req, res) => {
 
   const { title, slug, order, nav, draft, body } = req.body;
 
+  // Preserve the existing date — pages have no date input
+  const existing = postsLib.read(dir, req.params.filename);
+  const existingDate = existing?.date || undefined;
+
   try {
     postsLib.write(dir, req.params.filename, {
       title, slug,
+      date:  existingDate,
       order: order ? parseInt(order, 10) : undefined,
-      nav:   nav !== '0',
+      nav:   nav === '1',
       draft: !!draft,
       body,
     });
