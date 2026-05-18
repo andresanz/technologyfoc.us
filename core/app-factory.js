@@ -170,21 +170,7 @@ function createApp(siteDir) {
     res.redirect(`${adminUrl}/posts`);
   });
 
-  // ── Edit mode toggle (sets cookie, redirects back) ────────────────────────
-  app.get('/_admin/edit', (req, res) => {
-    const on  = req.query.on !== '0';
-    const back = req.query.back || '/';
-    res.cookie('_admin_edit', on ? '1' : '', {
-      maxAge: on ? 7 * 24 * 60 * 60 * 1000 : 0,
-      httpOnly: false,
-      sameSite: 'lax',
-      path: '/',
-    });
-    res.redirect(back);
-  });
-
-
-  // ── Pages index ──────────────────────────────────────────────────────────
+// ── Pages index ──────────────────────────────────────────────────────────
   app.get('/pages', (req, res) => {
     const pages = pagesLib.getNavPages().filter(p => p.slug !== 'home');
     res.render('pages-index', { site: app.locals.siteConfig(), pages });
