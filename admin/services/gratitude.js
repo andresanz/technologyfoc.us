@@ -200,6 +200,34 @@ async function checkReplies() {
   return { created };
 }
 
+// ── Process a single Telegram update (used by webhook) ───────────────────────
+
+async function processUpdate(update) {
+  if (!CHAT_ID) throw new Error('TELEGRAM_CHAT_ID not set');
+  if (!update || !update.message || !update.message.text) return { skipped: 'no text' };
+
+  const msg = update.message;
+  if (String(msg.chat.id) !== String(CHAT_ID)) return { skipped: 'wrong chat' };
+  if (msg.text.startsWith('/')) return { skipped: 'command' };
+
+  const state = loadState();
+  if (!state.lastPromptSent) return { skipped: 'no prompt sent yet' };
+
+  const msgTime    = new Date(msg.date * 1000);
+  const promptTime = new Date(state.lastPromptSent);
+  if (msgTime <= promptTime) return { skipped: 'before prompt' };
+
+  const updateId = update.update_id;
+  if ((state.processedUpdates || []).includes(updateId)) return { skipped: 'already processed' };
+
+  await appendEntry(msg.text, state.lastPrompt);
+  state.processedUpdates = [...(state.processedUpdates || []), updateId];
+  if (state.processedUpdates.length > 500) state.processedUpdates = state.processedUpdates.slice(-500);
+  state.updateOffset = Math.max(state.updateOffset || 0, updateId + 1);
+  saveState(state);
+  return { created: 1 };
+}
+
 // ── Append entry ──────────────────────────────────────────────────────────────
 
 async function appendEntry(rawText, prompt) {
@@ -225,4 +253,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { appendEntry, loadState, loadEntries, deleteEntry, sendPrompt, checkReplies };
+module.exports = { appendEntry, loadState, loadEntries, deleteEntry, sendPrompt, checkReplies, processUpdate };

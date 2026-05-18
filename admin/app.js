@@ -84,6 +84,10 @@ app.use((req, res, next) => {
 });
 
 // ── Routes ───────────────────────────────────────────────────────────────────
+
+// Telegram webhook — must be unauthenticated for POST (verified by header secret)
+app.use('/webhook/telegram', require('./routes/telegram-webhook'));
+
 app.use('/',       require('./routes/auth'));
 app.use('/posts',  requireAuth, require('./routes/posts'));
 app.use('/pages',  requireAuth, require('./routes/pages'));
