@@ -44,7 +44,7 @@ module.exports = function createPrivateRouter(postsLib, pagesLib, gratitudeFile)
     if (!post) return res.status(404).render('error', { code: 404, message: 'Post not found', site: req.app.locals.siteConfig() });
     const adminUrl = process.env.ADMIN_URL || 'https://admin.andresanz.com';
     const fname = require('path').basename(post._filepath);
-    res.redirect(`${adminUrl}/posts/edit/${encodeURIComponent(fname)}`);
+    res.redirect(`${adminUrl}/posts/edit/${encodeURIComponent(fname)}?dir=private-posts`);
   });
 
   // GET /private/posts/:slug — individual post
