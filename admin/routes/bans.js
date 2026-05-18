@@ -34,7 +34,7 @@ function getJails() {
 
 function getEvents(limit = 200) {
   try {
-    const lines = execSync(`tail -n 2000 ${F2B_LOG} 2>/dev/null`).toString().split('\n');
+    const lines = execSync(`sudo tail -n 2000 ${F2B_LOG} 2>/dev/null`).toString().split('\n');
     const events = [];
     // Match: 2026-04-18 21:46:07,236 fail2ban.actions [pid]: NOTICE  [jail] Ban/Unban/Restore Ban IP
     const re = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d+ fail2ban\.actions\s+\[\d+\]: NOTICE\s+\[([^\]]+)\] (Ban|Unban|Restore Ban|Found) (.+)$/;
