@@ -58,7 +58,7 @@ function read(postsDir, filename) {
     filename,
     slug:    data.slug    || slugify(data.title || path.basename(filename, '.md')),
     title:   data.title   || '',
-    date:    date.toISOString().split('T')[0],  // YYYY-MM-DD for <input type=date>
+    date:    date.toISOString().slice(0, 16),  // YYYY-MM-DDTHH:MM for <input type=datetime-local>
     tags:    Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ''),
     excerpt: data.excerpt || '',
     image:   data.image   || '',
@@ -72,7 +72,10 @@ function write(postsDir, filename, { title, slug, date, tags, excerpt, image, dr
   assertSafeFilename(filename);
   if (!fs.existsSync(postsDir)) fs.mkdirSync(postsDir, { recursive: true });
 
-  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+  const today = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  })();
   const fm = {
     title,
     ...(date !== undefined ? { date: date || today } : {}),
