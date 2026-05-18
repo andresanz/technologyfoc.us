@@ -57,7 +57,8 @@ async function list(site, { prefix, continuationToken, maxKeys = 50 } = {}) {
       sizeStr:      formatBytes(o.Size),
       lastModified: o.LastModified,
       dateStr:      new Date(o.LastModified).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),
-    }));
+    }))
+    .sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
   return {
     objects,
