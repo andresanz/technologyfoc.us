@@ -26,7 +26,15 @@
   </div>
 
   <footer class="post-footer">
-    <a href="/posts" class="back-link">← All posts</a>
+    <div class="post-nav">
+      <a href="/posts" class="back-link">← All posts</a>
+      <% if (locals.older) { %>
+        <a href="/post/<%= older.slug %>" class="back-link" title="<%= older.title %>">Older →</a>
+      <% } %>
+      <% if (locals.newer) { %>
+        <a href="/post/<%= newer.slug %>" class="back-link" title="<%= newer.title %>">← Newer</a>
+      <% } %>
+    </div>
     <% if (post.tags.length) { %>
       <div class="post-tags">
         <% post.tags.forEach(function(t) { %>

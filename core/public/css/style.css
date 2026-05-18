@@ -450,6 +450,7 @@ main.container:has(.home-page) { padding-top: 0; }
   border-top: 1px solid var(--border);
 }
 .back-link { font-size: var(--fs-sm); }
+.post-nav { display: flex; gap: var(--s-4); flex-wrap: wrap; align-items: center; }
 .post-tags { display: flex; gap: var(--s-2); flex-wrap: wrap; }
 
 /* ── Tag cloud ───────────────────────────────────────────────────────────── */

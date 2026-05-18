@@ -70,7 +70,12 @@ module.exports = function createPostsRouter(postsLib, pagesLib, privatePostsLib)
         code: 404, message: 'Post not found',
       });
     }
-    res.render('post', { site: req.app.locals.siteConfig(), post });
+    // Compute prev/next based on date order (newest → oldest)
+    const all = postsLib.getAll();
+    const idx = all.findIndex(p => p.slug === post.slug);
+    const newer = idx > 0              ? all[idx - 1] : null;
+    const older = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
+    res.render('post', { site: req.app.locals.siteConfig(), post, newer, older });
   });
 
   // ── Cache bust ────────────────────────────────────────────────────────────
