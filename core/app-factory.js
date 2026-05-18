@@ -93,6 +93,7 @@ function createApp(siteDir) {
         allNav:     isObj ? (raw.nav        || []) : raw,
         homeNav:    isObj ? (raw.homeNav    || null) : null,
         privateNav: isObj ? (raw.privateNav || null) : null,
+        pageNav:    isObj ? (raw.pageNav    || null) : null,
       };
       navCache = { mtime, parsed };
       return parsed;
@@ -117,6 +118,10 @@ function createApp(siteDir) {
       if (isPrivate && parsed.privateNav) items = parsed.privateNav;
       res.locals.nav       = items.filter(i => i.enabled !== false);
       res.locals.navLoaded = true;
+      if (parsed.pageNav) {
+        const rule = parsed.pageNav.find(r => r.path && req.path === r.path);
+        if (rule) res.locals.navExtra = (rule.links || []).filter(i => i.enabled !== false);
+      }
     } else {
       res.locals.nav = null; res.locals.navLoaded = false;
     }

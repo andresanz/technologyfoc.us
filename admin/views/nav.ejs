@@ -101,6 +101,41 @@
   </div>
 </section>
 
+<section class="card" style="margin-top:1rem">
+  <h3 style="margin-bottom:.25rem">Page-specific nav links</h3>
+  <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem">Extra links appended to the nav on specific pages only. Match is exact path (e.g. <code>/private/posts</code>).</p>
+  <div id="pageNavRules">
+    <% pageNavItems.forEach(function(rule, ri) { %>
+    <div class="pnav-rule" data-ri="<%= ri %>">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+        <input type="text" class="pnav-path" value="<%= rule.path %>" placeholder="/path" style="flex:1;font-family:var(--mono);font-size:.85rem">
+        <button type="button" class="btn btn-sm btn-danger" onclick="removeRule(this)">✕ Remove rule</button>
+      </div>
+      <table class="nav-table" style="margin-bottom:.5rem">
+        <thead><tr>
+          <th>Label</th><th>URL</th>
+          <th style="width:5rem;text-align:center">New tab</th>
+          <th style="width:3rem"></th>
+        </tr></thead>
+        <tbody class="pnav-links">
+          <% (rule.links || []).forEach(function(link) { %>
+          <tr class="nav-row">
+            <td><input type="text" class="nav-label" value="<%= link.label %>" placeholder="Label"></td>
+            <td><input type="text" class="nav-url"   value="<%= link.url %>"   placeholder="/path or https://…"></td>
+            <td style="text-align:center"><input type="checkbox" class="nav-newtab" <%= link.newTab ? 'checked' : '' %>></td>
+            <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <button type="button" class="btn btn-sm" onclick="addPageLink(this)">+ Add link</button>
+      <hr style="margin:1rem 0;border-color:var(--border)">
+    </div>
+    <% }) %>
+  </div>
+  <button type="button" class="btn" onclick="addPageRule()">+ Add page rule</button>
+</section>
+
 <style>
 .nav-table { width: 100%; border-collapse: collapse; }
 .nav-table th { text-align: left; font-size: .8rem; color: var(--muted); padding: .4rem .5rem; border-bottom: 1px solid var(--border); }
@@ -173,6 +208,54 @@ function serializeRows(tbodyId) {
   })).filter(i => i.label);
 }
 
+// ── Page nav rules ────────────────────────────────────────────────────────────
+function addPageRule() {
+  const container = document.getElementById('pageNavRules');
+  const div = document.createElement('div');
+  div.className = 'pnav-rule';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <input type="text" class="pnav-path" value="" placeholder="/path" style="flex:1;font-family:var(--mono);font-size:.85rem">
+      <button type="button" class="btn btn-sm btn-danger" onclick="removeRule(this)">✕ Remove rule</button>
+    </div>
+    <table class="nav-table" style="margin-bottom:.5rem">
+      <thead><tr>
+        <th>Label</th><th>URL</th>
+        <th style="width:5rem;text-align:center">New tab</th>
+        <th style="width:3rem"></th>
+      </tr></thead>
+      <tbody class="pnav-links"></tbody>
+    </table>
+    <button type="button" class="btn btn-sm" onclick="addPageLink(this)">+ Add link</button>
+    <hr style="margin:1rem 0;border-color:var(--border)">`;
+  container.appendChild(div);
+}
+
+function removeRule(btn) { btn.closest('.pnav-rule').remove(); }
+
+function addPageLink(btn) {
+  const tbody = btn.closest('.pnav-rule').querySelector('.pnav-links');
+  const tr = document.createElement('tr');
+  tr.className = 'nav-row';
+  tr.innerHTML = `
+    <td><input type="text" class="nav-label" value="" placeholder="Label"></td>
+    <td><input type="text" class="nav-url"   value="" placeholder="/path or https://…"></td>
+    <td style="text-align:center"><input type="checkbox" class="nav-newtab"></td>
+    <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function serializePageNav() {
+  return [...document.querySelectorAll('.pnav-rule')].map(rule => ({
+    path:  rule.querySelector('.pnav-path').value.trim(),
+    links: [...rule.querySelectorAll('.pnav-links .nav-row')].map(row => ({
+      label:  row.querySelector('.nav-label').value.trim(),
+      url:    row.querySelector('.nav-url').value.trim() || '/',
+      newTab: row.querySelector('.nav-newtab').checked,
+    })).filter(l => l.label),
+  })).filter(r => r.path);
+}
+
 // ── Save via fetch ────────────────────────────────────────────────────────────
 async function saveNav() {
   const btn = document.getElementById('saveBtn');
@@ -182,10 +265,11 @@ async function saveNav() {
     const nav        = serializeRows('navBody');
     const homeNav    = serializeRows('homeNavBody');
     const privateNav = serializeRows('privateNavBody');
+    const pageNav    = serializePageNav();
     const r = await fetch('/server/nav', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ nav, homeNav, privateNav }),
+      body:    JSON.stringify({ nav, homeNav, privateNav, pageNav }),
     });
     if (r.redirected || r.url.includes('/login')) {
       window.location.href = '/login';
