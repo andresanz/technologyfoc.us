@@ -303,8 +303,6 @@ main.container:has(.home-page) { padding-top: 0; }
   font-family: var(--font-ui);
   color: var(--muted);
   margin-bottom: var(--s-2);
-  padding-bottom: var(--s-3);
-  border-bottom: 1px solid var(--border);
 }
 
 .post-card h2 { font-size: var(--fs-xl); margin-bottom: var(--s-2); line-height: var(--lh-snug); }
