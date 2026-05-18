@@ -5,6 +5,7 @@ const fs              = require('fs');
 const path            = require('path');
 const { execSync, exec } = require('child_process');
 const Database        = require('better-sqlite3');
+const gitLib          = require('../lib/git');
 const router          = express.Router();
 
 const DATA_FILE = path.join(__dirname, '..', 'data', 'redirects.json');
@@ -149,6 +150,7 @@ router.post('/new', (req, res) => {
     updatedAt:    new Date().toISOString(),
   });
   save(list);
+  gitLib.autoCommit(req.site, `Add redirect: ${domain}`);
   req.flash('success', `Redirect added for ${domain}`);
   res.redirect('/redirects');
 });
@@ -175,6 +177,7 @@ router.post('/:domain/edit', (req, res) => {
     updatedAt:    new Date().toISOString(),
   };
   save(list);
+  gitLib.autoCommit(req.site, `Update redirect: ${req.params.domain}`);
   req.flash('success', 'Redirect updated');
   res.redirect('/redirects');
 });
@@ -234,6 +237,7 @@ server {
 router.post('/:domain/delete', (req, res) => {
   const list = load().filter(x => x.domain !== req.params.domain);
   save(list);
+  gitLib.autoCommit(req.site, `Delete redirect: ${req.params.domain}`);
   req.flash('success', `Deleted redirect for ${req.params.domain}`);
   res.redirect('/redirects');
 });

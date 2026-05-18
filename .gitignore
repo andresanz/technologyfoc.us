@@ -7,5 +7,3 @@ analytics.db-wal
 .env
 *.env
 package-lock.json
-admin/data/redirects.json
-admin/data/shortlinks.json
