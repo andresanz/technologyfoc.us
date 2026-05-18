@@ -7,9 +7,11 @@ LOG="/var/log/andresanz-deploy.log"
 set -a; source "$APP_DIR/.env"; set +a
 
 tg() {
-  if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then return; fi
-  curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-    -d chat_id="${TELEGRAM_CHAT_ID}" -d text="$1" > /dev/null
+  TOKEN="${DEPLOY_TELEGRAM_BOT_TOKEN:-${TELEGRAM_BOT_TOKEN:-}}"
+  CHAT="${DEPLOY_TELEGRAM_CHAT_ID:-${TELEGRAM_CHAT_ID:-}}"
+  if [ -z "$TOKEN" ] || [ -z "$CHAT" ]; then return; fi
+  curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+    -d chat_id="${CHAT}" -d text="$1" > /dev/null
 }
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"; }
 
