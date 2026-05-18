@@ -47,6 +47,15 @@
 
 <%- include('partials/flash') %>
 
+<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding:.6rem 1rem;background:var(--surface2,#f4f4f4);border-radius:var(--radius);font-size:.85rem">
+  <span style="color:var(--muted);font-weight:600">server_tokens</span>
+  <span style="font-family:var(--mono);padding:.15em .5em;border-radius:4px;font-size:.8rem;background:<%= serverTokens === 'off' ? '#dcfce7' : '#fee2e2' %>;color:<%= serverTokens === 'off' ? '#15803d' : '#991b1b' %>"><%= serverTokens %></span>
+  <form method="POST" action="/server/nginx/server-tokens" style="margin:0">
+    <button class="btn btn-sm"><%= serverTokens === 'off' ? 'Turn on' : 'Turn off' %></button>
+  </form>
+  <span style="color:var(--muted);font-size:.78rem"><%= serverTokens === 'off' ? 'nginx version hidden from responses ✓' : 'nginx version exposed in headers/error pages' %></span>
+</div>
+
 <% if (!testOk) { %>
 <div class="test-banner test-fail"><%= testResult %></div>
 <% } %>

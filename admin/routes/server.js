@@ -220,6 +220,16 @@ router.post('/nginx/reload', (req, res) => {
   res.redirect('/server');
 });
 
+const NGINX_CONF = '/etc/nginx/nginx.conf';
+
+function getServerTokens() {
+  try {
+    const raw = fs.readFileSync(NGINX_CONF, 'utf8');
+    const m = raw.match(/^\s*server_tokens\s+(on|off)\s*;/m);
+    return m ? m[1] : 'on'; // nginx default is on
+  } catch { return 'unknown'; }
+}
+
 // ── GET /server/nginx ─────────────────────────────────────────────────────────
 router.get('/nginx', (req, res) => {
   const availDir = '/etc/nginx/sites-available';
@@ -239,10 +249,42 @@ router.get('/nginx', (req, res) => {
     try { config = fs.readFileSync(`${availDir}/${selected}`, 'utf8'); } catch {}
   }
 
-  const testResult = run('sudo nginx -t 2>&1');
-  const testOk = testResult.includes('test is successful');
+  const testResult    = run('sudo nginx -t 2>&1');
+  const testOk        = testResult.includes('test is successful');
+  const serverTokens  = getServerTokens();
 
-  res.render('server-nginx', { sites, selected, config, testResult, testOk, flash: req.flash() });
+  res.render('server-nginx', { sites, selected, config, testResult, testOk, serverTokens, flash: req.flash() });
+});
+
+// ── POST /server/nginx/server-tokens ──────────────────────────────────────────
+router.post('/nginx/server-tokens', (req, res) => {
+  try {
+    let raw = fs.readFileSync(NGINX_CONF, 'utf8');
+    const current = getServerTokens();
+    const next    = current === 'off' ? 'on' : 'off';
+
+    if (/^\s*server_tokens\s+(on|off)\s*;/m.test(raw)) {
+      raw = raw.replace(/^(\s*server_tokens\s+)(on|off)(\s*;)/m, `$1${next}$3`);
+    } else {
+      // inject after the opening `http {` line
+      raw = raw.replace(/(http\s*\{)/, `$1\n    server_tokens ${next};`);
+    }
+
+    fs.writeFileSync(NGINX_CONF, raw, 'utf8');
+    const test = run('sudo nginx -t 2>&1');
+    if (test.includes('failed')) {
+      req.flash('error', `nginx test failed — reverted: ${test}`);
+      // revert
+      raw = raw.replace(/^(\s*server_tokens\s+)(on|off)(\s*;)/m, `$1${current}$3`);
+      fs.writeFileSync(NGINX_CONF, raw, 'utf8');
+    } else {
+      run('sudo systemctl reload nginx');
+      req.flash('success', `server_tokens set to ${next}`);
+    }
+  } catch (e) {
+    req.flash('error', e.message);
+  }
+  res.redirect('/server/nginx');
 });
 
 // ── POST /server/nginx/save ───────────────────────────────────────────────────
