@@ -1,0 +1,107 @@
+<%
+  pageTitle = 'Shortlinks';
+-%>
+<%- include('partials/head') %>
+
+<div class="page-header">
+  <h1>Shortlinks <span style="font-size:.7em;font-weight:400;color:var(--muted)">/r/:code</span></h1>
+</div>
+
+<%- include('partials/flash') %>
+
+<%/* ── Add form ── */%>
+<div class="card" style="margin-bottom:1.5rem;padding:1rem 1.25rem">
+  <form method="POST" action="/shortlinks/new" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end">
+    <label style="flex:0 0 120px">
+      <span style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Code</span>
+      <input type="text" name="code" placeholder="gh" required
+             style="width:100%;margin-top:.25rem"
+             pattern="[a-zA-Z0-9_-]+" title="Letters, numbers, - and _ only">
+    </label>
+    <label style="flex:1;min-width:180px">
+      <span style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">URL</span>
+      <input type="url" name="url" placeholder="https://…" required style="width:100%;margin-top:.25rem">
+    </label>
+    <label style="flex:0 0 160px">
+      <span style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Label <span style="font-weight:400;text-transform:none">(optional)</span></span>
+      <input type="text" name="label" placeholder="My GitHub" style="width:100%;margin-top:.25rem">
+    </label>
+    <button class="btn btn-primary" style="align-self:flex-end">Add</button>
+  </form>
+</div>
+
+<%/* ── List ── */%>
+<% if (links.length === 0) { %>
+  <div class="card" style="padding:2rem;text-align:center;color:var(--muted)">No shortlinks yet.</div>
+<% } else { %>
+<div class="card" style="padding:0;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:.5rem .85rem;color:var(--muted);font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Short URL</th>
+        <th style="text-align:left;padding:.5rem .85rem;color:var(--muted);font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Destination</th>
+        <th style="text-align:right;padding:.5rem .85rem;color:var(--muted);font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)">Hits</th>
+        <th style="border-bottom:1px solid var(--border)"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% links.forEach(function(l, i) { %>
+      <tr id="row-<%= i %>">
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle">
+          <code style="font-size:.85rem;color:var(--accent)">/r/<%= l.code %></code>
+          <button class="btn btn-sm" style="margin-left:.4rem;padding:.15em .5em;font-size:.72rem"
+                  onclick="copyLink('/r/<%= l.code %>', this)" title="Copy short URL">⎘</button>
+        </td>
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle;max-width:320px">
+          <div id="view-<%= i %>">
+            <% if (l.label) { %><span style="font-weight:500"><%= l.label %></span><br><% } %>
+            <a href="<%= l.url %>" target="_blank" style="font-size:.8rem;color:var(--muted);word-break:break-all"><%= l.url %></a>
+          </div>
+          <form id="edit-<%= i %>" method="POST" action="/shortlinks/edit" style="display:none;gap:.4rem;align-items:center;flex-wrap:wrap">
+            <input type="hidden" name="code" value="<%= l.code %>">
+            <input type="text"  name="label" value="<%= l.label %>" placeholder="Label" style="flex:0 0 140px;font-size:.85rem">
+            <input type="url"   name="url"   value="<%= l.url %>"   placeholder="URL"   style="flex:1;min-width:200px;font-size:.85rem" required>
+            <button class="btn btn-sm btn-primary">Save</button>
+            <button type="button" class="btn btn-sm" onclick="cancelEdit(<%= i %>)">Cancel</button>
+          </form>
+        </td>
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;color:var(--muted);white-space:nowrap">
+          <%= l.hits || 0 %>
+        </td>
+        <td style="padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;white-space:nowrap">
+          <button class="btn btn-sm" onclick="startEdit(<%= i %>)">Edit</button>
+          <form method="POST" action="/shortlinks/delete" style="display:inline"
+                onsubmit="return confirm('Delete /r/<%= l.code %>?')">
+            <input type="hidden" name="code" value="<%= l.code %>">
+            <button class="btn btn-sm btn-danger">✕</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<script>
+function copyLink(path, btn) {
+  const url = '<%= typeof siteUrl !== "undefined" && siteUrl ? siteUrl : "" %>' + path;
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+function startEdit(i) {
+  document.getElementById('view-' + i).style.display = 'none';
+  const f = document.getElementById('edit-' + i);
+  f.style.display = 'flex';
+  f.querySelector('[name=url]').focus();
+}
+function cancelEdit(i) {
+  document.getElementById('view-' + i).style.display = '';
+  document.getElementById('edit-' + i).style.display = 'none';
+}
+</script>
+
+<%- include('partials/foot') %>
