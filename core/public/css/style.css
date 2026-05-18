@@ -199,7 +199,7 @@ main.container:has(.home-page) { padding-top: 0; }
     border: none;
     box-shadow: none;
     padding: 0;
-    gap: var(--s-5);
+    gap: var(--s-3);
   }
   .site-header nav a {
     padding: 0;
