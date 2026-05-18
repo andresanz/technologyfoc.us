@@ -3,7 +3,7 @@
 const express  = require('express');
 const PER_PAGE = parseInt(process.env.PER_PAGE) || 5;
 
-module.exports = function createPostsRouter(postsLib, pagesLib) {
+module.exports = function createPostsRouter(postsLib, pagesLib, privatePostsLib) {
   const router = express.Router();
 
   // ── Homepage ──────────────────────────────────────────────────────────────
@@ -80,6 +80,7 @@ module.exports = function createPostsRouter(postsLib, pagesLib) {
     }
     postsLib.bust();
     if (pagesLib) pagesLib.bust();
+    if (privatePostsLib) privatePostsLib.bust();
     res.json({ ok: true, message: 'Cache cleared' });
   });
 
