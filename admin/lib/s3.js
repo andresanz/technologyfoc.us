@@ -109,4 +109,55 @@ function formatBytes(b) {
   return (b / 1048576).toFixed(1) + ' MB';
 }
 
-module.exports = { upload, list, remove, presign };
+// ─── Cached full-bucket listing with global newest-first sort ────────────────
+// Fetches every object once, caches sorted result, paginates locally.
+const allCache = new Map(); // key = bucket → { at, items }
+const CACHE_TTL = 5 * 60 * 1000;
+
+function invalidateAllCache(bucket) {
+  if (bucket) allCache.delete(bucket);
+  else allCache.clear();
+}
+
+async function listAll(site, { page = 1, perPage = 48 } = {}) {
+  if (!site.s3Bucket) return { objects: [], page: 1, totalPages: 0, total: 0 };
+
+  const cached = allCache.get(site.s3Bucket);
+  let items;
+  if (cached && (Date.now() - cached.at) < CACHE_TTL) {
+    items = cached.items;
+  } else {
+    items = [];
+    let token;
+    do {
+      const cmd = new ListObjectsV2Command({
+        Bucket:            site.s3Bucket,
+        MaxKeys:           1000,
+        ContinuationToken: token,
+      });
+      const res = await makeClient(site).send(cmd);
+      for (const o of (res.Contents || [])) {
+        if (!/\.(jpe?g|png|gif|webp|avif|svg)$/i.test(o.Key)) continue;
+        items.push({
+          key:          o.Key,
+          url:          publicUrl(site, o.Key),
+          size:         o.Size,
+          sizeStr:      formatBytes(o.Size),
+          lastModified: o.LastModified,
+          dateStr:      new Date(o.LastModified).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),
+        });
+      }
+      token = res.NextContinuationToken;
+    } while (token);
+    items.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+    allCache.set(site.s3Bucket, { at: Date.now(), items });
+  }
+
+  const total      = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const p          = Math.max(1, Math.min(page, totalPages));
+  const objects    = items.slice((p - 1) * perPage, p * perPage);
+  return { objects, page: p, totalPages, total };
+}
+
+module.exports = { upload, list, listAll, invalidateAllCache, remove, presign };

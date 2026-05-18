@@ -49,16 +49,16 @@ router.get('/', async (req, res) => {
   const site = req.site;
 
   const isJson = 'json' in req.query;
+  const page   = parseInt(req.query.page || req.query.next) || 1;
   try {
-    const result = await s3Lib.list(site, {
-      continuationToken: req.query.next || undefined,
-      maxKeys: isJson ? 200 : 48,
-    });
-    if (isJson) return res.json({ ok: true, ...result });
-    res.render('media', { site, ...result, s3Error: null, flash: req.flash() });
+    const result = await s3Lib.listAll(site, { page, perPage: isJson ? 200 : 48 });
+    // Back-compat for views expecting nextToken:
+    const nextToken = result.page < result.totalPages ? String(result.page + 1) : null;
+    if (isJson) return res.json({ ok: true, ...result, nextToken });
+    res.render('media', { site, ...result, nextToken, s3Error: null, flash: req.flash() });
   } catch (e) {
     if (isJson) return res.status(500).json({ error: e.message });
-    res.render('media', { site, objects: [], nextToken: null, flash: req.flash(), s3Error: e.message });
+    res.render('media', { site, objects: [], nextToken: null, page: 1, totalPages: 0, total: 0, flash: req.flash(), s3Error: e.message });
   }
 });
 
@@ -93,6 +93,7 @@ router.post('/upload', upload.array('images', 20), async (req, res) => {
         folder,
       }))
     );
+    s3Lib.invalidateAllCache(site.s3Bucket);
     res.json({ ok: true, files: results });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -105,6 +106,7 @@ router.post('/delete', async (req, res) => {
 
   try {
     await s3Lib.remove(site, req.body.key);
+    s3Lib.invalidateAllCache(site.s3Bucket);
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
