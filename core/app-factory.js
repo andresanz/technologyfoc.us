@@ -90,10 +90,8 @@ function createApp(siteDir) {
       const raw   = JSON.parse(fs.readFileSync(navFile, 'utf8'));
       const isObj = raw && !Array.isArray(raw);
       const parsed = {
-        allNav:     isObj ? (raw.nav        || []) : raw,
-        homeNav:    isObj ? (raw.homeNav    || null) : null,
-        privateNav: isObj ? (raw.privateNav || null) : null,
-        pageNav:    isObj ? (raw.pageNav    || null) : null,
+        allNav:  isObj ? (raw.nav     || []) : raw,
+        pageNav: isObj ? (raw.pageNav || null) : null,
       };
       navCache = { mtime, parsed };
       return parsed;
@@ -111,12 +109,7 @@ function createApp(siteDir) {
 
     const parsed = loadNav();
     if (parsed) {
-      const isHome    = req.path === '/';
-      const isPrivate = req.path.startsWith('/private');
-      let items = parsed.allNav;
-      if (isHome    && parsed.homeNav)    items = parsed.homeNav;
-      if (isPrivate && parsed.privateNav) items = parsed.privateNav;
-      res.locals.nav       = items.filter(i => i.enabled !== false);
+      res.locals.nav       = parsed.allNav.filter(i => i.enabled !== false);
       res.locals.navLoaded = true;
       if (parsed.pageNav) {
         const rule = parsed.pageNav.find(r => r.path && req.path === r.path);
