@@ -37,6 +37,16 @@ module.exports = function createPrivateRouter(postsLib, pagesLib, gratitudeFile)
     res.render('private-index', { posts, site: req.app.locals.siteConfig() });
   });
 
+  // GET /private/posts/:slug/edit — redirect to admin editor
+  router.get('/posts/:slug/edit', (req, res) => {
+    if (!authed(req)) return res.redirect('/private');
+    const post = postsLib.getBySlug(req.params.slug);
+    if (!post) return res.status(404).render('error', { code: 404, message: 'Post not found', site: req.app.locals.siteConfig() });
+    const adminUrl = process.env.ADMIN_URL || 'https://admin.andresanz.com';
+    const fname = require('path').basename(post._filepath);
+    res.redirect(`${adminUrl}/posts/edit/${encodeURIComponent(fname)}`);
+  });
+
   // GET /private/posts/:slug — individual post
   router.get('/posts/:slug', (req, res) => {
     if (!authed(req)) return res.redirect('/private');
