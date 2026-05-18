@@ -233,13 +233,8 @@ main.container:has(.home-page) { padding-top: 0; }
 .footer-copy { margin: 0; }
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
-.page-header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-7); flex-wrap: wrap; }
-.page-header h1 { font-size: var(--fs-2xl); margin: 0; }
-.page-header-actions { display: flex; align-items: center; gap: var(--s-3); flex-shrink: 0; }
-.btn { display: inline-block; padding: var(--s-1) var(--s-3); background: var(--accent); color: #fff; border-radius: 4px; font-size: var(--fs-sm); font-weight: 600; text-decoration: none; }
-.btn:hover { opacity: .85; text-decoration: none; color: #fff; }
-.btn-muted { font-size: var(--fs-sm); color: var(--muted); text-decoration: none; }
-.btn-muted:hover { color: var(--text); text-decoration: none; }
+.page-header { margin-bottom: var(--s-7); }
+.page-header h1 { font-size: var(--fs-2xl); }
 .site-desc { color: var(--muted); margin-top: var(--s-2); }
 .tag-highlight { color: var(--accent); }
 
