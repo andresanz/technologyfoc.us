@@ -1,6 +1,6 @@
 ---
 title: Great Hollow Nature Preserve
-date: '2026-05-18'
+date: '2026-05-18T16:00'
 slug: great-hollow-nature-preserve
 tags:
   - brewster
@@ -10,3 +10,4 @@ tags:
 image: 'https://andresanz.com/images/1779073955532-c2a57060991a.jpeg'
 ---
 
+[Great Hollow Nature Preserve](
