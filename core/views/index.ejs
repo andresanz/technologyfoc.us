@@ -19,22 +19,26 @@
   <% } else { %>
     <% posts.forEach(function(post) { %>
       <article class="post-card">
+        <a href="/post/<%= post.slug %>" class="card-link" aria-label="<%= post.title %>"></a>
         <% if (post.coverImage) { %>
-          <a href="/post/<%= post.slug %>" class="post-cover">
+          <div class="post-cover">
             <img src="<%= post.coverImage %>" alt="<%= post.title %>">
-          </a>
+            <div class="post-kicker">
+              <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
+              <% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %>
+            </div>
+          </div>
         <% } %>
         <div class="post-card-body">
+          <% if (!post.coverImage) { %>
           <div class="post-kicker">
             <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
-            <% post.tags.forEach(function(t) { %>
-              <a href="/tag/<%= t %>" class="tag"><%= t %></a>
-            <% }) %>
+            <% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %>
           </div>
-          <h2><a href="/post/<%= post.slug %>"><%= post.title %></a></h2>
+          <% } %>
+          <h2><%= post.title %></h2>
           <% var ex = post.excerpt || ''; var truncated = ex.length > 140 ? ex.slice(0, 137) + '…' : ex; %>
           <% if (truncated) { %><p class="excerpt"><%= truncated %></p><% } %>
-          <a href="/post/<%= post.slug %>" class="read-more">Read more <span class="read-more-arrow">→</span></a>
         </div>
       </article>
     <% }) %>
