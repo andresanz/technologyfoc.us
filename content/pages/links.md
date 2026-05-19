@@ -1,6 +1,6 @@
 ---
 title: Links
-date: '2026-05-01T04:00'
+date: '2026-05-01T08:00'
 slug: links
 nav: true
 ---
@@ -9,4 +9,4 @@ nav: true
 * [Alight - Cigna](https://worklife.alight.com/ah-angular-afirst-web/#/web/cigna/homepage) Non-employee access to healthcare info
 
 ### Employment
-* [NYS]
+* [Online Services For Individuals](https://apps.labor.ny.gov/IndividualReg/)
