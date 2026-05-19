@@ -1,6 +1,6 @@
 ---
 title: 'Dirty, stinking animals'
-date: '2026-05-19T18:09'
+date: '2026-05-18T22:09'
 slug: dirty-stinking-animals
 tags:
   - potd
