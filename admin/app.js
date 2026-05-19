@@ -1,4 +1,5 @@
 'use strict';
+process.env.TZ = 'America/New_York';
 require('dotenv').config();
 
 const express = require('express');
