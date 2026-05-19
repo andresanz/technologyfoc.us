@@ -242,7 +242,7 @@ main.container:has(.home-page) { padding-top: 0; }
     border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0,0,0,.1);
     padding: var(--s-1) 0; min-width: 130px; z-index: 200;
   }
-  .nav-dropdown.open .nav-dropdown-menu { display: flex; }
+  .nav-dropdown.open .nav-dropdown-menu { display: flex; padding-left: 10px; }
   .nav-dropdown-menu a {
     padding: var(--s-2) var(--s-4) var(--s-2) var(--s-5); font-size: var(--fs-sm); color: var(--muted);
     border: none; min-height: auto; white-space: nowrap;
