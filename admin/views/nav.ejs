@@ -17,29 +17,41 @@
 
 <section class="card">
   <h3 style="margin-bottom:.75rem">All pages nav</h3>
-  <table class="nav-table">
-    <thead><tr>
-      <th style="width:2rem"></th>
-      <th>Label</th><th>URL</th>
-      <th style="width:5rem;text-align:center">Enabled</th>
-      <th style="width:5rem;text-align:center">New tab</th>
-      <th style="width:3rem"></th>
-    </tr></thead>
-    <tbody id="navBody">
-      <% navItems.forEach(function(item) { %>
-      <tr class="nav-row" draggable="true">
-        <td class="drag-handle" title="Drag to reorder">⠿</td>
-        <td><input type="text" class="nav-label" value="<%= item.label %>" placeholder="Label"></td>
-        <td><input type="text" class="nav-url"   value="<%= item.url %>"   placeholder="/path or https://…"></td>
-        <td style="text-align:center"><input type="checkbox" class="nav-enabled" <%= item.enabled !== false ? 'checked' : '' %>></td>
-        <td style="text-align:center"><input type="checkbox" class="nav-newtab" <%= item.newTab ? 'checked' : '' %>></td>
-        <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <div style="margin-top:1rem;display:flex;gap:.5rem">
-    <button type="button" class="btn" onclick="addRow('navBody')">+ Add item</button>
+  <div id="navBody">
+    <% navItems.forEach(function(item) { %>
+    <div class="nav-item-wrap" draggable="true">
+      <div class="nav-item-row">
+        <span class="drag-handle" title="Drag to reorder">⠿</span>
+        <input type="text" class="nav-label" value="<%= item.label %>" placeholder="Label">
+        <input type="text" class="nav-url"   value="<%= item.url || '' %>" placeholder="/path or https://… (blank if dropdown)">
+        <label title="Enabled"><input type="checkbox" class="nav-enabled" <%= item.enabled !== false ? 'checked' : '' %>> on</label>
+        <label title="New tab"><input type="checkbox" class="nav-newtab" <%= item.newTab ? 'checked' : '' %>> ↗</label>
+        <button type="button" class="btn btn-sm" onclick="toggleChildren(this)">▾ Sub</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="removeNavItem(this)">✕</button>
+      </div>
+      <% if (item.children && item.children.length) { %>
+      <div class="nav-children open">
+        <% item.children.forEach(function(child) { %>
+        <div class="nav-child-row">
+          <span style="color:var(--muted);padding:0 .25rem">↳</span>
+          <input type="text" class="child-label" value="<%= child.label %>" placeholder="Label">
+          <input type="text" class="child-url"   value="<%= child.url %>"   placeholder="/path or https://…">
+          <label><input type="checkbox" class="child-newtab" <%= child.newTab ? 'checked' : '' %>> ↗</label>
+          <button type="button" class="btn btn-sm btn-danger" onclick="removeNavItem(this)">✕</button>
+        </div>
+        <% }) %>
+        <button type="button" class="btn btn-sm" style="margin:.25rem 0 .25rem 1.5rem" onclick="addChild(this)">+ Add link</button>
+      </div>
+      <% } else { %>
+      <div class="nav-children">
+        <button type="button" class="btn btn-sm" style="margin:.25rem 0 .25rem 1.5rem" onclick="addChild(this)">+ Add link</button>
+      </div>
+      <% } %>
+    </div>
+    <% }) %>
+  </div>
+  <div style="margin-top:1rem">
+    <button type="button" class="btn" onclick="addNavItem()">+ Add item</button>
   </div>
 </section>
 
@@ -80,75 +92,110 @@
 </section>
 
 <style>
+.nav-item-wrap { border: 1px solid var(--border); border-radius: 6px; margin-bottom: .5rem; overflow: hidden; }
+.nav-item-wrap.drag-over { border-color: var(--accent); }
+.nav-item-row { display: flex; align-items: center; gap: .4rem; padding: .4rem .5rem; background: var(--surface); flex-wrap: wrap; }
+.nav-item-row input[type=text] { flex: 1; min-width: 80px; }
+.nav-item-row label { display: flex; align-items: center; gap: .2rem; font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.nav-children { display: none; flex-direction: column; padding: .25rem .5rem; background: var(--bg); border-top: 1px solid var(--border); }
+.nav-children.open { display: flex; }
+.nav-child-row { display: flex; align-items: center; gap: .4rem; padding: .25rem 0; border-bottom: 1px solid var(--border); }
+.nav-child-row:last-of-type { border-bottom: none; }
+.nav-child-row input[type=text] { flex: 1; min-width: 80px; }
+.nav-child-row label { display: flex; align-items: center; gap: .2rem; font-size: .8rem; color: var(--muted); }
+.drag-handle { cursor: grab; color: var(--muted); font-size: 1.1rem; user-select: none; flex-shrink: 0; }
+/* page nav table */
 .nav-table { width: 100%; border-collapse: collapse; }
 .nav-table th { text-align: left; font-size: .8rem; color: var(--muted); padding: .4rem .5rem; border-bottom: 1px solid var(--border); }
 .nav-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .nav-table input[type=text] { width: 100%; }
-.drag-handle { cursor: grab; color: var(--muted); font-size: 1.1rem; user-select: none; }
-.nav-row.dragging { opacity: .4; }
-.nav-row.drag-over { border-top: 2px solid var(--accent); }
 </style>
 
 <script>
-// ── Drag-to-reorder ──────────────────────────────────────────────────────────
+// ── Drag-to-reorder (top-level items) ────────────────────────────────────────
 let dragSrc = null;
-document.querySelectorAll('tbody').forEach(tbody => {
-  tbody.addEventListener('dragstart', e => {
-    dragSrc = e.target.closest('tr');
-    dragSrc.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  });
-  tbody.addEventListener('dragend', () => {
-    document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('dragging','drag-over'));
-  });
-  tbody.addEventListener('dragover', e => {
-    e.preventDefault();
-    const row = e.target.closest('tr');
-    if (row && row !== dragSrc) {
-      document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('drag-over'));
-      row.classList.add('drag-over');
-    }
-  });
-  tbody.addEventListener('drop', e => {
-    e.preventDefault();
-    const row = e.target.closest('tr');
-    if (row && row !== dragSrc) tbody.insertBefore(dragSrc, row);
-    document.querySelectorAll('.nav-row').forEach(r => r.classList.remove('drag-over'));
-  });
+const navBody = document.getElementById('navBody');
+navBody.addEventListener('dragstart', e => {
+  dragSrc = e.target.closest('.nav-item-wrap');
+  if (dragSrc) { dragSrc.style.opacity = '.4'; e.dataTransfer.effectAllowed = 'move'; }
+});
+navBody.addEventListener('dragend', () => {
+  document.querySelectorAll('.nav-item-wrap').forEach(r => { r.style.opacity = ''; r.classList.remove('drag-over'); });
+});
+navBody.addEventListener('dragover', e => {
+  e.preventDefault();
+  const wrap = e.target.closest('.nav-item-wrap');
+  if (wrap && wrap !== dragSrc) {
+    document.querySelectorAll('.nav-item-wrap').forEach(r => r.classList.remove('drag-over'));
+    wrap.classList.add('drag-over');
+  }
+});
+navBody.addEventListener('drop', e => {
+  e.preventDefault();
+  const wrap = e.target.closest('.nav-item-wrap');
+  if (wrap && wrap !== dragSrc) navBody.insertBefore(dragSrc, wrap);
+  document.querySelectorAll('.nav-item-wrap').forEach(r => r.classList.remove('drag-over'));
 });
 
-// ── Add / remove rows ────────────────────────────────────────────────────────
-function addRow(tbodyId, label = '', url = '') {
-  const tbody = document.getElementById(tbodyId);
-  const tr = document.createElement('tr');
-  tr.className = 'nav-row';
-  tr.draggable = true;
-  tr.innerHTML = `
-    <td class="drag-handle" title="Drag to reorder">⠿</td>
-    <td><input type="text" class="nav-label" value="${label}" placeholder="Label"></td>
-    <td><input type="text" class="nav-url"   value="${url}"   placeholder="/path or https://…"></td>
-    <td style="text-align:center"><input type="checkbox" class="nav-enabled" checked></td>
-    <td style="text-align:center"><input type="checkbox" class="nav-newtab"></td>
-    <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">✕</button></td>`;
-  tbody.appendChild(tr);
+// ── Add / remove items ───────────────────────────────────────────────────────
+function addNavItem() {
+  const wrap = document.createElement('div');
+  wrap.className = 'nav-item-wrap';
+  wrap.draggable = true;
+  wrap.innerHTML = `
+    <div class="nav-item-row">
+      <span class="drag-handle">⠿</span>
+      <input type="text" class="nav-label" placeholder="Label">
+      <input type="text" class="nav-url" placeholder="/path or https://… (blank if dropdown)">
+      <label><input type="checkbox" class="nav-enabled" checked> on</label>
+      <label><input type="checkbox" class="nav-newtab"> ↗</label>
+      <button type="button" class="btn btn-sm" onclick="toggleChildren(this)">▾ Sub</button>
+      <button type="button" class="btn btn-sm btn-danger" onclick="removeNavItem(this)">✕</button>
+    </div>
+    <div class="nav-children">
+      <button type="button" class="btn btn-sm" style="margin:.25rem 0 .25rem 1.5rem" onclick="addChild(this)">+ Add link</button>
+    </div>`;
+  navBody.appendChild(wrap);
 }
 
-function removeRow(btn) { btn.closest('tr').remove(); }
+function removeNavItem(btn) { btn.closest('.nav-item-wrap, .nav-child-row').remove(); }
 
-function resetDefaults() {
-  const defaults = [{ label: 'Posts', url: '/' }, { label: 'Tags', url: '/tags' }, { label: 'RSS', url: '/feed/rss' }];
-  document.getElementById('navBody').innerHTML = '';
-  defaults.forEach(d => addRow('navBody', d.label, d.url));
+function toggleChildren(btn) {
+  const children = btn.closest('.nav-item-wrap').querySelector('.nav-children');
+  children.classList.toggle('open');
 }
 
-// ── Serialize rows ────────────────────────────────────────────────────────────
-function serializeRows(tbodyId) {
-  return [...document.getElementById(tbodyId).querySelectorAll('.nav-row')].map(row => ({
-    label:   row.querySelector('.nav-label').value.trim(),
-    url:     row.querySelector('.nav-url').value.trim() || '/',
-    enabled: row.querySelector('.nav-enabled').checked,
-    newTab:  row.querySelector('.nav-newtab').checked,
-  })).filter(i => i.label);
+function addChild(btn) {
+  const children = btn.closest('.nav-children');
+  const row = document.createElement('div');
+  row.className = 'nav-child-row';
+  row.innerHTML = `
+    <span style="color:var(--muted);padding:0 .25rem">↳</span>
+    <input type="text" class="child-label" placeholder="Label">
+    <input type="text" class="child-url" placeholder="/path or https://…">
+    <label><input type="checkbox" class="child-newtab"> ↗</label>
+    <button type="button" class="btn btn-sm btn-danger" onclick="removeNavItem(this)">✕</button>`;
+  children.insertBefore(row, btn);
+}
+
+// ── Serialize ────────────────────────────────────────────────────────────────
+function serializeRows(containerId) {
+  return [...document.getElementById(containerId).querySelectorAll('.nav-item-wrap')].map(wrap => {
+    const children = [...wrap.querySelectorAll('.nav-child-row')].map(r => ({
+      label:  r.querySelector('.child-label').value.trim(),
+      url:    r.querySelector('.child-url').value.trim() || '/',
+      newTab: r.querySelector('.child-newtab').checked,
+    })).filter(c => c.label);
+    const item = {
+      label:   wrap.querySelector('.nav-label').value.trim(),
+      url:     wrap.querySelector('.nav-url').value.trim() || null,
+      enabled: wrap.querySelector('.nav-enabled').checked,
+      newTab:  wrap.querySelector('.nav-newtab').checked,
+    };
+    if (children.length) item.children = children;
+    if (!item.url) delete item.url;
+    return item;
+  }).filter(i => i.label);
 }
 
 // ── Page nav rules ────────────────────────────────────────────────────────────

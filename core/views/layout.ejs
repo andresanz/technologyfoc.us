@@ -44,8 +44,26 @@
         <span></span><span></span><span></span>
       </button>
       <nav id="siteNav">
+        <%
+          function renderNavItems(items) {
+            (items || []).forEach(function(item) {
+              if (item.children && item.children.length) { %>
+                <div class="nav-dropdown">
+                  <button class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false"><%= item.label %> <span class="nav-caret">▾</span></button>
+                  <div class="nav-dropdown-menu">
+                    <% item.children.forEach(function(child) { %>
+                      <a href="<%= child.url %>"<%= child.newTab ? ' target="_blank" rel="noopener"' : '' %>><%= child.label %></a>
+                    <% }) %>
+                  </div>
+                </div>
+          <% } else { %>
+            <a href="<%= item.url %>"<%= item.newTab ? ' target="_blank" rel="noopener"' : '' %>><%= item.label %></a>
+          <% }
+            });
+          }
+        %>
         <% if (locals.navLoaded) { %>
-          <% (locals.nav || []).forEach(function(item) { %><a href="<%= item.url %>"<%= item.newTab ? ' target="_blank" rel="noopener"' : '' %>><%= item.label %></a><% }) %>
+          <% renderNavItems(locals.nav); %>
         <% } else { %>
           <a href="<%= locals.postsPath || '/' %>">Posts</a>
           <% if (locals.pages) { pages.forEach(function(p) { %>
@@ -55,7 +73,7 @@
           <a href="/feed/rss">RSS</a>
         <% } %>
         <% if (locals.navExtra) { %>
-          <% (locals.navExtra || []).forEach(function(item) { %><a href="<%= item.url %>"<%= item.newTab ? ' target="_blank" rel="noopener"' : '' %>><%= item.label %></a><% }) %>
+          <% renderNavItems(locals.navExtra); %>
         <% } %>
       </nav>
     </div>
@@ -94,6 +112,29 @@
       nav.classList.remove('open');
       toggle.classList.remove('open');
     }, { passive: true });
+
+    // Dropdowns — toggle on click, close on outside click
+    nav.querySelectorAll('.nav-dropdown-toggle').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var isOpen = btn.getAttribute('aria-expanded') === 'true';
+        // close all
+        nav.querySelectorAll('.nav-dropdown-toggle').forEach(function(b) {
+          b.setAttribute('aria-expanded', 'false');
+          b.closest('.nav-dropdown').classList.remove('open');
+        });
+        if (!isOpen) {
+          btn.setAttribute('aria-expanded', 'true');
+          btn.closest('.nav-dropdown').classList.add('open');
+        }
+      });
+    });
+    document.addEventListener('click', function() {
+      nav.querySelectorAll('.nav-dropdown-toggle').forEach(function(b) {
+        b.setAttribute('aria-expanded', 'false');
+        b.closest('.nav-dropdown').classList.remove('open');
+      });
+    });
   })();
   </script>
 
