@@ -53,7 +53,9 @@ module.exports = function createPostsLib(postsDir) {
         date,
         mtime:      stat.mtime,
         dateISO:    date.toISOString(),
-        dateStr:    date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        dateStr:    (/T\d{2}:\d{2}/.test(String(data.date || '')))
+                      ? date.toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })
+                      : date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/New_York' }),
         tags:       Array.isArray(data.tags) ? data.tags : (data.tags ? [data.tags] : []),
         excerpt:    data.excerpt   || excerptFrom(content),
         coverImage: data.image     || firstImageFrom(content),
