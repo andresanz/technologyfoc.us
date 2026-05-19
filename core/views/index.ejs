@@ -25,7 +25,7 @@
             <img src="<%= post.coverImage %>" alt="<%= post.title %>">
             <div class="post-kicker">
               <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
-              <% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %>
+              <% post.tags.forEach(function(t) { %><a href="/tag/<%= t %>" class="tag tag-link"><%= t %></a><% }) %>
             </div>
           </div>
         <% } %>
@@ -33,7 +33,7 @@
           <% if (!post.coverImage) { %>
           <div class="post-kicker">
             <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
-            <% post.tags.forEach(function(t) { %><span class="tag"><%= t %></span><% }) %>
+            <% post.tags.forEach(function(t) { %><a href="/tag/<%= t %>" class="tag tag-link"><%= t %></a><% }) %>
           </div>
           <% } %>
           <h2><%= post.title %></h2>

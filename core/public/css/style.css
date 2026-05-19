@@ -349,6 +349,7 @@ main.container:has(.home-page) { padding-top: 0; }
   text-decoration: none;
 }
 .tag:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.tag-link { position: relative; z-index: 2; }
 
 /* Keep post-meta for single post pages */
 .post-meta {
