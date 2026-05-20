@@ -1,6 +1,4 @@
 node_modules/
-.claude/
-mockup-*.html
 content/nav.json
 content/gratitude.json
 content/footer.md
