@@ -8,28 +8,31 @@ const { execSync } = require('child_process');
 const router   = express.Router();
 
 // ── Geo / flag lookup ─────────────────────────────────────────────────────────
-const geoCache = new Map(); // ip → { cc, ts }
+const geoCache = new Map(); // ip → { cc, country, ts }
 const GEO_TTL  = 7 * 24 * 60 * 60 * 1000;
-const PRIVATE   = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$)/;
+const PRIVATE  = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$)/;
 
-function lookupCC(ip) {
+function lookupGeo(ip) {
   return new Promise(resolve => {
-    if (!ip || PRIVATE.test(ip)) return resolve('');
+    if (!ip || PRIVATE.test(ip)) return resolve({ cc: '', country: '' });
     const cached = geoCache.get(ip);
-    if (cached && Date.now() - cached.ts < GEO_TTL) return resolve(cached.cc);
-    const req = http.get(`http://ip-api.com/json/${ip}?fields=countryCode`, { timeout: 3000 }, res => {
+    if (cached && Date.now() - cached.ts < GEO_TTL) return resolve(cached);
+    const req = http.get(`http://ip-api.com/json/${ip}?fields=countryCode,country`, { timeout: 3000 }, res => {
       let d = '';
       res.on('data', c => d += c);
       res.on('end', () => {
         try {
-          const cc = (JSON.parse(d).countryCode || '').slice(0, 2).toUpperCase();
-          if (/^[A-Z]{2}$/.test(cc)) geoCache.set(ip, { cc, ts: Date.now() });
-          resolve(/^[A-Z]{2}$/.test(cc) ? cc : '');
-        } catch { resolve(''); }
+          const j  = JSON.parse(d);
+          const cc = (j.countryCode || '').slice(0, 2).toUpperCase();
+          const country = j.country || '';
+          const geo = /^[A-Z]{2}$/.test(cc) ? { cc, country, ts: Date.now() } : { cc: '', country: '', ts: Date.now() };
+          geoCache.set(ip, geo);
+          resolve(geo);
+        } catch { resolve({ cc: '', country: '' }); }
       });
     });
-    req.on('error', () => resolve(''));
-    req.on('timeout', () => { req.destroy(); resolve(''); });
+    req.on('error', () => resolve({ cc: '', country: '' }));
+    req.on('timeout', () => { req.destroy(); resolve({ cc: '', country: '' }); });
   });
 }
 
@@ -39,10 +42,13 @@ function ccToFlag(cc) {
 }
 
 async function addGeo(events) {
-  const ips = [...new Set(events.map(e => e.ip).filter(Boolean))];
-  const ccs = await Promise.all(ips.map(lookupCC));
-  const map = Object.fromEntries(ips.map((ip, i) => [ip, ccs[i]]));
-  return events.map(e => ({ ...e, cc: map[e.ip] || '', flag: ccToFlag(map[e.ip] || '') }));
+  const ips  = [...new Set(events.map(e => e.ip).filter(Boolean))];
+  const geos = await Promise.all(ips.map(lookupGeo));
+  const map  = Object.fromEntries(ips.map((ip, i) => [ip, geos[i]]));
+  return events.map(e => {
+    const g = map[e.ip] || { cc: '', country: '' };
+    return { ...e, cc: g.cc, country: g.country, flag: ccToFlag(g.cc) };
+  });
 }
 
 const MODSEC_DIR   = '/etc/nginx/modsec';
@@ -142,9 +148,12 @@ function getEvents(limit = 200) {
 function getStats(events) {
   const today = new Date().toISOString().slice(0, 10);
   const todayCount = events.filter(e => e.time && e.time.startsWith(today)).length;
-  const ipMap = {}, ruleMap = {};
+  const ipMap = {}, ipMeta = {}, ruleMap = {};
   for (const e of events) {
-    if (e.ip) ipMap[e.ip] = (ipMap[e.ip] || 0) + 1;
+    if (e.ip) {
+      ipMap[e.ip] = (ipMap[e.ip] || 0) + 1;
+      if (!ipMeta[e.ip]) ipMeta[e.ip] = { flag: e.flag || '', country: e.country || '' };
+    }
     for (const m of e.messages) {
       if (m.id) ruleMap[m.id] = (ruleMap[m.id] || 0) + 1;
     }
@@ -152,7 +161,8 @@ function getStats(events) {
   return {
     today:    todayCount,
     total:    events.length,
-    topIps:   Object.entries(ipMap).sort((a,b) => b[1]-a[1]).slice(0,5),
+    topIps:   Object.entries(ipMap).sort((a,b) => b[1]-a[1]).slice(0,5)
+                .map(([ip, cnt]) => ({ ip, cnt, ...ipMeta[ip] })),
     topRules: Object.entries(ruleMap).sort((a,b) => b[1]-a[1]).slice(0,5),
   };
 }

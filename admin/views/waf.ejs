@@ -101,8 +101,11 @@
     <div class="stat-l" style="margin-bottom:.5rem">Top IPs</div>
     <% if (stats.topIps.length) { %>
     <ul class="top-list">
-      <% stats.topIps.forEach(([ip, cnt]) => { %>
-      <li><code><%= ip %></code><span class="cnt"><%= cnt %></span></li>
+      <% stats.topIps.forEach(function(r) { %>
+      <li>
+        <code title="<%= r.country %>"><% if (r.flag) { %><%= r.flag %> <% } %><%= r.ip %></code>
+        <span class="cnt"><%= r.cnt %></span>
+      </li>
       <% }) %>
     </ul>
     <% } else { %><div style="color:var(--muted);font-size:.8rem">None</div><% } %>
