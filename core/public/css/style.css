@@ -259,7 +259,7 @@ main.container:has(.home-page) { padding-top: 0; }
   font-size: var(--fs-sm);
   font-family: var(--font-ui);
   color: var(--muted);
-  margin-top: var(--s-7);
+  margin-top: var(--s-4);
 }
 .site-footer .container {
   border-top: 1px solid var(--border);
