@@ -439,11 +439,15 @@ main.container:has(.home-page) { padding-top: 0; }
 .post-body a { color: var(--accent); }
 
 .post-body img {
+  display: block;
+  width: 100%;
+  height: auto;
   border-radius: var(--radius);
   margin: var(--s-5) 0;
   border: 1px solid var(--border);
   box-shadow: 0 2px 12px rgba(0,0,0,0.07);
 }
+.post-body p:has(> img:only-child) { margin: 0; }
 
 /* Inline code */
 .post-body code:not([class]) {
