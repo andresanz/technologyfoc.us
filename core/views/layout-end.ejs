@@ -1,20 +1,12 @@
   </main>
 
+  <% if (locals.footerHtml) { %>
   <footer class="site-footer">
-    <div class="container">
-      <nav class="footer-nav">
-        <% if (locals.navLoaded) { %>
-          <% (locals.nav || []).forEach(function(item) { %><a href="<%= item.url %>"><%= item.label %></a><% }) %>
-        <% } else { %>
-          <a href="<%= locals.postsPath || '/' %>">Posts</a>
-          <% if (locals.pages) { pages.forEach(function(p) { %><a href="/<%= p.slug %>"><%= p.title %></a><% }) } %>
-          <a href="/tags">Tags</a>
-          <a href="/feed/rss">RSS</a>
-        <% } %>
-      </nav>
-      <% if (!site.hideAuthor && site.author) { %><p class="footer-copy"><%= site.author %></p><% } %>
+    <div class="container footer-custom">
+      <%- locals.footerHtml %>
     </div>
   </footer>
+  <% } %>
 <!-- Lightbox -->
 <div id="lb" role="dialog" aria-modal="true" aria-label="Image viewer" style="display:none">
   <button id="lb-close" aria-label="Close">&times;</button>

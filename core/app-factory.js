@@ -101,8 +101,23 @@ function createApp(siteDir) {
     }
   }
 
+  // Footer content — content/footer.md, cached by mtime
+  const footerFile = path.join(siteDir, 'content', 'footer.md');
+  const md = require('./lib/md');
+  let footerCache = { mtime: 0, html: null };
+  function loadFooter() {
+    try {
+      const mtime = fs.statSync(footerFile).mtimeMs;
+      if (footerCache.mtime === mtime) return footerCache.html;
+      const raw = fs.readFileSync(footerFile, 'utf8');
+      footerCache = { mtime, html: md.render(raw) };
+      return footerCache.html;
+    } catch { return null; }
+  }
+
   // Inject nav into every view
   app.use((req, res, next) => {
+    res.locals.footerHtml = loadFooter();
     const hasHome        = !!pagesLib.getBySlug('home');
     res.locals.pages     = pagesLib.getNavPages().filter(p => p.slug !== 'home');
     res.locals.postsPath = hasHome ? '/posts' : '/';
