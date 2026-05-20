@@ -190,22 +190,11 @@ router.post('/service/:name/:action', (req, res) => {
   res.redirect('/server');
 });
 
-// ── GET /server/logs?service=nginx&lines=100 ──────────────────────────────────
+// ── GET /server/logs — redirect to unified logs page ──────────────────────────
 router.get('/logs', (req, res) => {
-  const service = (req.query.service || 'nginx').replace(/[^a-zA-Z0-9@._-]/g, '');
-  const lines   = Math.min(parseInt(req.query.lines) || 100, 500);
-  const logs    = run(`journalctl -u ${service} -n ${lines} --no-pager --output=short-iso 2>/dev/null`);
-
-  const allServices = [
-    ...MANAGED_SERVICES.map(s => s.name),
-    ...run("systemctl list-units 'blog-*' --type=service --no-pager --no-legend")
-      .split('\n').filter(Boolean).map(l => l.trim().split(/\s+/)[0].replace('.service',''))
-  ];
-
-  if (req.headers.accept && req.headers.accept.includes('application/json')) {
-    return res.json({ logs });
-  }
-  res.render('server-logs', { logs, service, lines, allServices, flash: req.flash() });
+  const svc = req.query.service;
+  if (svc) return res.redirect(`/logs?source=journal&service=${encodeURIComponent(svc)}`);
+  res.redirect('/logs');
 });
 
 // ── POST /server/nginx/reload ─────────────────────────────────────────────────
