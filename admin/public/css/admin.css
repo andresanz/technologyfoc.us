@@ -303,19 +303,30 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 /* ── Mobile layout tweaks ────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   main { padding: 1rem .75rem; }
-  .page-header { margin-bottom: 1rem; }
-  .page-header h1 { font-size: 1.15rem; }
-  .card { padding: 1rem; }
+  .page-header { margin-bottom: 1rem; gap: .5rem; }
+  .page-header h1 { font-size: 1.1rem; }
+  .card { padding: .85rem; }
   .site-grid { grid-template-columns: 1fr; }
-  .header-actions { width: 100%; }
-  .header-actions .btn { flex: 1; text-align: center; }
-  /* Make inline forms in header-actions stretch like sibling btns */
+
+  /* shrink all buttons on mobile */
+  .btn { padding: .4rem .7rem; font-size: .82rem; min-height: 34px; }
+  .btn-sm { padding: .3rem .55rem; font-size: .78rem; min-height: 30px; }
+
+  /* header action buttons: stay inline, don't stretch full width */
+  .header-actions { flex-wrap: wrap; }
+  .header-actions .btn { flex: 1; min-width: 0; text-align: center; }
   .header-actions form { flex: 1; display: flex; }
   .header-actions form .btn { flex: 1; }
-  /* Bigger touch targets for small action buttons (Apple HIG: 44px min) */
-  .btn-sm { min-height: 44px; padding: .45rem .8rem; font-size: .85rem; }
+
+  /* filter bars: smaller, tighter */
+  .filter-bar { gap: .3rem; }
+  .filter-bar .btn { padding: .25rem .55rem; font-size: .78rem; min-height: 28px; }
+
   .title-input { font-size: 1.1rem; }
   .media-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .5rem; }
+
+  /* row action buttons in post cards */
+  .row-actions .btn { padding: .3rem .55rem; font-size: .78rem; min-height: 30px; }
 }
 
 /* ── Back to top ─────────────────────────────────────────────────────────── */

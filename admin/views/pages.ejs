@@ -14,7 +14,7 @@
 </div>
 <%- include('partials/flash') %>
 
-<div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+<div class="filter-bar" style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
   <a href="/pages?status=published&visibility=<%= visibility %>" class="btn<%= status === 'published' ? ' btn-primary' : '' %>">Published</a>
   <a href="/pages?status=drafts&visibility=<%= visibility %>"    class="btn<%= status === 'drafts'    ? ' btn-primary' : '' %>">Drafts</a>
   <span style="width:1px;background:var(--border);margin:0 .25rem"></span>
