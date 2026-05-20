@@ -182,7 +182,7 @@ router.post('/service/:name/:action', (req, res) => {
     return res.status(403).json({ error: 'Service not managed' });
   }
   try {
-    run(`systemctl ${action} ${name}`);
+    run(`sudo systemctl ${action} ${name}`);
     req.flash('success', `${name} ${action}ed`);
   } catch (e) {
     req.flash('error', `Failed: ${e.message}`);

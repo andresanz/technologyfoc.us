@@ -94,17 +94,17 @@ function serviceStatus(domain) {
 }
 
 function restartService(domain) {
-  execSync(`systemctl restart ${svcName(domain)}`, { timeout: 10000 });
+  execSync(`sudo systemctl restart ${svcName(domain)}`, { timeout: 10000 });
 }
 
 function stopService(domain) {
   const svc = svcName(domain);
-  execSync(`systemctl stop ${svc} && systemctl disable ${svc}`, { timeout: 10000 });
+  execSync(`sudo systemctl stop ${svc} && sudo systemctl disable ${svc}`, { timeout: 10000 });
 }
 
 function startService(domain) {
   const svc = svcName(domain);
-  execSync(`systemctl enable ${svc} && systemctl start ${svc}`, { timeout: 10000 });
+  execSync(`sudo systemctl enable ${svc} && sudo systemctl start ${svc}`, { timeout: 10000 });
 }
 
 // ── Service logs ──────────────────────────────────────────────────────────────
