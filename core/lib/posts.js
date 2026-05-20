@@ -80,13 +80,7 @@ module.exports = function createPostsLib(postsDir) {
       const re  = new RegExp(`<p>\\s*<img[^>]*src=["']${esc}["'][^>]*>\\s*</p>`, 'gi');
       html = html.replace(re, '');
     }
-    // Strip standalone body links whose anchor text equals the post title (avoid duplicating the title as a link)
-    if (post.title) {
-      const titleEsc = post.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const linkRe = new RegExp(`<p>\\s*<a[^>]*>\\s*${titleEsc}\\s*</a>\\s*</p>`, 'gi');
-      html = html.replace(linkRe, '');
-    }
-    post.html = html.trim();
+    post.html = html;
     return post;
   }
 
