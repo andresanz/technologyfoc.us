@@ -1,0 +1,36 @@
+<%
+  pageTitle = 'Footer · ' + site.title;
+-%>
+<%- include('partials/head') %>
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+
+<div class="page-header">
+  <div>
+    <h1>Footer</h1>
+    <p style="font-size:.85rem;color:var(--muted);margin-top:.25rem">Markdown or HTML — rendered at the bottom of every page.</p>
+  </div>
+  <div class="header-actions">
+    <a href="<%= site.url %>" target="_blank" class="btn">View site ↗</a>
+    <button form="footer-form" type="submit" class="btn btn-primary">Save footer</button>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<form id="footer-form" method="POST" action="/pages/footer">
+  <div class="card" style="padding:0;overflow:hidden">
+    <textarea id="body" name="body"><%= body %></textarea>
+  </div>
+</form>
+
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+new EasyMDE({
+  element: document.getElementById('body'),
+  spellChecker: false,
+  autosave: { enabled: false },
+  toolbar: ['bold','italic','link','|','unordered-list','ordered-list','|','preview'],
+  minHeight: '200px',
+});
+</script>
+
+<%- include('partials/foot') %>

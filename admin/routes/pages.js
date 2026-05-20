@@ -135,4 +135,29 @@ router.post('/delete/:filename', async (req, res) => {
   res.redirect('/pages');
 });
 
+// GET /pages/footer — edit footer.md
+router.get('/footer', (req, res) => {
+  const site = req.site;
+  const footerFile = require('path').join(site.dir, 'content', 'footer.md');
+  let body = '';
+  try { body = fs.readFileSync(footerFile, 'utf8'); } catch {}
+  res.render('footer-edit', { site, body, flash: req.flash() });
+});
+
+// POST /pages/footer — save footer.md
+router.post('/footer', async (req, res) => {
+  const site = req.site;
+  const footerFile = require('path').join(site.dir, 'content', 'footer.md');
+  try {
+    fs.mkdirSync(require('path').dirname(footerFile), { recursive: true });
+    fs.writeFileSync(footerFile, req.body.body || '', 'utf8');
+    await require('../lib/sites').bustCache(site).catch(() => {});
+    gitLib.autoCommit(site, 'Update footer.md');
+    req.flash('success', 'Footer saved');
+  } catch (e) {
+    req.flash('error', e.message);
+  }
+  res.redirect('/pages/footer');
+});
+
 module.exports = router;
