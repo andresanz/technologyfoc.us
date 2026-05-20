@@ -48,11 +48,11 @@
 <% if (totalPages > 1) { %>
   <nav class="pagination">
     <% if (page > 1) { %>
-      <a href="?page=<%= page - 1 %><%= tag ? '&tag=' + tag : '' %>" class="prev">← Newer</a>
+      <a href="?page=<%= page - 1 %><%= tag ? '&tag=' + tag : '' %>" class="prev">‹ Newer</a>
     <% } else { %><span></span><% } %>
     <span>Page <%= page %> of <%= totalPages %></span>
     <% if (page < totalPages) { %>
-      <a href="?page=<%= page + 1 %><%= tag ? '&tag=' + tag : '' %>" class="next">Older →</a>
+      <a href="?page=<%= page + 1 %><%= tag ? '&tag=' + tag : '' %>" class="next">Older ›</a>
     <% } else { %><span></span><% } %>
   </nav>
 <% } %>

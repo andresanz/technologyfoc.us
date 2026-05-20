@@ -18,7 +18,7 @@
           <h2><a href="/<%= page.slug %>"><%= page.title %></a></h2>
           <% var ex = page.excerpt || ''; var truncated = ex.length > 140 ? ex.slice(0, 137) + '…' : ex; %>
           <% if (truncated) { %><p class="excerpt"><%= truncated %></p><% } %>
-          <a href="/<%= page.slug %>" class="read-more">View →</a>
+          <a href="/<%= page.slug %>" class="read-more">View ›</a>
         </div>
       </article>
     <% }) %>
