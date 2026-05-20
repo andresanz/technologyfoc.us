@@ -20,11 +20,12 @@ const SERVICES = ['andresanz', 'andresanz-admin'];
 function telegram(text) {
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT) return;
   try {
-    const safeText = text.replace(/'/g, "'\\''");
+    const payload = JSON.stringify({ chat_id: TELEGRAM_CHAT, text, parse_mode: 'HTML' });
+    const safePayload = payload.replace(/'/g, "'\\''");
     execSync(
       `curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage"` +
       ` -H "Content-Type: application/json"` +
-      ` -d '{"chat_id":"${TELEGRAM_CHAT}","text":"${safeText}","parse_mode":"HTML"}'`,
+      ` -d '${safePayload}'`,
       { stdio: 'pipe' }
     );
   } catch (e) { console.error('Telegram error:', e.message); }
