@@ -22,8 +22,10 @@
 .event-table tr:last-child td { border-bottom:none; }
 .ts-cell    { color:var(--muted); white-space:nowrap; font-size:.75rem; }
 .ip-cell    { font-family:var(--mono); font-size:.78rem; }
-.uri-cell   { font-family:var(--mono); font-size:.75rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rule-pill  { display:inline-block; padding:.1em .45em; border-radius:4px; background:#fef2f2; border:1px solid #fecaca; font-size:.7rem; font-family:var(--mono); color:#991b1b; margin:.1em .1em 0 0; }
+.uri-cell   { font-family:var(--mono); font-size:.75rem; color:var(--muted); max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+.req-cell   { max-width:340px; }
+.rule-pill  { display:inline-block; padding:.1em .45em; border-radius:4px; background:#fef2f2; border:1px solid #fecaca; font-size:.7rem; font-family:var(--mono); color:#991b1b; margin:.1em .1em 0 0; white-space:nowrap; }
+.rules-cell { max-width:200px; }
 .sev-critical { color:#991b1b; font-weight:700; }
 .sev-error    { color:var(--danger); }
 .sev-warning  { color:#b45309; }
@@ -140,12 +142,12 @@
       <tr>
         <td class="ts-cell"><%= e.time || '' %></td>
         <td class="ip-cell"><% if (e.flag) { %><span style="margin-right:.3em"><%= e.flag %></span><% } %><%= e.ip %></td>
-        <td>
+        <td class="req-cell">
           <span style="font-size:.75rem;font-weight:600"><%= e.method %></span>
-          <span class="uri-cell" title="<%= e.uri %>"> <%= e.uri %></span>
+          <span class="uri-cell" title="<%= e.uri %>"><%= e.uri %></span>
           <% if (e.status) { %><span style="font-size:.72rem;color:var(--muted)"> → <%= e.status %></span><% } %>
         </td>
-        <td>
+        <td class="rules-cell">
           <% e.messages.forEach(function(m) { %>
             <a class="rule-pill" title="<%= m.msg %>" href="https://github.com/coreruleset/coreruleset/search?q=<%= m.id %>&type=code" target="_blank">
               <%= m.id %><% if (m.severity) { %> <span class="sev-<%= m.severity.toLowerCase() %>">·<%= m.severity.slice(0,4) %></span><% } %>
