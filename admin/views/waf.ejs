@@ -131,9 +131,10 @@
 </div>
 <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
 
-<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:2rem">
-  <table class="event-table" id="evTable">
-    <thead><tr><th>Time</th><th>IP</th><th>Request</th><th>Rules triggered</th></tr></thead>
+<div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:2rem">
+  <div style="max-height:60vh;overflow-y:auto">
+  <table class="event-table" id="evTable" style="table-layout:fixed;width:100%">
+    <thead style="position:sticky;top:0;background:var(--surface);z-index:1;box-shadow:0 1px 0 var(--border)"><tr><th>Time</th><th>IP</th><th>Request</th><th>Rules triggered</th></tr></thead>
     <tbody id="evBody">
       <% if (!events.length) { %>
       <tr><td colspan="4" style="color:var(--muted);padding:1rem">No events yet — ModSecurity is running in <%= mode %> mode</td></tr>
@@ -159,6 +160,7 @@
       <% } %>
     </tbody>
   </table>
+  </div>
 </div>
 
 <!-- Block rules -->
