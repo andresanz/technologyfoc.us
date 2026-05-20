@@ -92,7 +92,7 @@ router.get('/', (req, res) => {
 // POST /mac/delete
 router.post('/delete', (req, res) => {
   const { key } = req.body;
-  if (!key) return res.status(400).send('Invalid key');
+  if (!key || !/^[\w./-]+$/.test(key) || key.includes('..')) return res.status(400).send('Invalid key');
   try {
     run(`aws s3 rm "s3://${MAC_BUCKET}/${key}"`);
     req.flash('success', `Deleted ${key}`);
@@ -183,6 +183,7 @@ router.get('/browse', (req, res) => {
 router.get('/download', (req, res) => {
   const key = req.query.key || '';
   if (!key) return res.status(400).send('No key');
+  if (!/^[\w./-]+$/.test(key) || key.includes('..')) return res.status(400).send('Invalid key');
   try {
     const url = run(`aws s3 presign "s3://${MAC_BUCKET}/${key}" --expires-in 300`);
     res.redirect(url);

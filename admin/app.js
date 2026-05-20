@@ -33,6 +33,16 @@ app.set('view cache', false);
 // ── Static ───────────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Security headers ──────────────────────────────────────────────────────────
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+  next();
+});
+
 // ── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
@@ -41,8 +51,8 @@ app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(session({
   secret:            SESSION_SECRET,
   resave:            false,
-  saveUninitialized: true,
-  cookie:            { httpOnly: true, sameSite: 'lax' },
+  saveUninitialized: false,
+  cookie:            { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' },
 }));
 app.use(flash());
 

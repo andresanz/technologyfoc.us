@@ -76,9 +76,12 @@ router.get('/', async (req, res) => {
 });
 
 
+const DOMAIN_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
 // GET /domains/r53/:name — Route 53 domain detail
 router.get('/r53/:name', async (req, res) => {
   const name = req.params.name;
+  if (!DOMAIN_RE.test(name)) { req.flash('error', 'Invalid domain'); return res.redirect('/domains'); }
   try {
     const detail = awsCli(`route53domains get-domain-detail --region us-east-1 --domain-name ${name}`);
     res.render('domain-r53', { domain: detail, flash: req.flash() });

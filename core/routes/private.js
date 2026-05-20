@@ -1,9 +1,29 @@
 'use strict';
 
 const express = require('express');
+const crypto  = require('crypto');
 
 const COOKIE  = '_priv';
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// ── Simple in-memory rate limiter ────────────────────────────────────────────
+const loginAttempts = new Map();
+const RATE_LIMIT    = 10;
+const RATE_WINDOW   = 15 * 60 * 1000; // 15 min
+
+function checkRate(ip) {
+  const now   = Date.now();
+  const entry = loginAttempts.get(ip) || { count: 0, resetAt: now + RATE_WINDOW };
+  if (now > entry.resetAt) { entry.count = 0; entry.resetAt = now + RATE_WINDOW; }
+  entry.count++;
+  loginAttempts.set(ip, entry);
+  return entry.count <= RATE_LIMIT;
+}
+
+// ── HMAC token — stores hash of password, not the password itself ─────────────
+function makeToken(pw) {
+  return crypto.createHmac('sha256', pw).update('private_auth_v1').digest('hex');
+}
 
 module.exports = function createPrivateRouter(postsLib, pagesLib, gratitudeFile) {
   const router = express.Router();
@@ -11,7 +31,7 @@ module.exports = function createPrivateRouter(postsLib, pagesLib, gratitudeFile)
   function authed(req) {
     const pw = process.env.PRIVATE_PASSWORD;
     if (!pw) return false;
-    return req.cookies && req.cookies[COOKIE] === pw;
+    return req.cookies && req.cookies[COOKIE] === makeToken(pw);
   }
 
   // GET /private — login form or redirect to list
@@ -22,11 +42,15 @@ module.exports = function createPrivateRouter(postsLib, pagesLib, gratitudeFile)
 
   // POST /private — login
   router.post('/', express.urlencoded({ extended: false }), (req, res) => {
+    const ip = req.ip || req.connection.remoteAddress || '';
+    if (!checkRate(ip)) {
+      return res.render('private-login', { error: 'Too many attempts — try again later', site: req.app.locals.siteConfig() });
+    }
     const pw = process.env.PRIVATE_PASSWORD;
     if (!pw || req.body.password !== pw) {
       return res.render('private-login', { error: 'Wrong password', site: req.app.locals.siteConfig() });
     }
-    res.cookie(COOKIE, pw, { maxAge: MAX_AGE, httpOnly: true, sameSite: 'lax', path: '/' });
+    res.cookie(COOKIE, makeToken(pw), { maxAge: MAX_AGE, httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
     res.redirect('/private/posts');
   });
 

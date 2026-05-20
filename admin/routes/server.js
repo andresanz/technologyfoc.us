@@ -452,8 +452,10 @@ router.get('/history', (req, res) => {
 });
 
 // ── GET /server/history/:hash ─────────────────────────────────────────────────
+const HASH_RE = /^[a-f0-9]{4,40}$/;
 router.get('/history/:hash', (req, res) => {
   const site = req.site;
+  if (!HASH_RE.test(req.params.hash)) return res.status(400).render('error', { code: 400, message: 'Invalid hash', site });
   let detail = '';
   let files  = [];
   try {
@@ -467,12 +469,19 @@ router.get('/history/:hash', (req, res) => {
 // ── POST /server/history/:hash/restore ───────────────────────────────────────
 router.post('/history/:hash/restore', (req, res) => {
   const site = req.site;
+  if (!HASH_RE.test(req.params.hash)) return res.status(400).render('error', { code: 400, message: 'Invalid hash', site });
   const { file } = req.body;
+  // Validate file is a safe relative path within the site
+  const safeFile = require('path').normalize(file || '').replace(/^(\.\.[/\\])+/, '');
+  if (!safeFile || safeFile.includes('\0')) {
+    req.flash('error', 'Invalid file path');
+    return res.redirect(`/server/history/${req.params.hash}`);
+  }
   try {
-    execSync(`git -C ${site.dir} checkout ${req.params.hash} -- ${file}`, { timeout: 5000 });
-    gitLib.autoCommit(site, `Restore ${file} from ${req.params.hash}`);
+    execSync(`git -C ${site.dir} checkout ${req.params.hash} -- ${safeFile}`, { timeout: 5000 });
+    gitLib.autoCommit(site, `Restore ${safeFile} from ${req.params.hash}`);
     sitesLib.bustCache(site).catch(() => {});
-    req.flash('success', `Restored: ${file}`);
+    req.flash('success', `Restored: ${safeFile}`);
   } catch (e) {
     req.flash('error', `Restore failed: ${e.message.split('\n')[0]}`);
   }

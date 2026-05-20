@@ -74,6 +74,8 @@ function save(list) {
 }
 
 
+const DOMAIN_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
 function provisionSsl(domain) {
   try {
     execSync(
@@ -136,6 +138,10 @@ router.post('/new', (req, res) => {
     req.flash('error', 'Domain and destination are required');
     return res.redirect('/redirects/new');
   }
+  if (!DOMAIN_RE.test(domain.trim())) {
+    req.flash('error', 'Invalid domain name');
+    return res.redirect('/redirects/new');
+  }
   const list = load();
   if (list.find(r => r.domain === domain)) {
     req.flash('error', `${domain} already exists`);
@@ -185,6 +191,10 @@ router.post('/:domain/edit', (req, res) => {
 // POST /redirects/:domain/ssl
 router.post('/:domain/ssl', (req, res) => {
   const { domain } = req.params;
+  if (!DOMAIN_RE.test(domain)) {
+    req.flash('error', 'Invalid domain');
+    return res.redirect('/redirects');
+  }
   if (!load().find(r => r.domain === domain)) {
     req.flash('error', 'Redirect not found');
     return res.redirect('/redirects');
