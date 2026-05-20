@@ -149,12 +149,13 @@ cat > /etc/logrotate.d/modsec << 'EOF'
 EOF
 
 echo "==> Enabling ModSecurity in nginx site configs..."
+MODSEC_LINES="    modsecurity on;\n    modsecurity_rules_file /etc/nginx/modsec/main.conf;"
 for conf in /etc/nginx/sites-enabled/*; do
-  if grep -q 'modsecurity on' "$conf" 2>/dev/null; then
-    echo "    $conf — already enabled"
-    continue
-  fi
-  sed -i '/listen.*80\|listen.*443/a\        modsecurity on;\n        modsecurity_rules_file /etc/nginx/modsec/main.conf;' "$conf"
+  # Remove any existing modsecurity directives first (idempotent)
+  sed -i '/^\s*modsecurity[^_]/d' "$conf"
+  sed -i '/^\s*modsecurity_rules_file/d' "$conf"
+  # Insert once after the first server { line
+  sed -i "0,/server\s*{/s|server\s*{|server {\n${MODSEC_LINES}|" "$conf"
   echo "    Patched: $conf"
 done
 
