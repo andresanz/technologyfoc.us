@@ -107,6 +107,7 @@ app.use('/write',  requireAuth, require('./routes/write'));
 app.use('/server', requireAuth, require('./routes/server'));
 app.use('/server/backups', requireAuth, require('./routes/backup'));
 app.use('/server/bans',    requireAuth, require('./routes/bans'));
+app.use('/waf',            requireAuth, require('./routes/waf'));
 app.use('/analytics',      requireAuth, require('./routes/analytics'));
 app.use('/redirects',      requireAuth, require('./routes/redirects'));
 app.use('/templates',     requireAuth, require('./routes/templates'));

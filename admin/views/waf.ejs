@@ -1,0 +1,246 @@
+<% pageTitle = 'WAF · Server' -%>
+<%- include('partials/head') %>
+
+<style>
+.waf-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap:.6rem; margin-bottom:1.5rem; }
+.stat-card  { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.85rem 1rem; }
+.stat-n     { font-size:1.8rem; font-weight:700; line-height:1; }
+.stat-l     { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-top:.2rem; }
+.stat-n.red { color:var(--danger); }
+
+.mode-bar   { display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+.mode-badge { display:inline-block; padding:.25em .75em; border-radius:999px; font-size:.8rem; font-weight:700; letter-spacing:.03em; }
+.mode-detecting { background:#fef9c3; color:#854d0e; border:1px solid #fde047; }
+.mode-blocking  { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+.mode-off       { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
+
+.section-title { font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:1.5rem 0 .6rem; }
+
+.event-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.event-table th { text-align:left; padding:.45rem .75rem; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); border-bottom:1px solid var(--border); }
+.event-table td { padding:.45rem .75rem; border-bottom:1px solid var(--border); vertical-align:top; }
+.event-table tr:last-child td { border-bottom:none; }
+.ts-cell    { color:var(--muted); white-space:nowrap; font-size:.75rem; }
+.ip-cell    { font-family:var(--mono); font-size:.78rem; }
+.uri-cell   { font-family:var(--mono); font-size:.75rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rule-pill  { display:inline-block; padding:.1em .45em; border-radius:4px; background:#fef2f2; border:1px solid #fecaca; font-size:.7rem; font-family:var(--mono); color:#991b1b; margin:.1em .1em 0 0; }
+.sev-critical { color:#991b1b; font-weight:700; }
+.sev-error    { color:var(--danger); }
+.sev-warning  { color:#b45309; }
+.sev-notice   { color:var(--muted); }
+
+.excl-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.excl-table th { text-align:left; padding:.45rem .75rem; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); border-bottom:1px solid var(--border); }
+.excl-table td { padding:.45rem .75rem; border-bottom:1px solid var(--border); }
+.excl-table tr:last-child td { border-bottom:none; }
+
+.excl-form  { display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:1.5rem; }
+.excl-form select, .excl-form input { padding:.4rem .6rem; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:.875rem; }
+.excl-form input[name=value] { width:220px; font-family:var(--mono); }
+.excl-form input[name=note]  { width:180px; }
+.type-badge { display:inline-block; padding:.1em .5em; border-radius:4px; font-size:.72rem; border:1px solid var(--border); background:var(--surface); color:var(--muted); }
+
+.top-list { list-style:none; padding:0; margin:0; font-size:.82rem; }
+.top-list li { display:flex; justify-content:space-between; padding:.3rem 0; border-bottom:1px solid var(--border); }
+.top-list li:last-child { border-bottom:none; }
+.top-list code { font-family:var(--mono); font-size:.78rem; }
+.top-list .cnt { font-weight:700; color:var(--danger); }
+
+.not-installed { text-align:center; padding:4rem 0; color:var(--muted); }
+.not-installed h2 { color:var(--text); margin-bottom:.5rem; }
+.not-installed pre { text-align:left; display:inline-block; background:var(--surface); border:1px solid var(--border); padding:1rem 1.5rem; border-radius:var(--radius); font-size:.85rem; margin-top:1.5rem; }
+</style>
+
+<div class="page-header">
+  <div><h1>WAF</h1></div>
+  <div class="header-actions">
+    <a href="/logs?source=sysfile&file=modsec_audit.log" class="btn">Raw log</a>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<% if (!installed) { %>
+<div class="not-installed">
+  <h2>ModSecurity not installed</h2>
+  <p>Run the setup script on the server to enable the WAF.</p>
+  <pre>sudo bash /var/www/andresanz.com/scripts/setup-modsec.sh</pre>
+</div>
+<% } else { %>
+
+<!-- Mode bar -->
+<div class="mode-bar">
+  <strong style="font-size:.9rem">Mode:</strong>
+  <span class="mode-badge <%= mode === 'On' ? 'mode-blocking' : mode === 'DetectionOnly' ? 'mode-detecting' : 'mode-off' %>">
+    <%= mode === 'On' ? '🛡 Blocking' : mode === 'DetectionOnly' ? '👁 Detection Only' : '⭕ Off' %>
+  </span>
+  <form method="POST" action="/waf/mode" style="display:inline-flex;gap:.4rem">
+    <% if (mode !== 'DetectionOnly') { %>
+      <button name="mode" value="DetectionOnly" class="btn btn-sm">Detection</button>
+    <% } %>
+    <% if (mode !== 'On') { %>
+      <button name="mode" value="On" class="btn btn-sm btn-primary">Blocking</button>
+    <% } %>
+    <% if (mode !== 'Off') { %>
+      <button name="mode" value="Off" class="btn btn-sm btn-danger">Disable</button>
+    <% } %>
+  </form>
+</div>
+
+<!-- Stats -->
+<div class="waf-stats">
+  <div class="stat-card">
+    <div class="stat-n <%= stats.today > 0 ? 'red' : '' %>"><%= stats.today %></div>
+    <div class="stat-l">Events today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-n"><%= stats.total %></div>
+    <div class="stat-l">Recent events</div>
+  </div>
+  <div class="stat-card" style="grid-column:span 2">
+    <div class="stat-l" style="margin-bottom:.5rem">Top IPs</div>
+    <% if (stats.topIps.length) { %>
+    <ul class="top-list">
+      <% stats.topIps.forEach(([ip, cnt]) => { %>
+      <li><code><%= ip %></code><span class="cnt"><%= cnt %></span></li>
+      <% }) %>
+    </ul>
+    <% } else { %><div style="color:var(--muted);font-size:.8rem">None</div><% } %>
+  </div>
+  <div class="stat-card" style="grid-column:span 2">
+    <div class="stat-l" style="margin-bottom:.5rem">Top rules</div>
+    <% if (stats.topRules.length) { %>
+    <ul class="top-list">
+      <% stats.topRules.forEach(([rule, cnt]) => { %>
+      <li><code><%= rule %></code><span class="cnt"><%= cnt %></span></li>
+      <% }) %>
+    </ul>
+    <% } else { %><div style="color:var(--muted);font-size:.8rem">None</div><% } %>
+  </div>
+</div>
+
+<!-- Event log -->
+<div class="section-title" style="display:flex;align-items:center;gap:.75rem">
+  Recent events
+  <span id="live-dot" style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block;animation:pulse 2s infinite"></span>
+</div>
+<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
+
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:2rem">
+  <table class="event-table" id="evTable">
+    <thead><tr><th>Time</th><th>IP</th><th>Request</th><th>Rules triggered</th></tr></thead>
+    <tbody id="evBody">
+      <% if (!events.length) { %>
+      <tr><td colspan="4" style="color:var(--muted);padding:1rem">No events yet — ModSecurity is running in <%= mode %> mode</td></tr>
+      <% } else { %>
+      <% events.forEach(function(e) { %>
+      <tr>
+        <td class="ts-cell"><%= e.time ? e.time.slice(0,19).replace('T',' ') : '' %></td>
+        <td class="ip-cell"><%= e.ip %></td>
+        <td>
+          <span style="font-size:.75rem;font-weight:600"><%= e.method %></span>
+          <span class="uri-cell" title="<%= e.uri %>"> <%= e.uri %></span>
+          <% if (e.status) { %><span style="font-size:.72rem;color:var(--muted)"> → <%= e.status %></span><% } %>
+        </td>
+        <td>
+          <% e.messages.forEach(function(m) { %>
+            <span class="rule-pill" title="<%= m.msg %>">
+              <%= m.id %><% if (m.severity) { %> <span class="sev-<%= m.severity.toLowerCase() %>">·<%= m.severity.slice(0,4) %></span><% } %>
+            </span>
+          <% }) %>
+        </td>
+      </tr>
+      <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Exclusions -->
+<div class="section-title">Exclusions / Whitelist</div>
+
+<form method="POST" action="/waf/exclusions/add" class="excl-form">
+  <div>
+    <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:.25rem">Type</label>
+    <select name="type">
+      <option value="ip">IP address</option>
+      <option value="rule">Rule ID</option>
+      <option value="path">Path prefix</option>
+    </select>
+  </div>
+  <div>
+    <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:.25rem">Value</label>
+    <input type="text" name="value" placeholder="e.g. 1.2.3.4 / 941100 / /api/" required>
+  </div>
+  <div>
+    <label style="font-size:.75rem;font-weight:600;display:block;margin-bottom:.25rem">Note</label>
+    <input type="text" name="note" placeholder="Reason (optional)">
+  </div>
+  <button class="btn btn-primary">Add exclusion</button>
+</form>
+
+<% if (exclusions.length) { %>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:2rem">
+  <table class="excl-table">
+    <thead><tr><th>Type</th><th>Value</th><th>Note</th><th>Added</th><th></th></tr></thead>
+    <tbody>
+      <% exclusions.forEach(function(e) { %>
+      <tr>
+        <td><span class="type-badge"><%= e.type %></span></td>
+        <td><code style="font-size:.8rem;font-family:var(--mono)"><%= e.value %></code></td>
+        <td style="color:var(--muted);font-size:.8rem"><%= e.note %></td>
+        <td class="ts-cell"><%= e.createdAt ? e.createdAt.slice(0,10) : '' %></td>
+        <td>
+          <form method="POST" action="/waf/exclusions/delete" style="display:inline">
+            <input type="hidden" name="id" value="<%= e.id %>">
+            <button class="btn btn-sm btn-danger" onclick="return confirm('Remove exclusion?')">Remove</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } else { %>
+<p style="color:var(--muted);font-size:.85rem">No exclusions yet. Add one above if you get false positives.</p>
+<% } %>
+
+<% } %>
+
+<script>
+let lastTs = '<%= events[0] ? (events[0].time||'').slice(0,19) : "" %>';
+
+function sevClass(s) {
+  s = (s||'').toLowerCase();
+  if (s === 'critical') return 'sev-critical';
+  if (s === 'error')    return 'sev-error';
+  if (s === 'warning')  return 'sev-warning';
+  return 'sev-notice';
+}
+
+async function pollEvents() {
+  try {
+    const data = await fetch('/waf/events').then(r => r.json());
+    if (!data.length) return;
+    const newTs = (data[0].time||'').slice(0,19);
+    if (newTs === lastTs) return;
+    lastTs = newTs;
+    document.getElementById('evBody').innerHTML = data.map(e => `
+      <tr>
+        <td class="ts-cell">${(e.time||'').slice(0,19).replace('T',' ')}</td>
+        <td class="ip-cell">${e.ip||''}</td>
+        <td>
+          <span style="font-size:.75rem;font-weight:600">${e.method||''}</span>
+          <span class="uri-cell" title="${e.uri||''}"> ${e.uri||''}</span>
+          ${e.status ? `<span style="font-size:.72rem;color:var(--muted)"> → ${e.status}</span>` : ''}
+        </td>
+        <td>${(e.messages||[]).map(m =>
+          `<span class="rule-pill" title="${m.msg||''}">${m.id||''}${m.severity ? ` <span class="${sevClass(m.severity)}">·${m.severity.slice(0,4)}</span>` : ''}</span>`
+        ).join('')}</td>
+      </tr>`).join('');
+  } catch {}
+}
+setInterval(pollEvents, 10000);
+</script>
+
+<%- include('partials/foot') %>
