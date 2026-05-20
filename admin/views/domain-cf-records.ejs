@@ -1,0 +1,112 @@
+<%
+  pageTitle = zone.name + ' · Cloudflare';
+  const typeOptions = ['A','AAAA','CNAME','MX','TXT','NS','SRV','CAA'];
+  const ttlOptions  = [[1,'Auto'],[300,'5m'],[3600,'1h'],[14400,'4h'],[86400,'1d']];
+-%>
+<%- include('partials/head') %>
+
+<style>
+.rec-table { width:100%;border-collapse:collapse;font-size:.82rem; }
+.rec-table th { text-align:left;padding:.5rem .6rem;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border); }
+.rec-table td { padding:.5rem .6rem;border-bottom:1px solid var(--border);vertical-align:middle;word-break:break-all; }
+.rec-table tr:hover td { background:var(--surface2); }
+.type-badge { display:inline-block;padding:.1em .45em;border-radius:3px;font-size:.7rem;font-weight:700;background:var(--surface2);color:var(--muted);font-family:var(--mono); }
+.proxy-on  { display:inline-block;padding:.1em .45em;border-radius:3px;font-size:.7rem;background:#f6821f22;color:#f6821f;border:1px solid #f6821f44; }
+.proxy-off { display:inline-block;padding:.1em .45em;border-radius:3px;font-size:.7rem;background:var(--surface2);color:var(--muted); }
+.add-form { display:grid;grid-template-columns:80px 1fr 1fr 80px 80px 70px auto;gap:.4rem;align-items:end; }
+@media(max-width:700px){.add-form{grid-template-columns:1fr 1fr;}}
+</style>
+
+<div class="page-header">
+  <div>
+    <div style="font-size:.8rem;color:var(--muted);margin-bottom:.2rem"><a href="/domains">Domains</a> › Cloudflare</div>
+    <h1><%= zone.name %></h1>
+  </div>
+  <div class="header-actions">
+    <span class="proxy-<%= zone.status === 'active' ? 'on' : 'off' %>"><%= zone.status %></span>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<!-- Records table -->
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
+  <% if (!records.length) { %>
+    <p class="empty" style="padding:2rem 1rem">No records yet.</p>
+  <% } else { %>
+  <table class="rec-table">
+    <thead><tr><th>Type</th><th>Name</th><th>Content</th><th>TTL</th><th>Proxy</th><th></th></tr></thead>
+    <tbody>
+      <% records.forEach(r => { %>
+      <tr>
+        <td><span class="type-badge"><%= r.type %></span></td>
+        <td style="color:var(--muted)"><%= r.name %></td>
+        <td><%= r.content %><% if (r.priority) { %> <span style="color:var(--muted);font-size:.75rem">(pri <%= r.priority %>)</span><% } %></td>
+        <td style="color:var(--muted);white-space:nowrap"><%= r.ttl === 1 ? 'Auto' : r.ttl + 's' %></td>
+        <td><span class="proxy-<%= r.proxied ? 'on' : 'off' %>"><%= r.proxied ? '☁ On' : 'DNS' %></span></td>
+        <td style="white-space:nowrap;text-align:right">
+          <% if (!['SOA','NS'].includes(r.type)) { %>
+          <form method="POST" action="/domains/cf/<%= zone.id %>/records/<%= r.id %>/delete" style="display:inline"
+                onsubmit="return confirm('Delete this <%= r.type %> record?')">
+            <button class="btn btn-sm btn-danger">✕</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<!-- Add record -->
+<h2 style="font-size:.95rem;margin-bottom:.6rem">Add record</h2>
+<div class="card" style="padding:1rem">
+  <form method="POST" action="/domains/cf/<%= zone.id %>/records" class="add-form">
+    <div>
+      <label style="font-size:.75rem;color:var(--muted)">Type</label>
+      <select name="type" id="recType" onchange="toggleFields(this.value)">
+        <% typeOptions.forEach(t => { %><option><%= t %></option><% }) %>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:var(--muted)">Name</label>
+      <input type="text" name="name" placeholder="@ or subdomain">
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:var(--muted)">Content</label>
+      <input type="text" name="content" placeholder="IP, hostname, or value" required>
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:var(--muted)">TTL</label>
+      <select name="ttl">
+        <% ttlOptions.forEach(([v,l]) => { %><option value="<%= v %>"><%= l %></option><% }) %>
+      </select>
+    </div>
+    <div id="priField">
+      <label style="font-size:.75rem;color:var(--muted)">Priority</label>
+      <input type="number" name="priority" value="10" style="width:100%">
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:var(--muted)">Proxy</label>
+      <label style="display:flex;align-items:center;gap:.3rem;padding:.4rem 0">
+        <input type="checkbox" name="proxied" id="chkProxy"> ☁ On
+      </label>
+    </div>
+    <div style="align-self:end">
+      <button class="btn btn-primary" style="width:100%">Add</button>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleFields(type) {
+  document.getElementById('priField').style.display = ['MX','SRV'].includes(type) ? '' : 'none';
+  // Only A/AAAA/CNAME can be proxied
+  document.getElementById('chkProxy').disabled = !['A','AAAA','CNAME'].includes(type);
+  if (!['A','AAAA','CNAME'].includes(type)) document.getElementById('chkProxy').checked = false;
+}
+toggleFields(document.getElementById('recType').value);
+</script>
+
+<%- include('partials/foot') %>

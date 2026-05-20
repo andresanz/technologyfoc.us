@@ -73,7 +73,7 @@
 <div class="card" style="padding:1rem;color:var(--muted);font-size:.875rem">
   <% if (cfZones.length) { %>
     <table class="domain-table">
-      <thead><tr><th>Domain</th><th>Status</th><th>Plan</th><th>NS</th></tr></thead>
+      <thead><tr><th>Domain</th><th>Status</th><th>Plan</th><th>NS</th><th></th></tr></thead>
       <tbody>
       <% cfZones.forEach(z => { %>
         <tr>
@@ -81,6 +81,7 @@
           <td><span style="color:<%= z.status==='active'?'var(--success, #16a34a)':'var(--danger)' %>"><%= z.status %></span></td>
           <td style="color:var(--muted);font-size:.8rem"><%= z.plan && z.plan.name || '—' %></td>
           <td style="font-size:.75rem;font-family:var(--mono);color:var(--muted)"><%= (z.name_servers||[]).slice(0,2).join(', ') %></td>
+          <td style="text-align:right"><a href="/domains/cf/<%= z.id %>/records" class="btn btn-sm">Records →</a></td>
         </tr>
       <% }) %>
       </tbody>

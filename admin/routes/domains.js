@@ -46,6 +46,42 @@ function awsCli(cmd) {
   return JSON.parse(out);
 }
 
+function cfGet(path) {
+  const token = process.env.CLOUDFLARE_TOKEN;
+  return fetch(`https://api.cloudflare.com/client/v4${path}`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  }).then(r => r.json());
+}
+
+function cfPost(path, body) {
+  const token = process.env.CLOUDFLARE_TOKEN;
+  return fetch(`https://api.cloudflare.com/client/v4${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(r => r.json());
+}
+
+function cfPut(path, body) {
+  const token = process.env.CLOUDFLARE_TOKEN;
+  return fetch(`https://api.cloudflare.com/client/v4${path}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(r => r.json());
+}
+
+function cfDel(path) {
+  const token = process.env.CLOUDFLARE_TOKEN;
+  return fetch(`https://api.cloudflare.com/client/v4${path}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(r => r.json());
+}
+
+const CF_ZONE_RE = /^[a-f0-9]{32}$/;
+const CF_REC_RE  = /^[a-f0-9]{32}$/;
+
 async function cloudflareZones() {
   const token = process.env.CLOUDFLARE_TOKEN;
   if (!token) return [];
@@ -187,6 +223,70 @@ router.post('/:id/records/:rid', async (req, res) => {
     else req.flash('success', 'Record updated');
   } catch (e) { req.flash('error', e.message); }
   res.redirect(`/domains/${id}/records`);
+});
+
+// ── Cloudflare DNS records ────────────────────────────────────────────────────
+
+// GET /domains/cf/:zoneId/records
+router.get('/cf/:zoneId/records', async (req, res) => {
+  const { zoneId } = req.params;
+  if (!CF_ZONE_RE.test(zoneId)) { req.flash('error', 'Invalid zone ID'); return res.redirect('/domains'); }
+  try {
+    const [zoneData, recData] = await Promise.all([
+      cfGet(`/zones/${zoneId}`),
+      cfGet(`/zones/${zoneId}/dns_records?per_page=100&order=type`),
+    ]);
+    const zone    = zoneData.result || {};
+    const records = (recData.result || []).sort((a, b) => {
+      const o = { SOA:0, NS:1, MX:2, A:3, AAAA:4, CNAME:5, TXT:6, SRV:7 };
+      return (o[a.type] ?? 99) - (o[b.type] ?? 99) || a.name.localeCompare(b.name);
+    });
+    res.render('domain-cf-records', { zone, records, flash: req.flash() });
+  } catch (e) {
+    req.flash('error', e.message);
+    res.redirect('/domains');
+  }
+});
+
+// POST /domains/cf/:zoneId/records — create
+router.post('/cf/:zoneId/records', async (req, res) => {
+  const { zoneId } = req.params;
+  if (!CF_ZONE_RE.test(zoneId)) { req.flash('error', 'Invalid zone ID'); return res.redirect('/domains'); }
+  const { type, name, content, ttl, proxied, priority } = req.body;
+  try {
+    const body = { type, name, content, ttl: parseInt(ttl) || 1, proxied: proxied === 'on' };
+    if (['MX', 'SRV'].includes(type)) body.priority = parseInt(priority) || 10;
+    const r = await cfPost(`/zones/${zoneId}/dns_records`, body);
+    if (!r.success) req.flash('error', (r.errors || []).map(e => e.message).join(', '));
+    else req.flash('success', 'Record created');
+  } catch (e) { req.flash('error', e.message); }
+  res.redirect(`/domains/cf/${zoneId}/records`);
+});
+
+// POST /domains/cf/:zoneId/records/:rid/delete
+router.post('/cf/:zoneId/records/:rid/delete', async (req, res) => {
+  const { zoneId, rid } = req.params;
+  if (!CF_ZONE_RE.test(zoneId) || !CF_REC_RE.test(rid)) { req.flash('error', 'Invalid ID'); return res.redirect('/domains'); }
+  try {
+    await cfDel(`/zones/${zoneId}/dns_records/${rid}`);
+    req.flash('success', 'Record deleted');
+  } catch (e) { req.flash('error', e.message); }
+  res.redirect(`/domains/cf/${zoneId}/records`);
+});
+
+// POST /domains/cf/:zoneId/records/:rid — update
+router.post('/cf/:zoneId/records/:rid', async (req, res) => {
+  const { zoneId, rid } = req.params;
+  if (!CF_ZONE_RE.test(zoneId) || !CF_REC_RE.test(rid)) { req.flash('error', 'Invalid ID'); return res.redirect('/domains'); }
+  const { type, name, content, ttl, proxied, priority } = req.body;
+  try {
+    const body = { type, name, content, ttl: parseInt(ttl) || 1, proxied: proxied === 'on' };
+    if (['MX', 'SRV'].includes(type)) body.priority = parseInt(priority) || 10;
+    const r = await cfPut(`/zones/${zoneId}/dns_records/${rid}`, body);
+    if (!r.success) req.flash('error', (r.errors || []).map(e => e.message).join(', '));
+    else req.flash('success', 'Record updated');
+  } catch (e) { req.flash('error', e.message); }
+  res.redirect(`/domains/cf/${zoneId}/records`);
 });
 
 module.exports = router;
