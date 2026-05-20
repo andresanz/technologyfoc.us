@@ -82,7 +82,7 @@ router.get('/fetch', (req, res) => {
     const site = (req.query.site || '').replace(/[^a-zA-Z0-9._-]/g, '');
     const type = req.query.type === 'error' ? 'error' : 'access';
     const file = `/var/log/nginx/${site}.${type}.log`;
-    content = fs.existsSync(file) ? run(`tail -n ${lines} "${file}"`) : `No log at ${file}`;
+    content = fs.existsSync(file) ? run(`sudo tail -n ${lines} "${file}"`) : `No log at ${file}`;
   } else if (source === 'journal') {
     const svc = (req.query.service || 'nginx').replace(/[^a-zA-Z0-9@._-]/g, '');
     content = run(`journalctl -u ${svc} -n ${lines} --no-pager --output=short-iso 2>/dev/null`);
