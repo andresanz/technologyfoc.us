@@ -1,16 +1,12 @@
 ---
 title: Great Hollow Nature Preserve
-date: '2026-05-19T00:00'
+date: '2026-05-19T04:00'
 slug: great-hollow-nature-preserve
 tags:
   - brewster
   - hiking
-  - south
-  - bucees
 image: 'https://andresanz.com/images/1779073955532-c2a57060991a.jpeg'
 ---
-
-
 
 ![IMG_6023.jpeg](https://andresanz.com/images/1779163965421-a2e2b15eb0a4.jpeg)
 
