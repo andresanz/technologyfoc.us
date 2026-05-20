@@ -136,7 +136,7 @@
       <% events.forEach(function(e) { %>
       <tr>
         <td class="ts-cell"><%= e.time || '' %></td>
-        <td class="ip-cell"><%= e.ip %></td>
+        <td class="ip-cell"><% if (e.flag) { %><span style="margin-right:.3em"><%= e.flag %></span><% } %><%= e.ip %></td>
         <td>
           <span style="font-size:.75rem;font-weight:600"><%= e.method %></span>
           <span class="uri-cell" title="<%= e.uri %>"> <%= e.uri %></span>
@@ -228,7 +228,7 @@ async function pollEvents() {
     document.getElementById('evBody').innerHTML = data.map(e => `
       <tr>
         <td class="ts-cell">${e.time||''}</td>
-        <td class="ip-cell">${e.ip||''}</td>
+        <td class="ip-cell">${e.flag ? `<span style="margin-right:.3em">${e.flag}</span>` : ''}${e.ip||''}</td>
         <td>
           <span style="font-size:.75rem;font-weight:600">${e.method||''}</span>
           <span class="uri-cell" title="${e.uri||''}"> ${e.uri||''}</span>

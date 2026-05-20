@@ -3,8 +3,47 @@
 const express  = require('express');
 const fs       = require('fs');
 const path     = require('path');
+const http     = require('http');
 const { execSync } = require('child_process');
 const router   = express.Router();
+
+// ── Geo / flag lookup ─────────────────────────────────────────────────────────
+const geoCache = new Map(); // ip → { cc, ts }
+const GEO_TTL  = 7 * 24 * 60 * 60 * 1000;
+const PRIVATE   = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$)/;
+
+function lookupCC(ip) {
+  return new Promise(resolve => {
+    if (!ip || PRIVATE.test(ip)) return resolve('');
+    const cached = geoCache.get(ip);
+    if (cached && Date.now() - cached.ts < GEO_TTL) return resolve(cached.cc);
+    const req = http.get(`http://ip-api.com/json/${ip}?fields=countryCode`, { timeout: 3000 }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const cc = (JSON.parse(d).countryCode || '').slice(0, 2).toUpperCase();
+          if (/^[A-Z]{2}$/.test(cc)) geoCache.set(ip, { cc, ts: Date.now() });
+          resolve(/^[A-Z]{2}$/.test(cc) ? cc : '');
+        } catch { resolve(''); }
+      });
+    });
+    req.on('error', () => resolve(''));
+    req.on('timeout', () => { req.destroy(); resolve(''); });
+  });
+}
+
+function ccToFlag(cc) {
+  if (!cc || cc.length !== 2) return '';
+  return [...cc].map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('');
+}
+
+async function addGeo(events) {
+  const ips = [...new Set(events.map(e => e.ip).filter(Boolean))];
+  const ccs = await Promise.all(ips.map(lookupCC));
+  const map = Object.fromEntries(ips.map((ip, i) => [ip, ccs[i]]));
+  return events.map(e => ({ ...e, cc: map[e.ip] || '', flag: ccToFlag(map[e.ip] || '') }));
+}
 
 const MODSEC_DIR   = '/etc/nginx/modsec';
 const MODE_CONF    = path.join(MODSEC_DIR, 'mode.conf');
@@ -119,18 +158,19 @@ function getStats(events) {
 }
 
 // ── GET /waf ──────────────────────────────────────────────────────────────────
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const installed  = isInstalled();
   const mode       = installed ? getMode() : null;
-  const events     = installed ? getEvents(200) : [];
+  const raw        = installed ? getEvents(200) : [];
+  const events     = await addGeo(raw);
   const exclusions = getExclusions();
   const stats      = getStats(events);
   res.render('waf', { site: req.site, installed, mode, events, exclusions, stats, flash: req.flash() });
 });
 
 // ── GET /waf/events (JSON poll) ───────────────────────────────────────────────
-router.get('/events', (req, res) => {
-  res.json(getEvents(50));
+router.get('/events', async (req, res) => {
+  res.json(await addGeo(getEvents(50)));
 });
 
 // ── POST /waf/mode ────────────────────────────────────────────────────────────
