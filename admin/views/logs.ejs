@@ -127,6 +127,9 @@ textarea.log-conf {
          onclick="pick(this)"><%= svc %></a>
     <% }) %>
 
+    <div class="log-sidebar-section">WAF</div>
+    <a data-src="sysfile" data-file="nginx/modsec_audit.log" onclick="pick(this)">modsec_audit.log</a>
+
     <div class="log-sidebar-section">System</div>
     <a data-src="sysfile" data-file="syslog" onclick="pick(this)">syslog</a>
     <a data-src="sysfile" data-file="auth.log" onclick="pick(this)">auth.log</a>
@@ -195,14 +198,19 @@ textarea.log-conf {
 
     <!-- Logrotate config + actions -->
     <div class="card" style="padding:1.25rem;">
-      <h3 style="margin:0 0 .75rem;font-size:.9rem;">/etc/logrotate.d/nginx</h3>
-      <textarea class="log-conf" id="rotConf"></textarea>
+      <h3 style="margin:0 0 .5rem;font-size:.9rem;">/etc/logrotate.d/nginx</h3>
+      <textarea class="log-conf" id="rotConf" style="height:150px"></textarea>
       <div style="display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="saveRotation()">Save</button>
-        <button class="btn" onclick="forceRotate()">Force Rotate Now</button>
+        <button class="btn btn-primary" onclick="saveRotation('nginx')">Save nginx</button>
+        <button class="btn" onclick="forceRotate()">Force Rotate All</button>
         <button class="btn btn-danger" onclick="vacuumJournal()" style="margin-left:auto;">
           Vacuum Journal
         </button>
+      </div>
+      <h3 style="margin:1rem 0 .5rem;font-size:.9rem;">/etc/logrotate.d/modsec</h3>
+      <textarea class="log-conf" id="rotModsec" style="height:150px"></textarea>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+        <button class="btn btn-primary" onclick="saveRotation('modsec')">Save modsec</button>
       </div>
       <div class="log-output" id="rotOutput"></div>
     </div>
@@ -299,6 +307,7 @@ textarea.log-conf {
     document.getElementById('rotDisk').textContent    = d.diskUsed;
     document.getElementById('rotJournal').textContent = d.journalSize.replace(/^.*?:\s*/,'').trim() || '?';
     document.getElementById('rotConf').value          = d.config;
+    document.getElementById('rotModsec').value        = d.modsecConfig || '';
 
     const tbody = document.querySelector('#rotTable tbody');
     tbody.innerHTML = d.files.map(f =>
@@ -314,12 +323,13 @@ textarea.log-conf {
     document.getElementById('mainLayout').style.display = 'grid';
   };
 
-  window.saveRotation = async function() {
-    const config = document.getElementById('rotConf').value;
+  window.saveRotation = async function(target) {
+    const config       = document.getElementById('rotConf').value;
+    const modsecConfig = document.getElementById('rotModsec').value;
     const r = await fetch('/logs/rotation/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config })
+      body: JSON.stringify({ config, modsecConfig, target })
     });
     const d = await r.json();
     showOutput(d.ok ? '✓ Saved\n' + (d.test || '') : '✗ ' + d.error);
@@ -353,8 +363,25 @@ textarea.log-conf {
     el.textContent = txt;
   }
 
-  // ── fix: route POST bodies as JSON ────────────────────────────────────────────
-  // rotation/save already sends JSON body above; ensure express receives it
+  // ── Auto-select from URL query params ─────────────────────────────────────────
+  (function autoSelect() {
+    const p = new URLSearchParams(location.search);
+    const src  = p.get('source');
+    const file = p.get('file');
+    const svc  = p.get('service');
+    const site = p.get('site');
+    const type = p.get('type');
+    if (!src) return;
+    let el;
+    if (src === 'sysfile' && file) {
+      el = document.querySelector(`.log-sidebar a[data-src="sysfile"][data-file="${file}"]`);
+    } else if (src === 'journal' && svc) {
+      el = document.querySelector(`.log-sidebar a[data-src="journal"][data-service="${svc}"]`);
+    } else if (src === 'nginx' && site) {
+      el = document.querySelector(`.log-sidebar a[data-src="nginx"][data-site="${site}"][data-type="${type||'access'}"]`);
+    }
+    if (el) pick(el);
+  })();
 })();
 </script>
 

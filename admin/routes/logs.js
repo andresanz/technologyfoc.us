@@ -79,7 +79,8 @@ router.get('/fetch', (req, res) => {
   } else if (source === 'sysfile') {
     const allowed = ['syslog', 'auth.log', 'ufw.log', 'mail.log', 'kern.log',
                      'fail2ban.log', 'letsencrypt/letsencrypt.log',
-                     'unattended-upgrades/unattended-upgrades.log'];
+                     'unattended-upgrades/unattended-upgrades.log',
+                     'nginx/modsec_audit.log'];
     const file = req.query.file || '';
     if (!allowed.includes(file)) return res.json({ content: 'File not allowed' });
     const full = `/var/log/${file}`;
@@ -91,22 +92,27 @@ router.get('/fetch', (req, res) => {
 
 // ── GET /logs/rotation ────────────────────────────────────────────────────────
 router.get('/rotation', (req, res) => {
-  const confPath = '/etc/logrotate.d/nginx';
-  const config   = fs.existsSync(confPath) ? fs.readFileSync(confPath, 'utf8') : '';
-  const files    = nginxLogFiles();
-  const diskUsed = logDiskUsage();
+  const nginxConf  = '/etc/logrotate.d/nginx';
+  const modsecConf = '/etc/logrotate.d/modsec';
+  const files      = nginxLogFiles();
+  const diskUsed   = logDiskUsage();
   const journalSize = run('journalctl --disk-usage 2>/dev/null').trim();
-  res.json({ config, files, diskUsed, journalSize });
+  res.json({
+    config:       fs.existsSync(nginxConf)  ? fs.readFileSync(nginxConf,  'utf8') : '',
+    modsecConfig: fs.existsSync(modsecConf) ? fs.readFileSync(modsecConf, 'utf8') : '',
+    files, diskUsed, journalSize,
+  });
 });
 
 // ── POST /logs/rotation/save ──────────────────────────────────────────────────
 router.post('/rotation/save', express.json(), (req, res) => {
-  const config = req.body.config || '';
-  if (!config.trim()) return res.json({ ok: false, error: 'Empty config' });
+  const { config, modsecConfig, target } = req.body;
+  const confPath = target === 'modsec' ? '/etc/logrotate.d/modsec' : '/etc/logrotate.d/nginx';
+  const content  = target === 'modsec' ? modsecConfig : config;
+  if (!content || !content.trim()) return res.json({ ok: false, error: 'Empty config' });
   try {
-    fs.writeFileSync('/etc/logrotate.d/nginx', config, 'utf8');
-    // verify syntax
-    const test = run('logrotate --debug /etc/logrotate.d/nginx 2>&1');
+    fs.writeFileSync(confPath, content, 'utf8');
+    const test = run(`logrotate --debug ${confPath} 2>&1`);
     res.json({ ok: true, test: test.slice(0, 500) });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -115,8 +121,9 @@ router.post('/rotation/save', express.json(), (req, res) => {
 
 // ── POST /logs/rotate ─────────────────────────────────────────────────────────
 router.post('/rotate', (req, res) => {
-  const out = run('logrotate -f /etc/logrotate.d/nginx 2>&1');
-  res.json({ ok: true, output: out || '(no output — rotation complete)' });
+  const out1 = run('sudo logrotate -f /etc/logrotate.d/nginx 2>&1');
+  const out2 = fs.existsSync('/etc/logrotate.d/modsec') ? run('sudo logrotate -f /etc/logrotate.d/modsec 2>&1') : '';
+  res.json({ ok: true, output: [out1, out2].filter(Boolean).join('\n') || '(no output — rotation complete)' });
 });
 
 // ── POST /logs/journal/vacuum ─────────────────────────────────────────────────
