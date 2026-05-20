@@ -73,7 +73,14 @@ module.exports = function createPostsLib(postsDir) {
   // ── Lazily render HTML ─────────────────────────────────────────────────────
   function renderPost(post) {
     if (post.html) return post;
-    post.html = md.render(post.raw);
+    let html = md.render(post.raw);
+    // Strip the cover image from body if it appears (any <p><img src="cover"></p>)
+    if (post.coverImage) {
+      const esc = post.coverImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re  = new RegExp(`<p>\\s*<img[^>]*src=["']${esc}["'][^>]*>\\s*</p>`, 'gi');
+      html = html.replace(re, '');
+    }
+    post.html = html;
     return post;
   }
 
