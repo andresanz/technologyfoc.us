@@ -281,7 +281,7 @@ main.container:has(.home-page) { padding-top: 0; }
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
 .page-header { margin-bottom: var(--s-7); }
-.page-header h1 { font-size: var(--fs-2xl); }
+.page-header h1 { font-size: var(--fs-2xl); display: none; }
 .site-desc { color: var(--muted); margin-top: var(--s-2); }
 .tag-highlight { color: var(--accent); }
 
@@ -393,6 +393,7 @@ main.container:has(.home-page) { padding-top: 0; }
 /* ── Single post ─────────────────────────────────────────────────────────── */
 .post-header { margin-bottom: var(--s-3); }
 .post-header h1 {
+  display: none;
   font-size: var(--fs-3xl);
   line-height: var(--lh-tight);
   margin: 0 0 var(--s-2);
@@ -703,6 +704,8 @@ sup.footnote-ref a { color: var(--accent); text-decoration: none; font-size: .75
   transition: color .15s;
 }
 .search-form button:hover { color: var(--text); }
+.page-title    { display: none; }
+.page-header-simple h1 { display: none; }
 .search-count  { color: var(--muted); margin-bottom: var(--s-5); }
 .search-empty  { color: var(--muted); }
 
