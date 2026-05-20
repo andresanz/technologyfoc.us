@@ -13,12 +13,7 @@ function run(cmd) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function nginxSites() {
-  try {
-    return fs.readdirSync('/var/log/nginx')
-      .filter(f => f.endsWith('.access.log') && !f.startsWith('access'))
-      .map(f => f.replace('.access.log', ''))
-      .sort();
-  } catch { return []; }
+  return ['andresanz.com'];
 }
 
 const SYSFILES = [
