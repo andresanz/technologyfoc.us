@@ -85,10 +85,11 @@ router.get('/fetch', (req, res) => {
     if (!allowed.includes(file)) return res.json({ content: 'File not allowed' });
     const full = `/var/log/${file}`;
     if (!fs.existsSync(full)) {
-      content = `No file at ${full}\n\nOn Ubuntu 24.04, /var/log/syslog requires rsyslog:\n  sudo apt install rsyslog`;
+      content = `No file at ${full}`;
+      if (file === 'syslog') content += `\n\nrsyslog may not be installed:\n  sudo apt install rsyslog`;
     } else {
       content = run(`sudo tail -n ${lines} "${full}" 2>&1`);
-      if (!content.trim()) content = `(empty — if this is syslog, rsyslog may not be installed)\nTry: sudo apt install rsyslog`;
+      if (!content.trim() && file === 'syslog') content = `(empty)\n\nrsyslog may not be installed:\n  sudo apt install rsyslog`;
     }
   }
 
