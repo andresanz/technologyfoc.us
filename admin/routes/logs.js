@@ -22,7 +22,7 @@ function nginxSites() {
 }
 
 function journalServices() {
-  const base = ['andresanz', 'andresanz-admin', 'andresanz-deploy', 'nginx', 'redis', 'fail2ban', 'postfix', 'ssh', 'cron'];
+  const base = ['andresanz', 'andresanz-admin', 'andresanz-deploy', 'nginx', 'redis-server', 'fail2ban', 'postfix', 'ssh', 'cron'];
   return base;
 }
 
