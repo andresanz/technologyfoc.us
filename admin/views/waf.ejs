@@ -135,7 +135,7 @@
       <% } else { %>
       <% events.forEach(function(e) { %>
       <tr>
-        <td class="ts-cell"><%= e.time ? e.time.slice(0,19).replace('T',' ') : '' %></td>
+        <td class="ts-cell"><%= e.time || '' %></td>
         <td class="ip-cell"><%= e.ip %></td>
         <td>
           <span style="font-size:.75rem;font-weight:600"><%= e.method %></span>
@@ -227,7 +227,7 @@ async function pollEvents() {
     lastTs = newTs;
     document.getElementById('evBody').innerHTML = data.map(e => `
       <tr>
-        <td class="ts-cell">${(e.time||'').slice(0,19).replace('T',' ')}</td>
+        <td class="ts-cell">${e.time||''}</td>
         <td class="ip-cell">${e.ip||''}</td>
         <td>
           <span style="font-size:.75rem;font-weight:600">${e.method||''}</span>

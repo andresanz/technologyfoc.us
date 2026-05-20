@@ -54,6 +54,16 @@ function saveExclusions(list) {
   run('sudo systemctl reload nginx');
 }
 
+const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function parseModSecTime(raw) {
+  if (!raw) return '';
+  // Apache format: 20/May/2026:14:47:45.123 -0400
+  const m = raw.match(/(\d{2})\/(\w{3})\/(\d{4}):(\d{2}:\d{2}:\d{2})/);
+  if (m) return `${m[3]}-${String(MONTHS[m[2]]+1).padStart(2,'0')}-${m[1]} ${m[4]}`;
+  // ISO format fallback
+  return raw.slice(0,19).replace('T',' ');
+}
+
 function getEvents(limit = 200) {
   if (!fs.existsSync(AUDIT_LOG)) return [];
   try {
@@ -68,7 +78,7 @@ function getEvents(limit = 200) {
         const msgs = (tx.messages || []).filter(m => m && m.details && m.details.ruleId);
         if (!msgs.length) continue;
         events.push({
-          time:     tx.time || tx.timestamp || '',
+          time:     parseModSecTime(tx.time || tx.timestamp || ''),
           id:       tx.id || '',
           ip:       tx.client_ip || tx.clientIp || '',
           method:   (tx.request || {}).method || '',
