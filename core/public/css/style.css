@@ -265,7 +265,7 @@ main.container:has(.home-page) { padding-top: 0; }
   padding-top: var(--s-4);
   padding-bottom: var(--s-5);
 }
-.footer-custom { color: var(--muted); text-align: center; }
+.footer-custom { color: var(--muted); }
 .footer-custom p { margin-bottom: var(--s-2); }
 .footer-custom a { color: var(--muted); }
 .footer-custom a:hover { color: var(--text); text-decoration: none; }
