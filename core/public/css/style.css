@@ -401,8 +401,6 @@ main.container:has(.home-page) { padding-top: 0; }
 
 /* ── Post body (rendered markdown) ──────────────────────────────────────── */
 .post-body { margin-top: var(--s-5); }
-.post-body.has-cover > p:first-child > img:only-child,
-.post-body.has-cover > img:first-child { display: none; }
 
 .post-body h1,
 .post-body h2,
@@ -447,10 +445,8 @@ main.container:has(.home-page) { padding-top: 0; }
   box-shadow: 0 2px 12px rgba(0,0,0,0.07);
 }
 .post-body p:has(> img:only-child) {
-  margin: var(--s-5) 0;
-  line-height: 0;
+  margin: var(--s-3) 0;
 }
-.post-body.has-cover > p:first-child:has(> img:only-child) { display: none; }
 
 /* Inline code */
 .post-body code:not([class]) {
