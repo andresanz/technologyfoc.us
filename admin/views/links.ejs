@@ -1,17 +1,57 @@
-<% pageTitle = 'Links' %>
+<% pageTitle = 'Links · ' + site.title %>
 <%- include('partials/head') %>
 
 <div class="page-header">
-  <h1>Links</h1>
+  <div>
+    <h1>Links</h1>
+    <p style="font-size:.85rem;color:var(--muted);margin-top:.25rem">Quick-add to <code>/links</code></p>
+  </div>
+  <div class="header-actions">
+    <a href="<%= site.url %>/links" target="_blank" class="btn">View ↗</a>
+  </div>
 </div>
 
 <%- include('partials/flash') %>
 
-<form method="POST" action="/links/save">
-  <textarea name="content" style="font-family:var(--mono);font-size:.9rem;min-height:60vh;width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);resize:vertical"><%= content %></textarea>
-  <div style="margin-top:.75rem">
-    <button class="btn btn-primary btn-full">Save</button>
+<form method="POST" action="/links/add" class="card" style="padding:1rem;margin-bottom:1.5rem">
+  <div style="display:grid;grid-template-columns:1fr;gap:.75rem">
+    <label>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:.2rem">URL</div>
+      <input name="url" type="url" required placeholder="https://example.com" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+    </label>
+    <label>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:.2rem">Title <span style="opacity:.6">(optional — defaults to URL)</span></div>
+      <input name="title" type="text" placeholder="Link title" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+    </label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <label>
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:.2rem">Section</div>
+        <select name="section" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+          <option value="">— none —</option>
+          <% (sections || []).forEach(function(s) { %>
+            <option value="<%= s %>"><%= s %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:.2rem">…or new section</div>
+        <input name="newSection" type="text" placeholder="e.g. Tools" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+      </label>
+    </div>
+    <div style="margin-top:.25rem">
+      <button class="btn btn-primary">+ Add link</button>
+    </div>
   </div>
 </form>
+
+<details>
+  <summary style="cursor:pointer;font-size:.9rem;color:var(--muted);margin-bottom:.5rem">Edit raw markdown</summary>
+  <form method="POST" action="/links/save">
+    <textarea name="content" style="font-family:var(--mono);font-size:.9rem;min-height:50vh;width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);resize:vertical"><%= content %></textarea>
+    <div style="margin-top:.75rem">
+      <button class="btn">Save raw</button>
+    </div>
+  </form>
+</details>
 
 <%- include('partials/foot') %>
