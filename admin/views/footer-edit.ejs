@@ -17,19 +17,56 @@
 <%- include('partials/flash') %>
 
 <form id="footer-form" method="POST" action="/pages/footer">
-  <div class="card" style="padding:0;overflow:hidden">
-    <textarea id="body" name="body"><%= body %></textarea>
+  <div class="edit-layout">
+    <div class="edit-main">
+      <textarea name="body" id="editor"><%= body %></textarea>
+    </div>
+
+    <aside class="edit-sidebar">
+      <section class="card">
+        <h3>Tips</h3>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.5">
+          Anything here renders inside the site footer on every page.
+        </p>
+        <ul style="font-size:.82rem;color:var(--muted);line-height:1.6;padding-left:1rem;margin-top:.5rem">
+          <li>Markdown or raw HTML both work</li>
+          <li>Keep it short — one or two lines</li>
+          <li>Use <code>[text](url)</code> for links</li>
+          <li>Changes are cached — may take a moment to appear</li>
+        </ul>
+      </section>
+    </aside>
   </div>
 </form>
 
+<%- include('partials/md-help') %>
+
 <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <script>
-new EasyMDE({
-  element: document.getElementById('body'),
+const mdHelp        = document.getElementById('mdHelp');
+const mdHelpOverlay = document.getElementById('mdHelpOverlay');
+function openMdHelp()  { mdHelp.style.right = '0'; mdHelpOverlay.style.display = 'block'; }
+function closeMdHelp() { mdHelp.style.right = '-420px'; mdHelpOverlay.style.display = 'none'; }
+document.getElementById('closeMdHelp').addEventListener('click', closeMdHelp);
+mdHelpOverlay.addEventListener('click', closeMdHelp);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMdHelp(); });
+
+const isMobile = window.innerWidth < 768;
+const easyMDE = new EasyMDE({
+  element:      document.getElementById('editor'),
   spellChecker: false,
-  autosave: { enabled: false },
-  toolbar: ['bold','italic','link','|','unordered-list','ordered-list','|','preview'],
-  minHeight: '200px',
+  autosave:     { enabled: false },
+  minHeight:    '200px',
+  toolbar: isMobile
+    ? ['bold','italic','|','unordered-list','ordered-list','|','link','|','preview',
+       { name:'help', action: openMdHelp, className:'fa fa-question-circle', title:'Markdown help' }]
+    : ['bold','italic','heading','|','quote','unordered-list','ordered-list','|',
+       'link','image','|','preview','side-by-side','fullscreen','|',
+       { name:'help', action: openMdHelp, className:'fa fa-question-circle', title:'Markdown help' }],
+});
+
+document.getElementById('footer-form').addEventListener('submit', () => {
+  easyMDE.codemirror.save();
 });
 </script>
 
