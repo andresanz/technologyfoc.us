@@ -135,7 +135,7 @@ main.container:has(.home-page) { padding-top: 0; }
 }
 
 .site-title {
-  font-family: var(--font-title);
+  font-family: var(--font-ui);
   font-weight: 100;
   font-size: 2.5rem;
   letter-spacing: .03em;
