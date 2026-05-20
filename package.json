@@ -20,6 +20,7 @@
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.9.0",
     "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.6",
     "connect-redis": "^9.0.0",
     "dotenv": "^16.4.0",
     "ejs": "^3.1.10",
