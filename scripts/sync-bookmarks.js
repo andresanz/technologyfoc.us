@@ -82,6 +82,21 @@ function run() {
   for (const root of ['bookmark_bar', 'other', 'synced']) {
     const node = raw.roots[root];
     if (!node) continue;
+
+    // Collect bare URLs directly in this root (not inside any folder)
+    const bareLinks = (node.children || [])
+      .filter(c => c.type === 'url' && !shouldSkipUrl(c.url || ''))
+      .map(c => ({ title: c.name, url: c.url }));
+
+    if (bareLinks.length) {
+      body += `#### Bookmarks Bar\n`;
+      for (const { title, url } of bareLinks) {
+        body += `* [${title.trim() || url}](${url})\n`;
+      }
+      body += '\n';
+    }
+
+    // Then render each sub-folder as its own section
     for (const child of node.children || []) {
       if (child.type === 'folder') {
         body += renderSection(walkFolder(child));
