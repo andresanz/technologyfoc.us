@@ -1,12 +1,15 @@
 ---
 title: Great Hollow Nature Preserve
-date: '2026-05-19T04:00'
+date: '2026-05-19T08:00'
 slug: great-hollow-nature-preserve
 tags:
   - brewster
   - hiking
 image: 'https://andresanz.com/images/1779073955532-c2a57060991a.jpeg'
 ---
+
+[Great Hollow Nature Preserve](https://greathollow.org/)
+
 
 ![IMG_6023.jpeg](https://andresanz.com/images/1779163965421-a2e2b15eb0a4.jpeg)
 
@@ -26,4 +29,3 @@ image: 'https://andresanz.com/images/1779073955532-c2a57060991a.jpeg'
 
 ![IMG_6027.jpeg](https://andresanz.com/images/1779163977724-e5d939ae3a22.jpeg)
 
-[Great Hollow Nature Preserve](https://greathollow.org/)
