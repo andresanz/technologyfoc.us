@@ -54,8 +54,10 @@ async function addGeo(events) {
 const MODSEC_DIR   = '/etc/nginx/modsec';
 const MODE_CONF    = path.join(MODSEC_DIR, 'mode.conf');
 const CUSTOM_RULES = path.join(MODSEC_DIR, 'custom-rules.conf');
+const BLOCK_RULES  = path.join(MODSEC_DIR, 'block-rules.conf');
 const AUDIT_LOG    = '/var/log/nginx/modsec_audit.log';
 const EXCL_FILE    = path.join(__dirname, '..', 'data', 'waf-exclusions.json');
+const BLOCK_FILE   = path.join(__dirname, '..', 'data', 'waf-blocks.json');
 
 function run(cmd) {
   try { return execSync(cmd, { timeout: 8000 }).toString().trim(); }
@@ -96,6 +98,26 @@ function saveExclusions(list) {
     if (e.type === 'uri')  lines.push(`SecRuleRemoveByTag "attack" "chain"\nSecRule REQUEST_URI "@contains ${e.value}" "t:none"`);
   }
   fs.writeFileSync(CUSTOM_RULES, lines.join('\n') + '\n', 'utf8');
+  run('sudo systemctl reload nginx');
+}
+
+function getBlocks() {
+  try { return JSON.parse(fs.readFileSync(BLOCK_FILE, 'utf8')); }
+  catch { return []; }
+}
+
+function saveBlocks(list) {
+  fs.mkdirSync(path.dirname(BLOCK_FILE), { recursive: true });
+  fs.writeFileSync(BLOCK_FILE, JSON.stringify(list, null, 2), 'utf8');
+  const lines = ['# Block rules managed by admin panel — do not edit manually'];
+  let id = 9500;
+  for (const b of list) {
+    const bid = b.id || id++;
+    if (b.type === 'uri')  lines.push(`SecRule REQUEST_URI "@contains ${b.value}" "id:${bid},phase:1,deny,status:403,log,msg:'Blocked URI: ${b.note || b.value}'"`);
+    if (b.type === 'ip')   lines.push(`SecRule REMOTE_ADDR "@ipMatch ${b.value}" "id:${bid},phase:1,deny,status:403,log,msg:'Blocked IP: ${b.note || b.value}'"`);
+    if (b.type === 'ua')   lines.push(`SecRule REQUEST_HEADERS:User-Agent "@contains ${b.value}" "id:${bid},phase:1,deny,status:403,log,msg:'Blocked UA: ${b.note || b.value}'"`);
+  }
+  fs.writeFileSync(BLOCK_RULES, lines.join('\n') + '\n', 'utf8');
   run('sudo systemctl reload nginx');
 }
 
@@ -174,8 +196,9 @@ router.get('/', async (req, res) => {
   const raw        = installed ? getEvents(200) : [];
   const events     = await addGeo(raw);
   const exclusions = getExclusions();
+  const blocks     = getBlocks();
   const stats      = getStats(events);
-  res.render('waf', { site: req.site, installed, mode, events, exclusions, stats, flash: req.flash() });
+  res.render('waf', { site: req.site, installed, mode, events, exclusions, blocks, stats, flash: req.flash() });
 });
 
 // ── GET /waf/events (JSON poll) ───────────────────────────────────────────────
@@ -222,6 +245,35 @@ router.post('/exclusions/delete', (req, res) => {
   try {
     saveExclusions(list);
     req.flash('success', 'Exclusion removed');
+  } catch (e) {
+    req.flash('error', 'Failed: ' + e.message);
+  }
+  res.redirect('/waf');
+});
+
+// ── POST /waf/blocks/add ──────────────────────────────────────────────────────
+router.post('/blocks/add', (req, res) => {
+  const { type, value, note } = req.body;
+  if (!type || !value) { req.flash('error', 'Type and value required'); return res.redirect('/waf'); }
+  const list   = getBlocks();
+  const nextId = 9500 + list.length + 1;
+  list.push({ id: nextId, type, value: value.trim(), note: (note || '').trim(), createdAt: new Date().toISOString() });
+  try {
+    saveBlocks(list);
+    req.flash('success', 'Block rule added — nginx reloaded');
+  } catch (e) {
+    req.flash('error', 'Failed: ' + e.message);
+  }
+  res.redirect('/waf');
+});
+
+// ── POST /waf/blocks/delete ───────────────────────────────────────────────────
+router.post('/blocks/delete', (req, res) => {
+  const { id } = req.body;
+  const list = getBlocks().filter(b => String(b.id) !== String(id));
+  try {
+    saveBlocks(list);
+    req.flash('success', 'Block rule removed');
   } catch (e) {
     req.flash('error', 'Failed: ' + e.message);
   }
