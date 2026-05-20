@@ -5,6 +5,20 @@ slug: links
 nav: true
 ---
 
+#### Bookmarks Bar
+* [Gmail](https://mail.google.com/mail/u/0/#inbox)
+* [Unread](https://mail.google.com/mail/u/0/#search/label%3Aunread)
+* [Online Services For Individuals](https://apps.labor.ny.gov/IndividualReg/)
+* [Calendar](https://calendar.google.com/calendar/u/0/r)
+* [BitWarden](https://vault.bitwarden.com/#/vault)
+* [Claude](https://claude.ai/)
+* [Reddit](https://www.reddit.com/)
+* [10509](https://weather.com/weather/tenday/l/9d19d23203f431d47800bf1fa87e8942520b704718e24f75568d9e4002082420)
+* [29909](https://weather.com/weather/tenday/l/e67925853dae750f79e3f7062160a1d246799f766bcf0c57e1afa6420e225614)
+* [Peacock](https://www.peacocktv.com/signin?return=%2Fwatch%2Fplayback%2Fevent%2FPCKSLE%3Aba52e205-e591-4796-95fe-bbb7acf7d7f1%3Ad1bcebab-eced-4ce1-8473-9be03a80dda0%2F5e994d21-f143-386c-8037-50ab9a85dd0f)
+* [Warranty Portal](https://warranty.khov.com/)
+* [The Random Act of Writing](https://therandomactofwriting.com/)
+
 #### Brewster
 * [Westview Apartments Additional Info](https://westview-apartments6-rentcafewebsite.securecafe.com/onlineleasing/westview-apartments6/oleapplication.aspx?propleadsource_1663110=portal&stepname=DocumentSummary&&myOlePropertyId=1663110&_yTrackUser=MzcyODc0MjUxOCMxMjAyMTU5MDk%253d-TRFpsfGP4tk%253d&_yTrackVisit=NjE0MDI5Mjg3MSMxNDQ3MDA0OTk4-vooUbQI9obY%253d&_yTrackReqDT=46592120251210)
 * [Westview, Barrett Hill | Luxury Rentals | One & Two Bedroom](https://www.westviewapts.com/)
