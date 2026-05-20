@@ -1,6 +1,7 @@
 node_modules/
 content/nav.json
 content/gratitude.json
+content/footer.md
 analytics.db
 analytics.db-shm
 analytics.db-wal
