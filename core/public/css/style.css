@@ -441,11 +441,15 @@ main.container:has(.home-page) { padding-top: 0; }
   width: 100%;
   height: auto;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  margin: 0;
 }
 .post-body p:has(> img:only-child) {
-  margin: var(--s-3) 0;
+  margin: var(--s-2) 0;
+  line-height: 0;
+  font-size: 0;
+}
+.post-body p:has(> img:only-child) + p:has(> img:only-child) {
+  margin-top: var(--s-2);
 }
 
 /* Inline code */
