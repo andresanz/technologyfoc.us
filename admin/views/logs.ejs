@@ -141,19 +141,16 @@ textarea.log-conf {
   <!-- Main viewer -->
   <div class="log-main">
     <div class="log-toolbar">
-      <span id="logTitle" style="font-weight:600;font-size:.9rem;flex:1;">Select a log source →</span>
-      <label style="font-size:.82rem;color:var(--muted);">Lines:</label>
-      <select id="selLines" onchange="fetchLog()">
+      <span id="logTitle" style="font-weight:600;font-size:.9rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Select a log →</span>
+      <select id="selLines" onchange="fetchLog()" title="Lines" style="width:70px">
         <option value="50">50</option>
         <option value="100" selected>100</option>
         <option value="200">200</option>
         <option value="500">500</option>
         <option value="1000">1000</option>
       </select>
-      <label style="font-size:.82rem;color:var(--muted);">Filter:</label>
-      <input type="text" id="filterInput" placeholder="grep…" style="width:120px;"
-             oninput="applyFilter()">
-      <label style="font-size:.82rem;color:var(--muted);">
+      <input type="text" id="filterInput" placeholder="filter…" style="width:100px;" oninput="applyFilter()">
+      <label style="font-size:.82rem;color:var(--muted);white-space:nowrap;cursor:pointer">
         <input type="checkbox" id="chkAutoRefresh" onchange="toggleAutoRefresh()"> Auto
       </label>
     </div>
