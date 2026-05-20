@@ -54,12 +54,15 @@ function saveExclusions(list) {
   run('sudo systemctl reload nginx');
 }
 
-const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+const MONTHS = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
 function parseModSecTime(raw) {
   if (!raw) return '';
+  // ModSec3 format: "Wed May 20 14:53:10 2026"
+  const m = raw.match(/\w{3}\s+(\w{3})\s+(\d{1,2})\s+(\d{2}:\d{2}:\d{2})\s+(\d{4})/);
+  if (m) return `${m[4]}-${String(MONTHS[m[1]]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')} ${m[3]}`;
   // Apache format: 20/May/2026:14:47:45.123 -0400
-  const m = raw.match(/(\d{2})\/(\w{3})\/(\d{4}):(\d{2}:\d{2}:\d{2})/);
-  if (m) return `${m[3]}-${String(MONTHS[m[2]]+1).padStart(2,'0')}-${m[1]} ${m[4]}`;
+  const m2 = raw.match(/(\d{2})\/(\w{3})\/(\d{4}):(\d{2}:\d{2}:\d{2})/);
+  if (m2) return `${m2[3]}-${String(MONTHS[m2[2]]).padStart(2,'0')}-${m2[1]} ${m2[4]}`;
   // ISO format fallback
   return raw.slice(0,19).replace('T',' ');
 }
@@ -78,7 +81,7 @@ function getEvents(limit = 200) {
         const msgs = (tx.messages || []).filter(m => m && m.details && m.details.ruleId);
         if (!msgs.length) continue;
         events.push({
-          time:     parseModSecTime(tx.time || tx.timestamp || ''),
+          time:     parseModSecTime(tx.time_stamp || tx.time || tx.timestamp || ''),
           id:       tx.id || '',
           ip:       tx.client_ip || tx.clientIp || '',
           method:   (tx.request || {}).method || '',
