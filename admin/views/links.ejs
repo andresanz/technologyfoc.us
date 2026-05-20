@@ -4,14 +4,11 @@
 <div class="page-header">
   <div><h1>Links</h1></div>
   <div class="header-actions">
-    <a href="<%= site.url %>/links" target="_blank" class="btn">View ↗</a>
-    <button id="syncBtn" class="btn btn-primary">↺ Sync from Chrome</button>
+    <a href="<%= site.url %>/private/links" target="_blank" class="btn">View ↗</a>
   </div>
 </div>
 
 <%- include('partials/flash') %>
-
-<div id="syncStatus" style="display:none;margin-bottom:1rem;padding:.6rem 1rem;border-radius:var(--radius);font-size:.9rem"></div>
 
 <form method="POST" action="/links/save">
   <textarea name="content" style="font-family:var(--mono);font-size:.9rem;min-height:60vh;width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);resize:vertical"><%= content %></textarea>
@@ -19,109 +16,5 @@
     <button class="btn btn-primary btn-full">Save</button>
   </div>
 </form>
-
-<script>
-const SKIP_URL = ['javascript:', 'chrome://', 'chrome-extension://', 'andresanz.com'];
-const SKIP_FOLDERS = new Set(['Bookmarks Bar','Other Bookmarks','Mobile Bookmarks']);
-
-function shouldSkip(url) { return SKIP_URL.some(p => url.includes(p)); }
-
-function walkFolder(node) {
-  const out = { name: node.name, links: [], children: [] };
-  for (const c of node.children || []) {
-    if (c.type === 'url' && !shouldSkip(c.url || '')) {
-      out.links.push({ title: c.name, url: c.url });
-    } else if (c.type === 'folder') {
-      const sub = walkFolder(c);
-      if (sub.links.length || sub.children.length) out.children.push(sub);
-    }
-  }
-  return out;
-}
-
-function renderSection(folder) {
-  let md = '';
-  if (!SKIP_FOLDERS.has(folder.name) && folder.links.length) {
-    md += `#### ${folder.name}\n`;
-    for (const { title, url } of folder.links) {
-      md += `* [${(title||'').trim() || url}](${url})\n`;
-    }
-    md += '\n';
-  }
-  for (const child of folder.children) md += renderSection(child);
-  return md;
-}
-
-function parseBookmarks(json) {
-  const roots = json.roots || {};
-  let body = '';
-  for (const key of ['bookmark_bar','other','synced']) {
-    const node = roots[key];
-    if (!node) continue;
-    // bare URLs in this root
-    const bare = (node.children||[]).filter(c => c.type==='url' && !shouldSkip(c.url||''));
-    if (bare.length) {
-      body += `#### Bookmarks Bar\n`;
-      for (const c of bare) body += `* [${(c.name||'').trim()||c.url}](${c.url})\n`;
-      body += '\n';
-    }
-    for (const c of (node.children||[])) {
-      if (c.type === 'folder') body += renderSection(walkFolder(c));
-    }
-  }
-  const fm = `---\ntitle: Links\ndate: '2026-05-02T08:00'\nslug: links\nnav: true\n---\n\n`;
-  return fm + body.trimEnd() + '\n';
-}
-
-function status(msg, ok) {
-  const el = document.getElementById('syncStatus');
-  el.style.display = 'block';
-  el.style.background = ok ? 'var(--surface)' : '#fbe9e6';
-  el.style.border = `1px solid ${ok ? 'var(--border)' : '#c44a3a'}`;
-  el.style.color = ok ? 'var(--text)' : '#8d2a1f';
-  el.textContent = msg;
-}
-
-document.getElementById('syncBtn').addEventListener('click', async () => {
-  try {
-    // Try File System Access API for direct path
-    let file;
-    if (window.showOpenFilePicker) {
-      const [fh] = await window.showOpenFilePicker({
-        types: [{ description: 'Chrome Bookmarks', accept: { 'application/json': ['.json',''] } }],
-        startIn: 'downloads',
-      });
-      file = await fh.getFile();
-    } else {
-      // Fallback: invisible file input
-      file = await new Promise(resolve => {
-        const inp = document.createElement('input');
-        inp.type = 'file'; inp.accept = '.json,application/json';
-        inp.onchange = () => resolve(inp.files[0]);
-        inp.click();
-      });
-    }
-    if (!file) return;
-    status('Parsing…', true);
-    const json = JSON.parse(await file.text());
-    const markdown = parseBookmarks(json);
-    status('Uploading…', true);
-    const r = await fetch('/links/sync-bookmarks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ markdown }),
-    });
-    const data = await r.json();
-    if (data.ok) {
-      status('✓ Synced — reloading…', true);
-      setTimeout(() => location.reload(), 800);
-    } else {
-      status('Error: ' + data.error, false);
-    }
-  } catch (e) {
-    if (e.name !== 'AbortError') status('Error: ' + e.message, false);
-  }
-});
-</script>
 
 <%- include('partials/foot') %>

@@ -2,7 +2,7 @@
 title: Links
 date: '2026-05-02T08:00'
 slug: links
-nav: true
+nav: false
 ---
 
 #### Bookmarks Bar
