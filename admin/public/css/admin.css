@@ -35,7 +35,7 @@ label { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; c
 
 /* 16px min font-size on inputs prevents iOS auto-zoom */
 input[type=text], input[type=email], input[type=password],
-input[type=number], input[type=date], textarea, select {
+input[type=number], input[type=date], input[type=datetime-local], textarea, select {
   background:    var(--surface2);
   border:        1px solid var(--border);
   border-radius: var(--radius);
