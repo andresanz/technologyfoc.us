@@ -259,7 +259,7 @@ main.container:has(.home-page) { padding-top: 0; }
   font-size: var(--fs-sm);
   font-family: var(--font-ui);
   color: var(--muted);
-  margin-top: var(--s-4);
+  margin-top: var(--s-2);
 }
 .site-footer .container {
   border-top: 1px solid var(--border);
@@ -502,9 +502,9 @@ main.container:has(.home-page) { padding-top: 0; }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--s-4);
-  margin-top: var(--s-5);
+  margin-top: var(--s-4);
   padding-top: var(--s-3);
-  padding-bottom: var(--s-3);
+  padding-bottom: var(--s-2);
   border-top: 1px solid var(--border);
 }
 .back-link { font-size: var(--fs-sm); }
