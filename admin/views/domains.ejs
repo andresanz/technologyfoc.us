@@ -23,7 +23,7 @@
 
 <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
   <a href="#linode" style="font-size:.82rem;color:var(--muted);text-decoration:none">↓ Linode DNS <span style="font-weight:600;color:var(--text)">(<%= domains.length %>)</span></a>
-  <a href="#r53" style="font-size:.82rem;color:var(--muted);text-decoration:none">↓ AWS Route 53</a>
+  <a href="#r53" style="font-size:.82rem;color:var(--muted);text-decoration:none">↓ AWS Route 53 <span style="font-weight:600;color:var(--text)">(<%= r53domains ? r53domains.length : 0 %>)</span></a>
   <% if (typeof cfZones !== 'undefined' && cfZones.length) { %>
   <a href="#cloudflare" style="font-size:.82rem;color:var(--muted);text-decoration:none">↓ Cloudflare <span style="font-weight:600;color:var(--text)">(<%= cfZones.length %>)</span></a>
   <% } %>
@@ -54,7 +54,7 @@
 </div>
 
 <!-- Route 53 -->
-<h2 id="r53" style="font-size:1rem;margin-bottom:.5rem">AWS Route 53</h2>
+<h2 id="r53" style="font-size:1rem;margin-bottom:.5rem">AWS Route 53 <span style="font-size:.8rem;font-weight:400;color:var(--muted)">(<%= r53domains ? r53domains.length : 0 %>)</span></h2>
 <div class="card" style="padding:1rem;color:var(--muted);font-size:.875rem">
   <% if (r53domains && r53domains.length) { %>
     <table class="domain-table">
