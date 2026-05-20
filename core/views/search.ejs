@@ -9,18 +9,26 @@
     <div class="post-list">
       <% results.forEach(function(post) { %>
         <article class="post-card">
-          <h2 class="post-title"><a href="/post/<%= post.slug %>"><%= post.title %></a></h2>
-          <div class="post-meta">
-            <time><%= post.dateStr %></time>
-            <% if (post.tags && post.tags.length) { %>
-              <span class="tags">
-                <% post.tags.forEach(function(tag) { %>
-                  <a href="/tag/<%= tag %>" class="tag"><%= tag %></a>
-                <% }) %>
-              </span>
+          <a href="/post/<%= post.slug %>" class="card-link" aria-label="<%= post.title %>"></a>
+          <% if (post.coverImage) { %>
+            <div class="post-cover">
+              <img src="<%= post.coverImage %>" alt="<%= post.title %>">
+              <div class="post-kicker">
+                <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
+                <% (post.tags||[]).forEach(function(t) { %><a href="/tag/<%= t %>" class="tag tag-link"><%= t %></a><% }) %>
+              </div>
+            </div>
+          <% } %>
+          <div class="post-card-body">
+            <% if (!post.coverImage) { %>
+              <div class="post-kicker">
+                <time datetime="<%= post.dateISO %>"><%= post.dateStr %></time>
+                <% (post.tags||[]).forEach(function(t) { %><a href="/tag/<%= t %>" class="tag tag-link"><%= t %></a><% }) %>
+              </div>
             <% } %>
+            <h2><%= post.title %></h2>
+            <% if (post.excerpt) { %><p class="post-excerpt"><%= post.excerpt %></p><% } %>
           </div>
-          <% if (post.excerpt) { %><p class="post-excerpt"><%= post.excerpt %></p><% } %>
         </article>
       <% }) %>
     </div>
