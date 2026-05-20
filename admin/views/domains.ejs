@@ -21,8 +21,16 @@
 
 <%- include('partials/flash') %>
 
+<div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+  <a href="#linode" style="font-size:.82rem;color:var(--muted);text-decoration:none">↓ Linode DNS <span style="font-weight:600;color:var(--text)">(<%= domains.length %>)</span></a>
+  <a href="#r53" style="font-size:.82rem;color:var(--muted);text-decoration:none">↓ AWS Route 53</a>
+  <% if (typeof cfZones !== 'undefined' && cfZones.length) { %>
+  <a href="#cloudflare" style="font-size:.82rem;color:var(--muted);text-decoration:none">↓ Cloudflare <span style="font-weight:600;color:var(--text)">(<%= cfZones.length %>)</span></a>
+  <% } %>
+</div>
+
 <!-- Linode DNS -->
-<h2 style="font-size:1rem;margin-bottom:.5rem">Linode DNS <span style="font-size:.8rem;font-weight:400;color:var(--muted)">(<%= domains.length %>)</span></h2>
+<h2 id="linode" style="font-size:1rem;margin-bottom:.5rem">Linode DNS <span style="font-size:.8rem;font-weight:400;color:var(--muted)">(<%= domains.length %>)</span></h2>
 <div class="card" style="padding:0;overflow:hidden;margin-bottom:2rem">
   <% if (!domains.length) { %>
     <p class="empty" style="padding:2rem 1rem">No domains found.</p>
@@ -46,7 +54,7 @@
 </div>
 
 <!-- Route 53 -->
-<h2 style="font-size:1rem;margin-bottom:.5rem">AWS Route 53</h2>
+<h2 id="r53" style="font-size:1rem;margin-bottom:.5rem">AWS Route 53</h2>
 <div class="card" style="padding:1rem;color:var(--muted);font-size:.875rem">
   <% if (r53domains && r53domains.length) { %>
     <table class="domain-table">
@@ -69,7 +77,7 @@
 </div>
 
 <% if (typeof cfZones !== 'undefined') { %>
-<h2 style="font-size:1rem;margin-bottom:.5rem;margin-top:1.5rem">Cloudflare <span style="font-size:.8rem;font-weight:400;color:var(--muted)">(<%= cfZones.length %>)</span></h2>
+<h2 id="cloudflare" style="font-size:1rem;margin-bottom:.5rem;margin-top:1.5rem">Cloudflare <span style="font-size:.8rem;font-weight:400;color:var(--muted)">(<%= cfZones.length %>)</span></h2>
 <div class="card" style="padding:1rem;color:var(--muted);font-size:.875rem">
   <% if (cfZones.length) { %>
     <table class="domain-table">
