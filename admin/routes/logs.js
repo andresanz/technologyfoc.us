@@ -82,7 +82,7 @@ router.get('/fetch', (req, res) => {
     const site = (req.query.site || '').replace(/[^a-zA-Z0-9._-]/g, '');
     const type = req.query.type === 'error' ? 'error' : 'access';
     const file = `/var/log/nginx/${site}.${type}.log`;
-    content = fs.existsSync(file) ? run(`sudo tail -n ${lines} "${file}"`) : `No log at ${file}`;
+    content = run(`sudo /usr/bin/tail -n ${lines} "${file}" 2>&1`) || `(empty)`;
   } else if (source === 'journal') {
     const svc = (req.query.service || 'nginx').replace(/[^a-zA-Z0-9@._-]/g, '');
     content = run(`journalctl -u ${svc} -n ${lines} --no-pager --output=short-iso 2>/dev/null`);
@@ -94,13 +94,7 @@ router.get('/fetch', (req, res) => {
     const file = req.query.file || '';
     if (!allowed.includes(file)) return res.json({ content: 'File not allowed' });
     const full = `/var/log/${file}`;
-    if (!fs.existsSync(full)) {
-      content = `No file at ${full}`;
-      if (file === 'syslog') content += `\n\nrsyslog may not be installed:\n  sudo apt install rsyslog`;
-    } else {
-      content = run(`sudo tail -n ${lines} "${full}" 2>&1`);
-      if (!content.trim() && file === 'syslog') content = `(empty)\n\nrsyslog may not be installed:\n  sudo apt install rsyslog`;
-    }
+    content = run(`sudo /usr/bin/tail -n ${lines} "${full}" 2>&1`) || `(empty)`;
   }
 
   res.json({ content });
