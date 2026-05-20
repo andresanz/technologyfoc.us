@@ -144,9 +144,9 @@
         </td>
         <td>
           <% e.messages.forEach(function(m) { %>
-            <span class="rule-pill" title="<%= m.msg %>">
+            <a class="rule-pill" title="<%= m.msg %>" href="https://github.com/coreruleset/coreruleset/search?q=<%= m.id %>&type=code" target="_blank">
               <%= m.id %><% if (m.severity) { %> <span class="sev-<%= m.severity.toLowerCase() %>">·<%= m.severity.slice(0,4) %></span><% } %>
-            </span>
+            </a>
           <% }) %>
         </td>
       </tr>
@@ -235,7 +235,7 @@ async function pollEvents() {
           ${e.status ? `<span style="font-size:.72rem;color:var(--muted)"> → ${e.status}</span>` : ''}
         </td>
         <td>${(e.messages||[]).map(m =>
-          `<span class="rule-pill" title="${m.msg||''}">${m.id||''}${m.severity ? ` <span class="${sevClass(m.severity)}">·${m.severity.slice(0,4)}</span>` : ''}</span>`
+          `<a class="rule-pill" title="${m.msg||''}" href="https://github.com/coreruleset/coreruleset/search?q=${m.id||''}&type=code" target="_blank">${m.id||''}${m.severity ? ` <span class="${sevClass(m.severity)}">·${m.severity.slice(0,4)}</span>` : ''}</a>`
         ).join('')}</td>
       </tr>`).join('');
   } catch {}
