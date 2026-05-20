@@ -68,9 +68,11 @@ router.get('/', async (req, res) => {
       linodeGet('/domains?page_size=200'),
       route53Domains(),
     ]);
+    console.log('[domains] linode results:', linodeData.results, 'errors:', linodeData.errors);
     const domains = (linodeData.data || []).sort((a, b) => a.domain.localeCompare(b.domain));
     res.render('domains', { domains, r53domains, flash: req.flash() });
   } catch (e) {
+    console.error('[domains] error:', e);
     res.render('domains', { domains: [], r53domains: [], error: e.message, flash: req.flash() });
   }
 });
