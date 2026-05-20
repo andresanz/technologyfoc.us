@@ -254,12 +254,16 @@ main.container:has(.home-page) { padding-top: 0; }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 .site-footer {
-  padding: var(--s-5) 0;
+  padding: 0;
   font-size: var(--fs-sm);
   font-family: var(--font-ui);
   color: var(--muted);
-  border-top: 1px solid var(--border);
   margin-top: var(--s-7);
+}
+.site-footer .container {
+  border-top: 1px solid var(--border);
+  padding-top: var(--s-4);
+  padding-bottom: var(--s-5);
 }
 .footer-custom { color: var(--muted); }
 .footer-custom p { margin-bottom: var(--s-2); }
