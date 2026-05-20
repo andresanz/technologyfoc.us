@@ -4,6 +4,7 @@ content/gratitude.json
 content/footer.md
 scripts/.env.deploy
 scripts/*.env.*
+admin/data/
 analytics.db
 analytics.db-shm
 analytics.db-wal
