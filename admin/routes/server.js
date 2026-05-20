@@ -439,8 +439,8 @@ router.post('/css', (req, res) => {
   fs.renameSync(cssTmp, cssFile);
   try { execSync('chown www-data:www-data ' + cssFile); } catch {}
   gitLib.autoCommit(site, 'Update custom CSS');
-  sitesLib.restartService(site.domain);
-  req.flash('success', 'CSS saved — service restarted');
+  sitesLib.bustCache(site).catch(() => {});
+  req.flash('success', 'CSS saved');
   res.redirect('/server/css');
 });
 
