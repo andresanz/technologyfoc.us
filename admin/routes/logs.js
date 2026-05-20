@@ -81,7 +81,7 @@ router.get('/fetch', (req, res) => {
   if (source === 'nginx') {
     const site = (req.query.site || '').replace(/[^a-zA-Z0-9._-]/g, '');
     const type = req.query.type === 'error' ? 'error' : 'access';
-    const file = `/var/log/nginx/${site}.${type}.log`;
+    const file = `/var/log/nginx/${site}-${type}.log`;
     content = run(`sudo /usr/bin/tail -n ${lines} "${file}" 2>&1`) || `(empty)`;
   } else if (source === 'journal') {
     const svc = (req.query.service || 'nginx').replace(/[^a-zA-Z0-9@._-]/g, '');
