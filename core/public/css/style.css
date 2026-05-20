@@ -55,8 +55,9 @@
   --max-w-wide: 960px;
 
   /* Fonts */
-  --font:    'Inter', system-ui, -apple-system, sans-serif;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font:       'Inter', system-ui, -apple-system, sans-serif;
+  --font-ui:    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-title: 'Raleway', system-ui, sans-serif;
   --mono:    'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', Menlo, Consolas, monospace;
 }
 
@@ -134,9 +135,10 @@ main.container:has(.home-page) { padding-top: 0; }
 }
 
 .site-title {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: var(--fs-lg);
+  font-family: var(--font-title);
+  font-weight: 300;
+  font-size: var(--fs-xl);
+  letter-spacing: .03em;
   color: var(--text);
   text-decoration: none;
   flex-shrink: 0;
