@@ -68,4 +68,29 @@
   <% } %>
 </div>
 
+<% if (typeof cfZones !== 'undefined') { %>
+<h2 style="font-size:1rem;margin-bottom:.5rem;margin-top:1.5rem">Cloudflare <span style="font-size:.8rem;font-weight:400;color:var(--muted)">(<%= cfZones.length %>)</span></h2>
+<div class="card" style="padding:1rem;color:var(--muted);font-size:.875rem">
+  <% if (cfZones.length) { %>
+    <table class="domain-table">
+      <thead><tr><th>Domain</th><th>Status</th><th>Plan</th><th>NS</th></tr></thead>
+      <tbody>
+      <% cfZones.forEach(z => { %>
+        <tr>
+          <td><%= z.name %></td>
+          <td><span style="color:<%= z.status==='active'?'var(--success, #16a34a)':'var(--danger)' %>"><%= z.status %></span></td>
+          <td style="color:var(--muted);font-size:.8rem"><%= z.plan && z.plan.name || '—' %></td>
+          <td style="font-size:.75rem;font-family:var(--mono);color:var(--muted)"><%= (z.name_servers||[]).slice(0,2).join(', ') %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  <% } else if (!process.env.CLOUDFLARE_TOKEN) { %>
+    Set <code>CLOUDFLARE_TOKEN</code> in <code>.env</code> to see Cloudflare zones.
+  <% } else { %>
+    No zones found.
+  <% } %>
+</div>
+<% } %>
+
 <%- include('partials/foot') %>

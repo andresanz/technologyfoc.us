@@ -46,6 +46,25 @@ function awsCli(cmd) {
   return JSON.parse(out);
 }
 
+async function cloudflareZones() {
+  const token = process.env.CLOUDFLARE_TOKEN;
+  if (!token) return [];
+  try {
+    const pages = [];
+    let page = 1, totalPages = 1;
+    while (page <= totalPages) {
+      const r = await fetch(`https://api.cloudflare.com/client/v4/zones?per_page=50&page=${page}`, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      }).then(r => r.json());
+      if (!r.success) break;
+      pages.push(...(r.result || []));
+      totalPages = r.result_info.total_pages;
+      page++;
+    }
+    return pages.sort((a, b) => a.name.localeCompare(b.name));
+  } catch { return []; }
+}
+
 async function route53Domains() {
   try {
     const { execSync } = require('child_process');
@@ -64,16 +83,17 @@ async function route53Domains() {
 // GET /domains
 router.get('/', async (req, res) => {
   try {
-    const [linodeData, r53domains] = await Promise.all([
+    const [linodeData, r53domains, cfZones] = await Promise.all([
       linodeGet('/domains?page_size=200'),
       route53Domains(),
+      cloudflareZones(),
     ]);
     console.log('[domains] linode results:', linodeData.results, 'errors:', linodeData.errors);
     const domains = (linodeData.data || []).sort((a, b) => a.domain.localeCompare(b.domain));
-    res.render('domains', { domains, r53domains, flash: req.flash() });
+    res.render('domains', { domains, r53domains, cfZones, flash: req.flash() });
   } catch (e) {
     console.error('[domains] error:', e);
-    res.render('domains', { domains: [], r53domains: [], error: e.message, flash: req.flash() });
+    res.render('domains', { domains: [], r53domains: [], cfZones: [], error: e.message, flash: req.flash() });
   }
 });
 
