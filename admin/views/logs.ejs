@@ -130,14 +130,12 @@ textarea.log-conf {
     <div class="log-sidebar-section">WAF</div>
     <a data-src="sysfile" data-file="nginx/modsec_audit.log" onclick="pick(this)">modsec_audit.log</a>
 
+    <% if (sysfiles.length) { %>
     <div class="log-sidebar-section">System</div>
-    <a data-src="sysfile" data-file="syslog" onclick="pick(this)">syslog</a>
-    <a data-src="sysfile" data-file="auth.log" onclick="pick(this)">auth.log</a>
-    <a data-src="sysfile" data-file="ufw.log" onclick="pick(this)">ufw.log</a>
-    <a data-src="sysfile" data-file="fail2ban.log" onclick="pick(this)">fail2ban.log</a>
-    <a data-src="sysfile" data-file="mail.log" onclick="pick(this)">mail.log</a>
-    <a data-src="sysfile" data-file="letsencrypt/letsencrypt.log" onclick="pick(this)">letsencrypt</a>
-    <a data-src="sysfile" data-file="unattended-upgrades/unattended-upgrades.log" onclick="pick(this)">unattended-upgrades</a>
+    <% sysfiles.forEach(function(f) { %>
+    <a data-src="sysfile" data-file="<%= f.file %>" onclick="pick(this)"><%= f.label %></a>
+    <% }) %>
+    <% } %>
   </nav>
 
   <!-- Main viewer -->

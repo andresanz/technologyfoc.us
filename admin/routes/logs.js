@@ -21,6 +21,20 @@ function nginxSites() {
   } catch { return []; }
 }
 
+const SYSFILES = [
+  { file: 'syslog',                                       label: 'syslog' },
+  { file: 'auth.log',                                     label: 'auth.log' },
+  { file: 'ufw.log',                                      label: 'ufw.log' },
+  { file: 'fail2ban.log',                                 label: 'fail2ban.log' },
+  { file: 'mail.log',                                     label: 'mail.log' },
+  { file: 'letsencrypt/letsencrypt.log',                  label: 'letsencrypt' },
+  { file: 'unattended-upgrades/unattended-upgrades.log',  label: 'unattended-upgrades' },
+];
+
+function availableSysfiles() {
+  return SYSFILES.filter(f => fs.existsSync(`/var/log/${f.file}`));
+}
+
 function journalServices() {
   const base = ['andresanz', 'andresanz-admin', 'andresanz-deploy', 'nginx', 'redis-server', 'fail2ban', 'postfix', 'ssh', 'cron'];
   return base;
@@ -53,9 +67,10 @@ function logDiskUsage() {
 // ── GET /logs ─────────────────────────────────────────────────────────────────
 router.get('/', (req, res) => {
   res.render('logs', {
-    sites:    nginxSites(),
-    services: journalServices(),
-    flash:    req.flash(),
+    sites:     nginxSites(),
+    services:  journalServices(),
+    sysfiles:  availableSysfiles(),
+    flash:     req.flash(),
   });
 });
 
