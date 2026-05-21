@@ -158,7 +158,7 @@ function getTimeline() {
 
 function getTotalEventCount() {
   try {
-    const out = execSync(`sudo wc -l "${AUDIT_LOG}" 2>/dev/null`, { timeout: 3000 }).toString().trim();
+    const out = execSync(`sudo grep -c '' "${AUDIT_LOG}" 2>/dev/null`, { timeout: 3000 }).toString().trim();
     return parseInt(out) || 0;
   } catch { return 0; }
 }
