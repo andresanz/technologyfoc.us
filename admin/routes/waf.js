@@ -134,6 +134,13 @@ function parseModSecTime(raw) {
   return raw.slice(0,19).replace('T',' ');
 }
 
+function getTotalEventCount() {
+  try {
+    const n = execSync(`sudo wc -l < "${AUDIT_LOG}" 2>/dev/null`, { timeout: 3000 }).toString().trim();
+    return parseInt(n) || 0;
+  } catch { return 0; }
+}
+
 function getEvents(limit = 200) {
   if (!fs.existsSync(AUDIT_LOG)) return [];
   try {
@@ -167,7 +174,7 @@ function getEvents(limit = 200) {
   } catch { return []; }
 }
 
-function getStats(events) {
+function getStats(events, totalInLog = 0) {
   const today = new Date().toISOString().slice(0, 10);
   const todayCount = events.filter(e => e.time && e.time.startsWith(today)).length;
   const ipMap = {}, ipMeta = {}, ruleMap = {};
@@ -182,7 +189,8 @@ function getStats(events) {
   }
   return {
     today:    todayCount,
-    total:    events.length,
+    loaded:   events.length,
+    total:    totalInLog,
     topIps:   Object.entries(ipMap).sort((a,b) => b[1]-a[1]).slice(0,5)
                 .map(([ip, cnt]) => ({ ip, cnt, ...ipMeta[ip] })),
     topRules: Object.entries(ruleMap).sort((a,b) => b[1]-a[1]).slice(0,5),
@@ -197,7 +205,8 @@ router.get('/', async (req, res) => {
   const events     = await addGeo(raw);
   const exclusions = getExclusions();
   const blocks     = getBlocks();
-  const stats      = getStats(events);
+  const totalInLog = installed ? getTotalEventCount() : 0;
+  const stats      = getStats(events, totalInLog);
   res.render('waf', { site: req.site, installed, mode, events, exclusions, blocks, stats, flash: req.flash() });
 });
 
