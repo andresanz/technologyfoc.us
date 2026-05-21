@@ -183,10 +183,15 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
   .post-table thead { display: none; }
   .post-table, .post-table tbody, .post-table tr, .post-table td { display: block; width: 100%; }
   .post-table tr { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: .75rem; padding: .75rem; }
-  .post-table td { border: none; padding: .2rem 0; }
-  .post-table td:first-child { font-weight: 600; font-size: .95rem; margin-bottom: .25rem; }
+  .post-table td { border: none; padding: 0; }
+  .post-table td:first-child { font-weight: 600; font-size: .95rem; margin-bottom: .4rem; }
   .post-table td[data-label]::before { content: attr(data-label) ": "; font-size: .75rem; color: var(--muted); }
-  .row-actions { margin-top: .5rem; }
+  /* meta cells (visibility, date, tags, status) flow inline */
+  .post-table td:not(:first-child):not(:last-child) {
+    display: inline-flex; align-items: center;
+    width: auto; padding: 0; margin-right: .5rem; margin-bottom: .2rem;
+  }
+  .row-actions { margin-top: .6rem; }
 }
 
 /* ── Post editor ─────────────────────────────────────────────────────────── */
