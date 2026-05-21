@@ -1,0 +1,57 @@
+<%
+  locals.pageTitle = 'Contact';
+  locals.canonical = '/contact';
+-%>
+<%- include('layout') %>
+
+<div class="page-header">
+  <h1>Contact</h1>
+</div>
+
+<div class="post-body" style="max-width:560px">
+
+<% if (success) { %>
+  <div class="callout callout-tip" style="margin-bottom:2rem">
+    <strong>Message sent.</strong> I'll get back to you soon.
+  </div>
+<% } else { %>
+
+  <% if (error) { %>
+    <div class="callout callout-danger" style="margin-bottom:1.5rem"><%= error %></div>
+  <% } %>
+
+  <form method="POST" action="/contact" novalidate>
+
+    <!-- Honeypot — hidden from real users -->
+    <div style="display:none" aria-hidden="true">
+      <label for="_hp">Leave this blank</label>
+      <input type="text" id="_hp" name="_hp" tabindex="-1" autocomplete="off">
+    </div>
+
+    <label style="display:block;margin-bottom:1.25rem">
+      <span class="form-label">Name</span>
+      <input type="text" name="name" value="<%= values.name || '' %>"
+             required autocomplete="name"
+             style="display:block;width:100%;margin-top:.35rem">
+    </label>
+
+    <label style="display:block;margin-bottom:1.25rem">
+      <span class="form-label">Email</span>
+      <input type="email" name="email" value="<%= values.email || '' %>"
+             required autocomplete="email"
+             style="display:block;width:100%;margin-top:.35rem">
+    </label>
+
+    <label style="display:block;margin-bottom:1.5rem">
+      <span class="form-label">Message</span>
+      <textarea name="message" required rows="6"
+                style="display:block;width:100%;margin-top:.35rem;resize:vertical"><%= values.message || '' %></textarea>
+    </label>
+
+    <button type="submit" class="btn btn-primary">Send message</button>
+  </form>
+
+<% } %>
+</div>
+
+<%- include('layout-end') %>

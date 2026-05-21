@@ -330,6 +330,24 @@ body.private { background: var(--bg); }
 .editor-status.error { color: #a02020; }
 .editor-actions { display: flex; gap: 0.5rem; }
 
+/* ── Contact form ────────────────────────────────────────────────────── */
+.form-label { font-size: .85rem; font-weight: 600; color: var(--text); }
+.post-body input[type="text"],
+.post-body input[type="email"],
+.post-body textarea {
+  width: 100%; padding: .55rem .75rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--text);
+  font-size: .95rem; font-family: inherit;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.post-body input:focus,
+.post-body textarea:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
 .editor-pane { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; height: calc(100vh - 22rem); min-height: 30rem; }
 .editor-col, .preview-col { display: flex; flex-direction: column; }
 .editor-col h3, .preview-col h3 { font-size: 0.8rem; text-transform: uppercase; color: var(--muted); margin: 0 0 0.4rem; }
