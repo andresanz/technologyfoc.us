@@ -1,11 +1,12 @@
 ---
 title: Finish
-date: '2026-04-22'
+date: '2026-04-22T16:00'
+slug: finish
 tags:
   - leadership
   - finish
+image: 'https://andresanz.com/images/1775576408156-d2565c1be689707e.jpg'
 ---
-![Finish](https://andresanz.com/images/1776867300776-e2c34e6249a6.webp)
 
 **The Problem**: Every day I’m faced with a new set of things to do, and as a manager, I need to decide who on the team is best to do them. Some things are easy and quick wins, but most are not. Some are area-focused (for example, Business Continuity tasks are given to the Business Continuity manager, and not the finance manager), but all of these things are incomplete, nebulous, unclear and difficult to get off the ground.
 
