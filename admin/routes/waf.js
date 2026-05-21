@@ -113,9 +113,9 @@ function saveBlocks(list) {
   let id = 9500;
   for (const b of list) {
     const bid = b.id || id++;
-    if (b.type === 'uri')  lines.push(`SecRule REQUEST_URI "@contains ${b.value}" "id:${bid},phase:1,deny,status:403,log,msg:'Blocked URI: ${b.note || b.value}'"`);
-    if (b.type === 'ip')   lines.push(`SecRule REMOTE_ADDR "@ipMatch ${b.value}" "id:${bid},phase:1,deny,status:403,log,msg:'Blocked IP: ${b.note || b.value}'"`);
-    if (b.type === 'ua')   lines.push(`SecRule REQUEST_HEADERS:User-Agent "@contains ${b.value}" "id:${bid},phase:1,deny,status:403,log,msg:'Blocked UA: ${b.note || b.value}'"`);
+    if (b.type === 'uri')  lines.push(`SecRule REQUEST_URI "@contains ${b.value}" "id:${bid},phase:2,deny,status:403,log,msg:'Blocked URI: ${b.note || b.value}'"`);
+    if (b.type === 'ip')   lines.push(`SecRule REMOTE_ADDR "@ipMatch ${b.value}" "id:${bid},phase:2,deny,status:403,log,msg:'Blocked IP: ${b.note || b.value}'"`);
+    if (b.type === 'ua')   lines.push(`SecRule REQUEST_HEADERS:User-Agent "@contains ${b.value}" "id:${bid},phase:2,deny,status:403,log,msg:'Blocked UA: ${b.note || b.value}'"`);
   }
   fs.writeFileSync(BLOCK_RULES, lines.join('\n') + '\n', 'utf8');
   run('sudo systemctl reload nginx');
