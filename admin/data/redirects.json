@@ -81,11 +81,11 @@
   },
   {
     "domain": "server02.andresanz.com",
-    "to": "https://admin.server02.andresanz.com",
+    "to": "https://admin.andresanz.com",
     "code": 301,
     "note": "",
     "preservePath": false,
-    "updatedAt": "2026-04-27T23:09:38.788Z"
+    "updatedAt": "2026-05-21T18:50:59.155Z"
   },
   {
     "domain": "andresanz.me",
