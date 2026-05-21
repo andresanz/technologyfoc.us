@@ -1,6 +1,6 @@
 ---
 title: André Sanz
-date: '2026-05-18T08:00'
+date: '2026-05-18T12:00'
 slug: home
 nav: true
 ---
@@ -10,4 +10,3 @@ nav: true
 	</style>
 	
 welcome to [andresanz.com](https://andresanz.com).  **what is it..?**  I don't know just yet, but if you're looking for André **the corporate employee**, click [here]
-:::
