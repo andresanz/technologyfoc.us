@@ -1,6 +1,6 @@
 ---
 title: About
-date: '2026-05-15T14:38'
+date: '2026-05-15T18:38'
 slug: about
 nav: true
 ---
@@ -11,7 +11,7 @@ Hi! I'm André, a Director-level leader and enterprise cyber risk executive with
 
 My work has centered on helping large, regulated organizations reduce cyber exposure, close audit findings, and drive real remediation — not just reporting risk, but driving it to resolution.
 
-***Want to connect?*** Send me an ***[email](mailto:sanz.andre@gmail.com)***, give me a ***[call](tel:+19146596430)***, grab a copy of my ***[resume](https://docs.google.com/document/d/14CzfI7PGRZkrvkIR2bEhIhwH1NvhUnWE/edit?usp=sharing&ouid=115116554809636474259&rtpof=true&sd=true)***, or connect via ***[LinkedIn](https://www.linkedin.com/in/andresanz/)***.
+***Want to connect?*** Send me an **[email](mailto:sanz.andre@gmail.com)**, give me a **[call](tel:+19146596430)**, grab a copy of my **[resume](https://docs.google.com/document/d/14CzfI7PGRZkrvkIR2bEhIhwH1NvhUnWE/edit?usp=sharing&ouid=115116554809636474259&rtpof=true&sd=true)**, or connect via **[LinkedIn](https://www.linkedin.com/in/andresanz/)**.
 
 <div style="clear:both"></div>
 
