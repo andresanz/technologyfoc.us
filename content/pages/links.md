@@ -1,8 +1,9 @@
 ---
 title: Links
-date: '2026-05-20T16:00'
+date: '2026-05-20T20:00'
 slug: links
 nav: true
 ---
 
-* [Google](https://google.com)
+##Google Sites
+* [Google Search](https://google.com)
