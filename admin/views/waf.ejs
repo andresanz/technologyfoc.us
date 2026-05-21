@@ -128,6 +128,13 @@
   </div>
 </div>
 
+<!-- Timeline chart -->
+<div class="section-title">Events over time</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1.5rem;position:relative;min-height:120px">
+  <canvas id="timelineChart" height="90"></canvas>
+  <div id="timelineEmpty" style="display:none;color:var(--muted);font-size:.85rem;text-align:center;padding:2rem 0">No data yet</div>
+</div>
+
 <!-- Event log -->
 <div class="section-title" style="display:flex;align-items:center;gap:.75rem">
   Recent events
@@ -266,6 +273,47 @@
 <% } %>
 
 <% } %>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(async function initTimeline() {
+  try {
+    const { labels, counts } = await fetch('/waf/timeline').then(r => r.json());
+    if (!labels || !labels.length) {
+      document.getElementById('timelineEmpty').style.display = 'block';
+      document.getElementById('timelineChart').style.display = 'none';
+      return;
+    }
+    const isDark = document.documentElement.classList.contains('dark') ||
+                   window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridColor  = isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.07)';
+    const labelColor = isDark ? '#9ca3af' : '#6b7280';
+    const barColor   = 'rgba(220,38,38,.75)';
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ data: counts, backgroundColor: barColor, borderRadius: 3, borderSkipped: false }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { title: t => t[0].label, label: t => `${t.raw} event${t.raw !== 1 ? 's' : ''}` }
+        }},
+        scales: {
+          x: { ticks: { color: labelColor, font: { size: 11 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 14 }, grid: { color: gridColor } },
+          y: { ticks: { color: labelColor, font: { size: 11 }, precision: 0 }, grid: { color: gridColor }, beginAtZero: true }
+        }
+      }
+    });
+  } catch (err) {
+    document.getElementById('timelineEmpty').style.display = 'block';
+    document.getElementById('timelineChart').style.display = 'none';
+  }
+})();
+</script>
 
 <script>
 let lastTs = '<%= events[0] ? (events[0].time||'').slice(0,19) : "" %>';
