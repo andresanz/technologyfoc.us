@@ -7,8 +7,8 @@ const FILE = path.join(__dirname, '..', 'data', 'sharp-settings.json');
 
 const DEFAULTS = {
   maxWidth: 2400,
-  jpegQ:    85,
-  webpQ:    85,
+  jpegQ:    90,
+  webpQ:    90,
   pngEffort: 7,
 };
 
