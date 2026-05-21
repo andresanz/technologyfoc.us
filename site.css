@@ -331,7 +331,7 @@ body.private { background: var(--bg); }
 .editor-actions { display: flex; gap: 0.5rem; }
 
 /* ── Contact form ────────────────────────────────────────────────────── */
-.contact-wrap { max-width: 520px; margin: 2rem 0; }
+.contact-wrap { max-width: 520px; margin: 2rem auto; }
 .contact-field { margin-bottom: 1.25rem; }
 .contact-field label { display: block; font-size: .85rem; font-weight: 500; color: var(--text); margin-bottom: .35rem; }
 .contact-form input[type="text"],
