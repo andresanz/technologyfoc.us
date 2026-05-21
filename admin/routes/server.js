@@ -238,7 +238,7 @@ router.get('/nginx', (req, res) => {
     try { config = fs.readFileSync(`${availDir}/${selected}`, 'utf8'); } catch {}
   }
 
-  const testResult    = run('sudo nginx -t 2>&1');
+  const testResult    = run('sudo /usr/sbin/nginx -t 2>&1');
   const testOk        = testResult.includes('test is successful');
   const serverTokens  = getServerTokens();
 
@@ -260,8 +260,8 @@ router.post('/nginx/server-tokens', (req, res) => {
     }
 
     fs.writeFileSync(NGINX_CONF, raw, 'utf8');
-    const test = run('sudo nginx -t 2>&1');
-    if (test.includes('failed')) {
+    const test = run('sudo /usr/sbin/nginx -t 2>&1');
+    if (test.includes('failed') || test.includes('sudo:')) {
       req.flash('error', `nginx test failed — reverted: ${test}`);
       // revert
       raw = raw.replace(/^(\s*server_tokens\s+)(on|off)(\s*;)/m, `$1${current}$3`);
@@ -296,8 +296,8 @@ router.post('/nginx/save', (req, res) => {
   }
 
   // Test config
-  const test = run('sudo nginx -t 2>&1');
-  if (test.includes('failed')) {
+  const test = run('sudo /usr/sbin/nginx -t 2>&1');
+  if (test.includes('failed') || test.includes('sudo:')) {
     req.flash('error', `Saved but nginx test failed: ${test}`);
   } else {
     run('sudo systemctl reload nginx');
