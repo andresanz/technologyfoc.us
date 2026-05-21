@@ -4,23 +4,21 @@
 -%>
 <%- include('layout') %>
 
-<div class="page-header">
-  <h1>Contact</h1>
-</div>
+<h1 class="page-title">Contact</h1>
 
-<div class="post-body" style="max-width:560px">
+<div class="contact-wrap">
 
 <% if (success) { %>
-  <div class="callout callout-tip" style="margin-bottom:2rem">
+  <div class="callout callout-tip">
     <strong>Message sent.</strong> I'll get back to you soon.
   </div>
 <% } else { %>
 
   <% if (error) { %>
-    <div class="callout callout-danger" style="margin-bottom:1.5rem"><%= error %></div>
+    <div class="callout callout-danger" style="margin-bottom:var(--s-5)"><%= error %></div>
   <% } %>
 
-  <form method="POST" action="/contact" novalidate>
+  <form class="contact-form" method="POST" action="/contact" novalidate>
 
     <!-- Honeypot — hidden from real users -->
     <div style="display:none" aria-hidden="true">
@@ -28,27 +26,24 @@
       <input type="text" id="_hp" name="_hp" tabindex="-1" autocomplete="off">
     </div>
 
-    <label style="display:block;margin-bottom:1.25rem">
-      <span class="form-label">Name</span>
-      <input type="text" name="name" value="<%= values.name || '' %>"
-             required autocomplete="name"
-             style="display:block;width:100%;margin-top:.35rem">
-    </label>
+    <div class="contact-field">
+      <label for="c-name">Name</label>
+      <input type="text" id="c-name" name="name" value="<%= values.name || '' %>"
+             required autocomplete="name">
+    </div>
 
-    <label style="display:block;margin-bottom:1.25rem">
-      <span class="form-label">Email</span>
-      <input type="email" name="email" value="<%= values.email || '' %>"
-             required autocomplete="email"
-             style="display:block;width:100%;margin-top:.35rem">
-    </label>
+    <div class="contact-field">
+      <label for="c-email">Email</label>
+      <input type="email" id="c-email" name="email" value="<%= values.email || '' %>"
+             required autocomplete="email">
+    </div>
 
-    <label style="display:block;margin-bottom:1.5rem">
-      <span class="form-label">Message</span>
-      <textarea name="message" required rows="6"
-                style="display:block;width:100%;margin-top:.35rem;resize:vertical"><%= values.message || '' %></textarea>
-    </label>
+    <div class="contact-field">
+      <label for="c-message">Message</label>
+      <textarea id="c-message" name="message" required rows="6"><%= values.message || '' %></textarea>
+    </div>
 
-    <button type="submit" class="btn btn-primary">Send message</button>
+    <button type="submit" class="contact-submit">Send message</button>
   </form>
 
 <% } %>

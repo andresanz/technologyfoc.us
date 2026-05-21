@@ -331,22 +331,30 @@ body.private { background: var(--bg); }
 .editor-actions { display: flex; gap: 0.5rem; }
 
 /* ── Contact form ────────────────────────────────────────────────────── */
-.form-label { font-size: .85rem; font-weight: 600; color: var(--text); }
-.post-body input[type="text"],
-.post-body input[type="email"],
-.post-body textarea {
-  width: 100%; padding: .55rem .75rem;
-  border: 1px solid var(--border); border-radius: 6px;
-  background: var(--surface); color: var(--text);
+.contact-wrap { max-width: 520px; margin: 2rem 0; }
+.contact-field { margin-bottom: 1.25rem; }
+.contact-field label { display: block; font-size: .85rem; font-weight: 500; color: var(--text); margin-bottom: .35rem; }
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: .5rem .75rem;
   font-size: .95rem; font-family: inherit;
-  transition: border-color .15s;
-  box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: var(--radius, 6px);
+  background: var(--surface); color: var(--text);
+  outline: none; transition: border-color .15s;
 }
-.post-body input:focus,
-.post-body textarea:focus {
-  outline: none; border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+.contact-form input:focus,
+.contact-form textarea:focus { border-color: var(--accent); }
+.contact-form textarea { resize: vertical; min-height: 130px; }
+.contact-submit {
+  padding: .5rem 1.25rem;
+  font-size: .9rem; font-weight: 500;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius, 6px);
+  cursor: pointer; transition: background .15s;
 }
+.contact-submit:hover { background: var(--accent-h, var(--accent)); }
 
 .editor-pane { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; height: calc(100vh - 22rem); min-height: 30rem; }
 .editor-col, .preview-col { display: flex; flex-direction: column; }
