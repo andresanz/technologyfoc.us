@@ -263,7 +263,8 @@ router.post('/exclusions/add', (req, res) => {
   const { type, value, note } = req.body;
   if (!type || !value) { req.flash('error', 'Type and value required'); return res.redirect('/waf'); }
   const list   = getExclusions();
-  const nextId = 9000 + list.length + 1;
+  const maxId  = list.reduce((m, e) => Math.max(m, e.id || 0), 9000);
+  const nextId = maxId + 1;
   list.push({ id: nextId, type, value: value.trim(), note: (note || '').trim(), createdAt: new Date().toISOString() });
   try {
     saveExclusions(list);
@@ -292,7 +293,8 @@ router.post('/blocks/add', (req, res) => {
   const { type, value, note } = req.body;
   if (!type || !value) { req.flash('error', 'Type and value required'); return res.redirect('/waf'); }
   const list   = getBlocks();
-  const nextId = 9500 + list.length + 1;
+  const maxId  = list.reduce((m, b) => Math.max(m, b.id || 0), 9500);
+  const nextId = maxId + 1;
   list.push({ id: nextId, type, value: value.trim(), note: (note || '').trim(), createdAt: new Date().toISOString() });
   try {
     saveBlocks(list);
