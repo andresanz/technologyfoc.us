@@ -134,10 +134,32 @@ function parseModSecTime(raw) {
   return raw.slice(0,19).replace('T',' ');
 }
 
+function getTimeline() {
+  try {
+    // Pull only the time_stamp field — fast, no full JSON parse
+    const raw = execSync(
+      `sudo grep -o '"time_stamp":"[^"]*"' "${AUDIT_LOG}" 2>/dev/null`,
+      { timeout: 10000, maxBuffer: 10 * 1024 * 1024 }
+    ).toString();
+    const MO = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+    const counts = {};
+    for (const line of raw.split('\n')) {
+      // "Wed May 21 10:05:47 2026"
+      const m = line.match(/(\w{3})\s+(\d{1,2})\s+\d{2}:\d{2}:\d{2}\s+(\d{4})/);
+      if (m) {
+        const date = `${m[3]}-${MO[m[1]] || '00'}-${String(m[2]).padStart(2,'0')}`;
+        counts[date] = (counts[date] || 0) + 1;
+      }
+    }
+    const sorted = Object.entries(counts).sort(([a],[b]) => a.localeCompare(b)).slice(-30);
+    return { labels: sorted.map(([d]) => d), counts: sorted.map(([,c]) => c) };
+  } catch { return { labels: [], counts: [] }; }
+}
+
 function getTotalEventCount() {
   try {
-    const n = execSync(`sudo wc -l < "${AUDIT_LOG}" 2>/dev/null`, { timeout: 3000 }).toString().trim();
-    return parseInt(n) || 0;
+    const out = execSync(`sudo wc -l "${AUDIT_LOG}" 2>/dev/null`, { timeout: 3000 }).toString().trim();
+    return parseInt(out) || 0;
   } catch { return 0; }
 }
 
@@ -196,6 +218,11 @@ function getStats(events, totalInLog = 0) {
     topRules: Object.entries(ruleMap).sort((a,b) => b[1]-a[1]).slice(0,5),
   };
 }
+
+// ── GET /waf/timeline ─────────────────────────────────────────────────────────
+router.get('/timeline', (req, res) => {
+  res.json(isInstalled() ? getTimeline() : { labels: [], counts: [] });
+});
 
 // ── GET /waf ──────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
