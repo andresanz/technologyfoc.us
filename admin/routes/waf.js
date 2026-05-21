@@ -137,7 +137,7 @@ function parseModSecTime(raw) {
 function getEvents(limit = 200) {
   if (!fs.existsSync(AUDIT_LOG)) return [];
   try {
-    const raw = execSync(`tail -n 5000 "${AUDIT_LOG}" 2>/dev/null`, { timeout: 5000 }).toString();
+    const raw = execSync(`tail -n 2000 "${AUDIT_LOG}" 2>/dev/null`, { timeout: 5000, maxBuffer: 20 * 1024 * 1024 }).toString();
     const events = [];
     for (const line of raw.split('\n')) {
       if (!line.trim()) continue;
