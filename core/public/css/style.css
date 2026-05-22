@@ -749,9 +749,9 @@ sup.footnote-ref a { color: var(--accent); text-decoration: none; font-size: .75
   font-size: var(--fs-sm);
   font-family: var(--font-ui);
   font-weight: 600;
-  background: var(--text);
-  color: var(--bg);
-  border: 1px solid var(--text);
+  background: #1f1b16;
+  color: #f5f1ea;
+  border: 1px solid #1f1b16;
   border-radius: var(--radius-sm);
   cursor: pointer;
   letter-spacing: .01em;
