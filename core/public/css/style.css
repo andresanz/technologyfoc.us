@@ -748,16 +748,16 @@ sup.footnote-ref a { color: var(--accent); text-decoration: none; font-size: .75
   padding: var(--s-3) var(--s-5);
   font-size: var(--fs-sm);
   font-family: var(--font-ui);
-  font-weight: 500;
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--border);
+  font-weight: 600;
+  background: var(--text);
+  color: var(--bg);
+  border: 1px solid var(--text);
   border-radius: var(--radius-sm);
   cursor: pointer;
   letter-spacing: .01em;
-  transition: color .15s, border-color .15s;
+  transition: opacity .15s;
 }
-.contact-submit:hover { color: var(--text); border-color: var(--text); }
+.contact-submit:hover { opacity: .8; }
 
 /* ── Video ───────────────────────────────────────────────── */
 .video-wrap {
