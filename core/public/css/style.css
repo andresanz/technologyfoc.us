@@ -395,6 +395,8 @@ main.container:has(.home-page) { padding-top: 0; }
 .post-header { margin-bottom: var(--s-3); }
 .post-header h1 {
   display: block;
+  font-family: var(--font-ui);
+  font-weight: 100;
   font-size: var(--fs-3xl);
   line-height: var(--lh-tight);
   margin: 0 0 var(--s-2);
