@@ -394,7 +394,7 @@ main.container:has(.home-page) { padding-top: 0; }
 /* ── Single post ─────────────────────────────────────────────────────────── */
 .post-header { margin-bottom: var(--s-3); }
 .post-header h1 {
-  display: none;
+  display: block;
   font-size: var(--fs-3xl);
   line-height: var(--lh-tight);
   margin: 0 0 var(--s-2);
