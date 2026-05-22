@@ -8,3 +8,7 @@
 .site-footer {
     padding: 0rem 0;
 }
+
+body {
+color: $F5F5F5;
+}
