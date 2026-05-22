@@ -2,7 +2,28 @@
 
 const express      = require('express');
 const nodemailer   = require('nodemailer');
+const crypto       = require('crypto');
 const router       = express.Router();
+
+// ── Timed token — reject submissions faster than MIN_SECONDS ─────────────────
+const TOKEN_SECRET  = process.env.SESSION_SECRET || 'fallback';
+const MIN_SECONDS   = 4;
+
+function makeToken() {
+  const ts  = Date.now().toString();
+  const sig = crypto.createHmac('sha256', TOKEN_SECRET).update(ts).digest('hex').slice(0, 16);
+  return `${ts}.${sig}`;
+}
+
+function checkToken(token) {
+  if (!token) return false;
+  const [ts, sig] = token.split('.');
+  if (!ts || !sig) return false;
+  const expected = crypto.createHmac('sha256', TOKEN_SECRET).update(ts).digest('hex').slice(0, 16);
+  if (sig !== expected) return false;
+  const elapsed = (Date.now() - parseInt(ts, 10)) / 1000;
+  return elapsed >= MIN_SECONDS;
+}
 
 // ── In-memory rate limiter: max 3 submissions per IP per hour ─────────────────
 const ratemap = new Map(); // ip → [timestamps]
@@ -45,6 +66,7 @@ router.get('/contact', (req, res) => {
     success: false,
     error:   null,
     values:  {},
+    token:   makeToken(),
   });
 });
 
@@ -52,11 +74,22 @@ router.get('/contact', (req, res) => {
 router.post('/contact', async (req, res) => {
   const site   = res.app.locals.siteConfig();
   const render = (error, success = false) =>
-    res.render('contact', { site, success, error, values: req.body });
+    res.render('contact', { site, success, error, values: req.body, token: makeToken() });
 
   // Honeypot — bots fill this, humans don't see it
   if (req.body._hp && req.body._hp.trim()) {
-    return render(null, true); // silently succeed for bots
+    return render(null, true);
+  }
+
+  // Timed token — bots submit too fast
+  if (!checkToken(req.body._t)) {
+    return render(null, true); // silently succeed
+  }
+
+  // Block messages containing URLs
+  const rawMessage = req.body.message || '';
+  if (/https?:\/\/|www\./i.test(rawMessage)) {
+    return render('Message cannot contain links.');
   }
 
   const name    = (req.body.name    || '').trim().slice(0, 200);
