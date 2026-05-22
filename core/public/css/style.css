@@ -113,7 +113,7 @@ img { max-width: 100%; height: auto; display: block; }
   padding: 0 var(--s-4);
 }
 
-main.container { padding-top: var(--s-4); padding-bottom: 0; }
+main.container { padding-top: var(--s-4); padding-bottom: 0; flex: 1; }
 main.container:has(.home-page) { padding-top: 0; }
 .home-page .post-body > *:first-child { margin-top: 0; }
 .home-page .post-body > .shortcode-posts { margin-top: 0; }
