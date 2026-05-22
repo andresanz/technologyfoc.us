@@ -132,7 +132,11 @@
               </form>
               <a href="/sites/<%= s.domain %>/settings" class="btn btn-sm">Settings</a>
             <% } %>
-            <button class="btn btn-sm" onclick="openStateModal('<%= s.domain %>','<%= s.state %>','<%= (s.redirectTo||'').replace(/'/g,\"\\\\'\" ) %>')">
+            <button class="btn btn-sm"
+                    data-domain="<%= s.domain %>"
+                    data-state="<%= s.state %>"
+                    data-redirect="<%= s.redirectTo || '' %>"
+                    onclick="openStateModal(this)">
               Change state
             </button>
             <form method="POST" action="/sites/<%= s.domain %>/remove" class="state-form"
@@ -181,13 +185,15 @@ function toggleRedirectTo(val) {
   document.getElementById('redirectToWrap').style.display = val === 'redirect' ? '' : 'none';
 }
 
-function openStateModal(domain, currentState, currentRedirect) {
+function openStateModal(btn) {
+  const domain   = btn.dataset.domain;
+  const redirect = btn.dataset.redirect || '';
   document.getElementById('modalTitle').textContent = 'Change state: ' + domain;
   document.getElementById('stateForm').action = '/sites/' + domain + '/state';
   document.getElementById('stateInput').value = '';
-  document.getElementById('redirectToInput').value = currentRedirect || '';
+  document.getElementById('redirectToInput').value = redirect;
   document.getElementById('redirectPrompt').style.display = 'none';
-  document.getElementById('redirectTargetInput').value = currentRedirect || '';
+  document.getElementById('redirectTargetInput').value = redirect;
   document.getElementById('confirmBtn').style.display = 'none';
   document.getElementById('stateModal').classList.add('open');
 }
