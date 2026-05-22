@@ -241,7 +241,7 @@ main.container:has(.home-page) { padding-top: 0; }
   .nav-dropdown-toggle:hover { background: none; color: var(--text); }
   .nav-dropdown-menu {
     position: absolute; top: calc(100% + var(--s-2)); left: 0;
-    background: var(--bg); border: 1px solid var(--border);
+    background: #f5f5f5; border: 1px solid var(--border);
     border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0,0,0,.1);
     padding: var(--s-1) 0; min-width: 130px; z-index: 200;
   }
