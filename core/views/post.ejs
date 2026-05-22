@@ -16,14 +16,15 @@
         <a href="/tag/<%= t %>" class="tag"><%= t %></a>
       <% }) %>
     </div>
-    <% if (post.coverImage) { %>
-      <img class="post-cover-full lb-img" src="<%= post.coverImage %>" alt="<%= post.title %>" style="cursor:zoom-in">
-    <% } %>
   </header>
 
   <div class="post-body<%= post.coverImage ? ' has-cover' : '' %>">
     <%- post.html %>
   </div>
+
+  <% if (post.coverImage) { %>
+    <img class="post-cover-full lb-img" src="<%= post.coverImage %>" alt="<%= post.title %>" style="cursor:zoom-in;margin-top:var(--s-4)">
+  <% } %>
 
   <footer class="post-footer">
     <div class="post-nav">
