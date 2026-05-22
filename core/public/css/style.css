@@ -292,12 +292,12 @@ main.container:has(.home-page) { padding-top: 0; }
 .post-card {
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
   position: relative;
   transition: box-shadow .15s, transform .15s;
 }
-.post-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.08); transform: translateY(-2px); }
+.post-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.12); transform: translateY(-2px); }
 
 /* Stretched link — whole card is clickable */
 .card-link { position: absolute; inset: 0; z-index: 1; }
