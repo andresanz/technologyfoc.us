@@ -9,6 +9,6 @@
   padding: 0rem 0;
 }
 
-body {
+* {
   background: $F5F5F5 !important;
 }
