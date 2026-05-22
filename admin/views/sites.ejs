@@ -126,23 +126,27 @@
         <!-- Actions -->
         <td>
           <div class="action-row">
-            <% if (s.state === 'live') { %>
-              <form method="POST" action="/sites/<%= s.domain %>/restart" class="state-form">
-                <button type="submit" class="btn btn-sm">Restart</button>
+            <% if (s.managed === 'redirects') { %>
+              <a href="/redirects" class="btn btn-sm">Manage →</a>
+            <% } else { %>
+              <% if (s.state === 'live') { %>
+                <form method="POST" action="/sites/<%= s.domain %>/restart" class="state-form">
+                  <button type="submit" class="btn btn-sm">Restart</button>
+                </form>
+                <a href="/sites/<%= s.domain %>/settings" class="btn btn-sm">Settings</a>
+              <% } %>
+              <button class="btn btn-sm"
+                      data-domain="<%= s.domain %>"
+                      data-state="<%= s.state %>"
+                      data-redirect="<%= s.redirectTo || '' %>"
+                      onclick="openStateModal(this)">
+                Change state
+              </button>
+              <form method="POST" action="/sites/<%= s.domain %>/remove" class="state-form"
+                    onsubmit="return confirm('Remove <%= s.domain %> from registry?')">
+                <button type="submit" class="btn btn-sm btn-danger">×</button>
               </form>
-              <a href="/sites/<%= s.domain %>/settings" class="btn btn-sm">Settings</a>
             <% } %>
-            <button class="btn btn-sm"
-                    data-domain="<%= s.domain %>"
-                    data-state="<%= s.state %>"
-                    data-redirect="<%= s.redirectTo || '' %>"
-                    onclick="openStateModal(this)">
-              Change state
-            </button>
-            <form method="POST" action="/sites/<%= s.domain %>/remove" class="state-form"
-                  onsubmit="return confirm('Remove <%= s.domain %> from registry?')">
-              <button type="submit" class="btn btn-sm btn-danger">×</button>
-            </form>
           </div>
         </td>
       </tr>

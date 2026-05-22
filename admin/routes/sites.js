@@ -9,7 +9,8 @@ const { execSync } = require('child_process');
 const sitesLib = require('../lib/sites');
 const nginx    = require('../lib/nginx');
 
-const REGISTRY = path.join(__dirname, '../sites.json');
+const REGISTRY     = path.join(__dirname, '../sites.json');
+const REDIRECTS_DB = path.join(__dirname, '../data/redirects.json');
 
 // ── Registry helpers ──────────────────────────────────────────────────────────
 
@@ -26,13 +27,32 @@ function findSite(list, domain) {
   return list.find(s => s.domain === domain);
 }
 
+function readManagedRedirects() {
+  try { return JSON.parse(fs.readFileSync(REDIRECTS_DB, 'utf8')); }
+  catch { return []; }
+}
+
 // ── GET /sites ────────────────────────────────────────────────────────────────
 
 router.get('/', (req, res) => {
   const registry = readRegistry();
+  const registryDomains = new Set(registry.map(s => s.domain));
+
+  // Pull in domains managed by /redirects that aren't already in sites.json
+  const managedRedirects = readManagedRedirects()
+    .filter(r => !registryDomains.has(r.domain))
+    .map(r => ({
+      domain:     r.domain,
+      state:      'redirect',
+      redirectTo: r.to,
+      note:       r.note || '',
+      managed:    'redirects', // flag: managed by /redirects, not sites.json
+    }));
+
+  const combined = [...registry, ...managedRedirects];
 
   // Enrich live sites with runtime data from lib/sites
-  const sites = registry.map(entry => {
+  const sites = combined.map(entry => {
     const enriched = { ...entry };
     if (entry.state === 'live') {
       const runtime = sitesLib.getSite(entry.domain);
