@@ -712,6 +712,53 @@ sup.footnote-ref a { color: var(--accent); text-decoration: none; font-size: .75
 .search-count  { color: var(--muted); margin-bottom: var(--s-5); }
 .search-empty  { color: var(--muted); }
 
+/* ── Contact ─────────────────────────────────────────────────────────────── */
+.contact-wrap { max-width: 520px; margin: 0 auto; }
+
+.contact-field { margin-bottom: var(--s-4); }
+.contact-field label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: var(--s-1);
+  letter-spacing: .01em;
+}
+.contact-field input,
+.contact-field textarea {
+  width: 100%;
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-base);
+  font-family: var(--font-ui);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  transition: border-color .15s;
+}
+.contact-field input:focus,
+.contact-field textarea:focus { border-color: var(--accent); }
+.contact-field textarea { resize: vertical; min-height: 140px; }
+
+.contact-submit {
+  padding: var(--s-3) var(--s-5);
+  font-size: var(--fs-sm);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  letter-spacing: .01em;
+  transition: color .15s, border-color .15s;
+}
+.contact-submit:hover { color: var(--text); border-color: var(--text); }
+
 /* ── Video ───────────────────────────────────────────────── */
 .video-wrap {
   margin: var(--s-5) 0;
