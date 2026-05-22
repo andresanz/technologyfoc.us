@@ -4,50 +4,8 @@
 -%>
 <%- include('layout') %>
 
-<h1 class="page-title">Contact</h1>
-
-<div class="contact-wrap">
-
-<% if (success) { %>
-  <div class="callout callout-tip">
-    <strong>Message sent.</strong> I'll get back to you soon.
-  </div>
-<% } else { %>
-
-  <% if (error) { %>
-    <div class="callout callout-danger" style="margin-bottom:var(--s-5)"><%= error %></div>
-  <% } %>
-
-  <form class="contact-form" method="POST" action="/contact" novalidate>
-
-    <!-- Honeypot — hidden from real users -->
-    <div style="display:none" aria-hidden="true">
-      <label for="_hp">Leave this blank</label>
-      <input type="text" id="_hp" name="_hp" tabindex="-1" autocomplete="off">
-    </div>
-    <input type="hidden" name="_t" value="<%= token %>">
-
-    <div class="contact-field">
-      <label for="c-name">Name</label>
-      <input type="text" id="c-name" name="name" value="<%= values.name || '' %>"
-             required autocomplete="name">
-    </div>
-
-    <div class="contact-field">
-      <label for="c-email">Email</label>
-      <input type="email" id="c-email" name="email" value="<%= values.email || '' %>"
-             required autocomplete="email">
-    </div>
-
-    <div class="contact-field">
-      <label for="c-message">Message</label>
-      <textarea id="c-message" name="message" required rows="6"><%= values.message || '' %></textarea>
-    </div>
-
-    <button type="submit" class="contact-submit">Send message</button>
-  </form>
-
-<% } %>
+<div style="text-align:center;padding:var(--s-10) 0">
+  <a href="mailto:sanz.andre@gmail.com" style="font-family:var(--font-ui);font-size:var(--fs-xl);font-weight:300;color:var(--text);text-decoration:none;border-bottom:1px solid var(--border)">sanz.andre@gmail.com</a>
 </div>
 
 <%- include('layout-end') %>
