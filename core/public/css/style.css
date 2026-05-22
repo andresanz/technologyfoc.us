@@ -420,8 +420,6 @@ main.container:has(.home-page) { padding-top: 0; }
 .post-body h1 { font-size: var(--fs-2xl); }
 .post-body h2 {
   font-size: var(--fs-xl);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: var(--s-1);
 }
 .post-body h3 { font-size: var(--fs-md); }
 
