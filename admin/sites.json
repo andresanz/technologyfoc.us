@@ -1,0 +1,39 @@
+[
+  {
+    "domain": "andresanz.com",
+    "state": "live",
+    "note": "Main personal site"
+  },
+  {
+    "domain": "randomcategory.com",
+    "state": "redirect",
+    "redirectTo": "https://andresanz.com"
+  },
+  {
+    "domain": "914.io",
+    "state": "redirect",
+    "redirectTo": "https://andresanz.com"
+  },
+  {
+    "domain": "therandomactofwriting.com",
+    "state": "redirect",
+    "redirectTo": "https://andresanz.com"
+  },
+  {
+    "domain": "samsanz.info",
+    "state": "redirect",
+    "redirectTo": "https://andresanz.com"
+  },
+  {
+    "domain": "lowcountrydead.com",
+    "state": "parked"
+  },
+  {
+    "domain": "stuffandrewrites.com",
+    "state": "parked"
+  },
+  {
+    "domain": "technologyfoc.us",
+    "state": "parked"
+  }
+]

@@ -5,6 +5,7 @@ content/footer.md
 scripts/.env.deploy
 scripts/*.env.*
 admin/data/
+!admin/data/sites.json
 analytics.db
 analytics.db-shm
 analytics.db-wal

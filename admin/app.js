@@ -114,6 +114,7 @@ app.use('/templates',     requireAuth, require('./routes/templates'));
 app.use('/sharp',         requireAuth, require('./routes/sharp'));
 app.use('/logs',          requireAuth, require('./routes/logs'));
 app.use('/s3',            requireAuth, require('./routes/s3'));
+app.use('/sites',         requireAuth, require('./routes/sites'));
 app.use('/domains',       requireAuth, require('./routes/domains'));
 app.use('/michele',       requireAuth, require('./routes/michele'));
 app.use('/mac',           requireAuth, require('./routes/mac'));
