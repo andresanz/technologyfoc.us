@@ -56,6 +56,7 @@ const MODE_CONF    = path.join(MODSEC_DIR, 'mode.conf');
 const CUSTOM_RULES = path.join(MODSEC_DIR, 'custom-rules.conf');
 const BLOCK_RULES  = path.join(MODSEC_DIR, 'block-rules.conf');
 const AUDIT_LOG    = '/var/log/nginx/modsec_audit.log';
+const AUDIT_LOG_1  = '/var/log/nginx/modsec_audit.log.1';
 const EXCL_FILE    = path.join(__dirname, '..', 'data', 'waf-exclusions.json');
 const BLOCK_FILE   = path.join(__dirname, '..', 'data', 'waf-blocks.json');
 
@@ -138,7 +139,7 @@ function getTimeline() {
   try {
     // Pull only the time_stamp field — fast, no full JSON parse
     const raw = execSync(
-      `sudo /usr/bin/tail -n +1 "${AUDIT_LOG}" 2>/dev/null | grep -o '"time_stamp":"[^"]*"'`,
+      `sudo /usr/bin/tail -n +1 "${activeLog()}" 2>/dev/null | grep -o '"time_stamp":"[^"]*"'`,
       { timeout: 15000, maxBuffer: 10 * 1024 * 1024 }
     ).toString();
     const MO = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
@@ -156,17 +157,26 @@ function getTimeline() {
   } catch { return { labels: [], counts: [] }; }
 }
 
+function activeLog() {
+  // Use rotated log if current is empty
+  const cur = fs.existsSync(AUDIT_LOG) ? fs.statSync(AUDIT_LOG).size : 0;
+  if (cur === 0 && fs.existsSync(AUDIT_LOG_1)) return AUDIT_LOG_1;
+  return AUDIT_LOG;
+}
+
 function getTotalEventCount() {
+  const log = activeLog();
   try {
-    const out = execSync(`sudo /usr/bin/tail -n +1 "${AUDIT_LOG}" 2>/dev/null | wc -l`, { timeout: 8000, maxBuffer: 4 * 1024 * 1024 }).toString().trim();
+    const out = execSync(`sudo /usr/bin/tail -n +1 "${log}" 2>/dev/null | wc -l`, { timeout: 8000, maxBuffer: 4 * 1024 * 1024 }).toString().trim();
     return parseInt(out) || 0;
   } catch { return 0; }
 }
 
 function getEvents(limit = 200) {
-  if (!fs.existsSync(AUDIT_LOG)) return [];
+  const log = activeLog();
+  if (!fs.existsSync(log)) return [];
   try {
-    const raw = execSync(`tail -n 2000 "${AUDIT_LOG}" 2>/dev/null`, { timeout: 5000, maxBuffer: 20 * 1024 * 1024 }).toString();
+    const raw = execSync(`tail -n 2000 "${log}" 2>/dev/null`, { timeout: 5000, maxBuffer: 20 * 1024 * 1024 }).toString();
     const events = [];
     for (const line of raw.split('\n')) {
       if (!line.trim()) continue;
