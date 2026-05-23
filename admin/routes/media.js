@@ -100,6 +100,23 @@ router.post('/upload', upload.array('images', 20), async (req, res) => {
   }
 });
 
+// POST /media/presign — JSON { filename, mimetype, folder? }
+// Returns { uploadUrl, publicUrl, key } so the browser can PUT directly to S3.
+router.post('/presign', async (req, res) => {
+  const site = req.site;
+  try {
+    const { filename, mimetype } = req.body || {};
+    if (!filename || !mimetype) return res.status(400).json({ error: 'filename and mimetype required' });
+    const isVideo = mimetype.startsWith('video/');
+    const folder  = (req.body.folder || (isVideo ? 'videos' : 'images')).replace(/[^a-z0-9_-]/gi, '');
+    const result  = await s3Lib.presign(site, { filename, mimetype, folder });
+    s3Lib.invalidateAllCache(site.s3Bucket);
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /media/delete
 router.post('/delete', async (req, res) => {
   const site = req.site;

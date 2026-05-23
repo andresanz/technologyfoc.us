@@ -78,6 +78,10 @@
 .attr-chip { background:var(--surface,#fff); border:1px solid var(--border); border-radius:3px; padding:.1rem .4rem; font-size:.75rem; cursor:default; }
 .attr-chip code { background:none; border:none; padding:0; font-size:.75rem; }
 .media-thumb img { cursor: zoom-in; }
+.media-item.is-video .media-thumb { position:relative; background:#000; }
+.media-item.is-video .media-thumb video { width:100%; height:100%; object-fit:cover; display:block; }
+.video-badge { position:absolute; top:.4rem; left:.4rem; background:rgba(0,0,0,.7); color:#fff; font-size:.7rem; padding:.15rem .4rem; border-radius:3px; pointer-events:none; }
+.uploaded-row.error { color:#b91c1c; }
 </style>
 
 <!-- Media grid -->
@@ -86,9 +90,14 @@
 <% } else { %>
   <div class="media-grid" id="mediaGrid">
     <% objects.forEach(function(obj) { %>
-      <div class="media-item" data-key="<%= obj.key %>">
+      <div class="media-item<%= obj.isVideo ? ' is-video' : '' %>" data-key="<%= obj.key %>">
         <div class="media-thumb">
-          <img src="<%= obj.url %>" loading="lazy" alt="<%= obj.key %>">
+          <% if (obj.isVideo) { %>
+            <video src="<%= obj.url %>" preload="metadata" muted playsinline></video>
+            <span class="video-badge">▶ video</span>
+          <% } else { %>
+            <img src="<%= obj.url %>" loading="lazy" alt="<%= obj.key %>">
+          <% } %>
         </div>
         <div class="media-info">
           <div class="media-name" title="<%= obj.key %>"><%= obj.key.split('/').pop() %></div>
@@ -142,27 +151,56 @@ videoDropZone.addEventListener('drop', e => { e.preventDefault(); videoDropZone.
 videoInput.addEventListener('change', e => handleVideoFiles(e.target.files));
 
 async function handleVideoFiles(files) {
-  const fd = new FormData();
-  [...files].forEach(f => fd.append('images', f));
-  videoResults.innerHTML = '<p>Uploading… this may take a moment for large files.</p>';
-  try {
-    const r    = await fetch(`/media/upload`, { method: 'POST', body: fd });
-    const data = await r.json();
-    if (!r.ok || data.error) {
-      videoResults.innerHTML = '<p class="error">Upload failed: ' + (data.error || r.statusText) + '</p>';
-      return;
+  const list = [...files];
+  if (!list.length) return;
+  videoResults.innerHTML = '';
+  let success = 0;
+
+  for (const file of list) {
+    const status = document.createElement('div');
+    status.className = 'uploaded-row';
+    status.textContent = `Uploading ${file.name}… 0%`;
+    videoResults.appendChild(status);
+
+    try {
+      const presignRes = await fetch('/media/presign', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ filename: file.name, mimetype: file.type || 'video/mp4' }),
+      });
+      const presign = await presignRes.json();
+      if (!presignRes.ok || presign.error) throw new Error(presign.error || presignRes.statusText);
+
+      await putWithProgress(presign.uploadUrl, file, pct => {
+        status.textContent = `Uploading ${file.name}… ${pct}%`;
+      });
+
+      status.innerHTML = `<span>🎬 ${file.name}</span> <input readonly value="${presign.publicUrl}" onclick="this.select()">`;
+      addToGrid({ key: presign.key, url: presign.publicUrl, isVideo: true });
+      success++;
+    } catch (e) {
+      status.className = 'uploaded-row error';
+      status.textContent = `Upload failed for ${file.name}: ${e.message}`;
     }
-    videoResults.innerHTML = '';
-    (data.files || []).forEach(f => {
-      const row = document.createElement('div');
-      row.className = 'uploaded-row';
-      row.innerHTML = `<span>🎬 ${f.key.split('/').pop()}</span> <input readonly value="${f.url}" onclick="this.select()">`;
-      videoResults.appendChild(row);
-    });
-    toast('Uploaded ' + (data.files || []).length + ' video(s)');
-  } catch(e) {
-    videoResults.innerHTML = '<p class="error">Upload failed: ' + e.message + '</p>';
   }
+
+  if (success) toast('Uploaded ' + success + ' video(s)');
+}
+
+function putWithProgress(url, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+    xhr.upload.addEventListener('progress', e => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    });
+    xhr.onload  = () => xhr.status >= 200 && xhr.status < 300
+      ? resolve()
+      : reject(new Error('S3 PUT failed (' + xhr.status + ') — check bucket CORS for admin domain'));
+    xhr.onerror = () => reject(new Error('Network error during upload (CORS?)'));
+    xhr.send(file);
+  });
 }
 
 const dropZone  = document.getElementById('dropZone');
@@ -204,10 +242,13 @@ async function handleFiles(files) {
 function addToGrid(file) {
   if (!grid) return;
   const el = document.createElement('div');
-  el.className = 'media-item';
+  el.className = 'media-item' + (file.isVideo ? ' is-video' : '');
   el.dataset.key = file.key;
+  const thumb = file.isVideo
+    ? `<video src="${file.url}" preload="metadata" muted playsinline></video><span class="video-badge">▶ video</span>`
+    : `<img src="${file.url}" loading="lazy">`;
   el.innerHTML = `
-    <div class="media-thumb"><img src="${file.url}" loading="lazy"></div>
+    <div class="media-thumb">${thumb}</div>
     <div class="media-info">
       <div class="media-name">${file.key.split('/').pop()}</div>
       <div class="media-actions">

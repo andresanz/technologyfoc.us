@@ -2,6 +2,7 @@
 
 const {
   S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command,
+  GetBucketCorsCommand, PutBucketCorsCommand,
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const path   = require('path');
@@ -49,7 +50,7 @@ async function list(site, { prefix, continuationToken, maxKeys = 50 } = {}) {
   const res = await makeClient(site).send(cmd);
 
   const objects = (res.Contents || [])
-    .filter(o => /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(o.Key))
+    .filter(o => MEDIA_EXT_RE.test(o.Key))
     .map(o => ({
       key:          o.Key,
       url:          publicUrl(site, o.Key),
@@ -57,6 +58,7 @@ async function list(site, { prefix, continuationToken, maxKeys = 50 } = {}) {
       sizeStr:      formatBytes(o.Size),
       lastModified: o.LastModified,
       dateStr:      new Date(o.LastModified).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),
+      isVideo:      VIDEO_EXT_RE.test(o.Key),
     }))
     .sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
@@ -75,16 +77,51 @@ async function remove(site, key) {
   }));
 }
 
-// Presigned upload URL (for future client-side direct uploads)
+// Presigned upload URL — used by browser to PUT directly to S3
 async function presign(site, { filename, mimetype, folder = 'images', expires = 300 }) {
+  if (!site.s3Bucket) throw new Error('S3_BUCKET not configured for this site');
+  await ensureCors(site);
   const ext = path.extname(filename) || mimeToExt(mimetype);
   const key = `${folder}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
-  const url = await getSignedUrl(
+  const uploadUrl = await getSignedUrl(
     makeClient(site),
     new PutObjectCommand({ Bucket: site.s3Bucket, Key: key, ContentType: mimetype }),
     { expiresIn: expires }
   );
-  return { uploadUrl: url, publicUrl: publicUrl(site, key) };
+  return { uploadUrl, publicUrl: publicUrl(site, key), key };
+}
+
+// Ensure the bucket has CORS allowing PUT so browser presigned uploads work.
+// Called once per bucket per process. Appends to any existing rules (never overwrites).
+const corsChecked = new Set();
+async function ensureCors(site) {
+  if (corsChecked.has(site.s3Bucket)) return;
+  const client = makeClient(site);
+  const adminRule = {
+    AllowedMethods: ['GET', 'PUT', 'POST', 'HEAD'],
+    AllowedOrigins: ['*'],
+    AllowedHeaders: ['*'],
+    ExposeHeaders:  ['ETag'],
+    MaxAgeSeconds:  3000,
+  };
+
+  let existing = [];
+  try {
+    const got = await client.send(new GetBucketCorsCommand({ Bucket: site.s3Bucket }));
+    existing = got.CORSRules || [];
+    if (existing.some(r => (r.AllowedMethods || []).includes('PUT'))) {
+      corsChecked.add(site.s3Bucket);
+      return;
+    }
+  } catch (e) {
+    if (e.name !== 'NoSuchCORSConfiguration') throw e;
+  }
+
+  await client.send(new PutBucketCorsCommand({
+    Bucket: site.s3Bucket,
+    CORSConfiguration: { CORSRules: [...existing, adminRule] },
+  }));
+  corsChecked.add(site.s3Bucket);
 }
 
 function publicUrl(site, key) {
@@ -100,8 +137,13 @@ function mimeToExt(mime = '') {
   return {
     'image/jpeg': '.jpg', 'image/png': '.png', 'image/gif': '.gif',
     'image/webp': '.webp', 'image/svg+xml': '.svg', 'image/avif': '.avif',
+    'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov',
+    'video/x-msvideo': '.avi',
   }[mime] || '';
 }
+
+const MEDIA_EXT_RE   = /\.(jpe?g|png|gif|webp|avif|svg|mp4|webm|mov|m4v|avi)$/i;
+const VIDEO_EXT_RE   = /\.(mp4|webm|mov|m4v|avi)$/i;
 
 function formatBytes(b) {
   if (b < 1024) return b + ' B';
@@ -137,7 +179,7 @@ async function listAll(site, { page = 1, perPage = 48 } = {}) {
       });
       const res = await makeClient(site).send(cmd);
       for (const o of (res.Contents || [])) {
-        if (!/\.(jpe?g|png|gif|webp|avif|svg)$/i.test(o.Key)) continue;
+        if (!MEDIA_EXT_RE.test(o.Key)) continue;
         items.push({
           key:          o.Key,
           url:          publicUrl(site, o.Key),
@@ -145,6 +187,7 @@ async function listAll(site, { page = 1, perPage = 48 } = {}) {
           sizeStr:      formatBytes(o.Size),
           lastModified: o.LastModified,
           dateStr:      new Date(o.LastModified).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),
+          isVideo:      VIDEO_EXT_RE.test(o.Key),
         });
       }
       token = res.NextContinuationToken;
