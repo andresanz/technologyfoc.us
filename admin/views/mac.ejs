@@ -23,6 +23,36 @@
 
 <%- include('partials/flash') %>
 
+<% if (mountStatus) {
+  const ago = mountStatus.updated
+    ? Math.floor((Date.now() - mountStatus.updated) / 60000)
+    : null;
+  const agoStr = ago === null ? 'unknown'
+    : ago < 1    ? 'just now'
+    : ago < 60   ? ago + 'm ago'
+    : Math.floor(ago/60) + 'h ago';
+  const mounts = mountStatus.mounts || {};
+  const staleStatus = ago !== null && ago > 120; // >2h since last mount.sh run
+%>
+<div class="card" style="padding:.75rem 1.25rem;margin-top:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+  <div>
+    <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:.5rem">Mac Mounts</div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      <% [['GoogleDrive','Google Drive'],['AmazonS3','Amazon S3'],['LinodeServer02','Server02']].forEach(([key,label]) => {
+        const ok = mounts[key] === true;
+      %><span style="display:flex;align-items:center;gap:.35rem;font-size:.85rem">
+          <span style="width:8px;height:8px;border-radius:50%;background:<%= ok ? '#22c55e' : '#ef4444' %>"></span>
+          <%= label %>
+        </span>
+      <% }) %>
+    </div>
+  </div>
+  <div style="font-size:.78rem;color:<%= staleStatus ? 'var(--danger)' : 'var(--muted)' %>">
+    Updated <%= agoStr %>
+  </div>
+</div>
+<% } %>
+
 <div style="display:grid;gap:1rem;margin-top:1rem">
 <% sections.forEach(section => {
   const latest    = section.items[0] || null;

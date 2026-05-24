@@ -74,6 +74,17 @@ function sentinelDate(key) {
   } catch { return null; }
 }
 
+function getMountStatus() {
+  try {
+    const out = run(`aws s3 cp s3://${MAC_BUCKET}/MacbookAir/.mount-status.json - 2>/dev/null`);
+    const data = JSON.parse(out);
+    return {
+      updated: data.updated ? new Date(data.updated) : null,
+      mounts:  data.mounts  || {},
+    };
+  } catch { return null; }
+}
+
 // GET /mac
 router.get('/', (req, res) => {
   const home   = listFolders(`${MAC_PREFIX}Backups/`);
@@ -86,7 +97,8 @@ router.get('/', (req, res) => {
     { label: 'Music',  key: 'music',  items: music,  prefix: `${MAC_PREFIX}Music/`,   unit: 'files',  lastSync: sentinelDate('music')  },
   ];
 
-  res.render('mac', { sections, bucket: MAC_BUCKET, flash: req.flash() });
+  const mountStatus = getMountStatus();
+  res.render('mac', { sections, bucket: MAC_BUCKET, mountStatus, flash: req.flash() });
 });
 
 // POST /mac/delete
