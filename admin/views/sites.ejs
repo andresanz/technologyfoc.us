@@ -1,327 +1,179 @@
 <%
   pageTitle = 'Sites';
-  const stateColor = { live: '#16a34a', parked: '#6b7280', redirect: '#2563eb' };
-  const stateBg    = { live: '#dcfce7', parked: '#f3f4f6', redirect: '#dbeafe' };
-  const svcColor   = { active: '#16a34a', inactive: '#6b7280', failed: '#dc2626' };
-  const mismatchCount = sites.filter(s => s.mismatch).length;
+  const stateColor = { live:'#16a34a', parked:'#6b7280', redirect:'#2563eb' };
+  const stateBg    = { live:'#dcfce7', parked:'#f3f4f6', redirect:'#dbeafe' };
 -%>
 <%- include('partials/head') %>
 
 <style>
-.sites-table { width:100%;border-collapse:collapse;font-size:.875rem; }
-.sites-table th { text-align:left;padding:.6rem .75rem;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em; }
-.sites-table td { padding:.65rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle; }
-.sites-table tr:last-child td { border-bottom:none; }
-.sites-table tr:hover td { background:var(--surface2); }
-.sites-table tr.mismatch td { background:#fef3c7; }
-.sites-table tr.mismatch:hover td { background:#fde68a; }
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.75rem; margin-bottom:1.25rem; }
+@media (max-width:600px){ .stats-grid{ grid-template-columns:repeat(2,1fr) } }
+.stat-card { background:var(--surface,#fff); border:1px solid var(--border); border-radius:8px; padding:.75rem 1rem; text-decoration:none; color:var(--text); }
+.stat-card:hover { border-color:#2563eb; }
+.stat-card .v { font-size:1.5rem; font-weight:700; line-height:1; }
+.stat-card .l { font-size:.75rem; color:var(--muted); margin-top:.25rem; }
 
-.state-badge { display:inline-block;padding:.15em .55em;border-radius:4px;font-size:.72rem;font-weight:700;letter-spacing:.02em; }
-.svc-dot { display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.35rem;flex-shrink:0; }
-.ssl-dot { display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0; }
-.nginx-mismatch { font-size:.72rem;color:#b45309;margin-left:.4rem;font-weight:500; }
-.action-row { display:flex;gap:.4rem;align-items:center;justify-content:flex-end;flex-wrap:wrap; }
+.toolbar { display:flex; gap:.65rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
+.toolbar input[type=text] { flex:1; min-width:220px; padding:.4rem .65rem; font-size:.88rem; }
+.chip { padding:.3rem .65rem; font-size:.78rem; border-radius:999px; border:1px solid var(--border); background:var(--surface,#fff); color:var(--muted); cursor:pointer; text-decoration:none; font-weight:500; }
+.chip.active { background:#2563eb; border-color:#2563eb; color:#fff; }
 
-.toolbar { display:flex;gap:.75rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap; }
-.toolbar input[type=text] { flex:1;min-width:200px;padding:.45rem .7rem;font-size:.875rem; }
-.toolbar .filter-btn { padding:.35rem .7rem;font-size:.78rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:500; }
-.toolbar .filter-btn.active { background:var(--accent,#2563eb);color:#fff;border-color:var(--accent,#2563eb); }
+.sites-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+.sites-table th { text-align:left; padding:.55rem .75rem; color:var(--muted); font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); white-space:nowrap; }
+.sites-table td { padding:.55rem .75rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+.sites-table tr:hover td { background:var(--surface2,#fafafa); }
+.state-badge { display:inline-block; padding:.15em .55em; border-radius:4px; font-size:.72rem; font-weight:700; }
+.ssl-dot { display:inline-block; width:8px; height:8px; border-radius:50%; }
 
-.add-row { display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:0 }
-.add-row input, .add-row select { height:2rem;padding:0 .6rem;font-size:.82rem; }
-.add-row label { font-size:.78rem;color:var(--muted);display:block;margin-bottom:.2rem }
-.add-row .f { display:flex;flex-direction:column }
-#redirectToWrap { display:none }
+.row-form { display:flex; gap:.4rem; flex-wrap:wrap; align-items:center; }
+.row-form input, .row-form select { font-size:.8rem; padding:.25rem .45rem; }
 
-.inline-state { display:inline-flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden; }
-.inline-state button { padding:.25rem .5rem;font-size:.72rem;font-weight:500;border:none;background:transparent;color:var(--muted);cursor:pointer;border-right:1px solid var(--border); }
-.inline-state button:last-child { border-right:none; }
-.inline-state button:hover { background:var(--surface2);color:var(--text); }
-.inline-state button.active { background:var(--accent,#2563eb);color:#fff; }
-
-.sync-banner { background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:.65rem 1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center; }
-.sync-banner-text { color:#92400e;font-size:.85rem;font-weight:500; }
-
-.state-form { display:inline }
-.modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center }
-.modal-overlay.open { display:flex }
-.modal-box { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;width:380px;max-width:95vw }
-.modal-box h3 { margin:0 0 1rem;font-size:1rem }
+.add-row { display:flex; gap:.5rem; align-items:flex-end; flex-wrap:wrap; }
+.add-row input, .add-row select { height:2rem; padding:0 .55rem; font-size:.82rem; }
+.add-row label { font-size:.72rem; color:var(--muted); display:block; margin-bottom:.2rem; }
+.add-row .f { display:flex; flex-direction:column; }
 </style>
 
 <div class="page-header">
   <div>
     <h1>Sites</h1>
-    <div style="color:var(--muted);font-size:.85rem;margin-top:.25rem">
-      <%= sites.length %> domains
-      <% if (mismatchCount) { %> · <span style="color:#b45309;font-weight:600"><%= mismatchCount %> out of sync</span><% } %>
+    <div style="color:var(--muted); font-size:.85rem; margin-top:.25rem">
+      <%= counts.total %> domains
     </div>
   </div>
-  <div style="display:flex;gap:.5rem">
-    <% if (mismatchCount) { %>
-      <form method="POST" action="/sites/sync-all" style="display:inline" onsubmit="return confirm('Sync all <%= mismatchCount %> mismatched domains to nginx?')">
-        <button type="submit" class="btn">⟳ Sync all (<%= mismatchCount %>)</button>
-      </form>
-    <% } %>
-    <a href="/sites/new" class="btn btn-primary">+ New site</a>
+  <div style="display:flex; gap:.5rem">
+    <form method="POST" action="/sites/sync-all" style="display:inline" onsubmit="return confirm('Push registry state to nginx for ALL <%= counts.total %> domains?')">
+      <button type="submit" class="btn">⟳ Sync all to nginx</button>
+    </form>
   </div>
 </div>
 
 <%- include('partials/flash') %>
 
-<!-- Add domain to registry -->
-<div class="card" style="padding:1rem;margin-bottom:1rem">
-  <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.65rem">Add domain to registry</div>
-  <form method="POST" action="/sites/add">
+<!-- Stats -->
+<div class="stats-grid">
+  <a href="/sites" class="stat-card">
+    <div class="v"><%= counts.total %></div>
+    <div class="l">Total</div>
+  </a>
+  <a href="/sites?state=live" class="stat-card">
+    <div class="v" style="color:#16a34a"><%= counts.live %></div>
+    <div class="l">Live</div>
+  </a>
+  <a href="/sites?state=redirect" class="stat-card">
+    <div class="v" style="color:#2563eb"><%= counts.redirect %></div>
+    <div class="l">Redirect</div>
+  </a>
+  <a href="/sites?state=parked" class="stat-card">
+    <div class="v" style="color:#6b7280"><%= counts.parked %></div>
+    <div class="l">Parked</div>
+  </a>
+</div>
+
+<!-- Add new domain -->
+<details class="card" style="padding:1rem; margin-bottom:1rem">
+  <summary style="cursor:pointer; font-weight:600; font-size:.85rem">+ Add domain</summary>
+  <form method="POST" action="/sites/add" style="margin-top:.75rem">
     <div class="add-row">
-      <div class="f">
-        <label>Domain</label>
-        <input type="text" name="domain" placeholder="example.com" required style="width:180px">
-      </div>
-      <div class="f">
-        <label>State</label>
-        <select name="state" id="addState" onchange="toggleRedirectTo(this.value)" style="width:120px">
+      <div class="f"><label>Domain</label>
+        <input type="text" name="domain" placeholder="example.com" required style="width:200px"></div>
+      <div class="f"><label>State</label>
+        <select name="state" onchange="document.getElementById('addTgt').style.display=this.value==='redirect'?'':'none';document.getElementById('addPort').style.display=this.value==='live'?'':'none'">
           <option value="parked">parked</option>
           <option value="redirect">redirect</option>
           <option value="live">live</option>
-        </select>
-      </div>
-      <div class="f" id="redirectToWrap">
-        <label>Redirect to</label>
-        <input type="text" name="redirectTo" placeholder="https://andresanz.com" style="width:220px">
-      </div>
-      <div class="f">
-        <label>Note</label>
-        <input type="text" name="note" placeholder="optional" style="width:140px">
-      </div>
-      <button type="submit" class="btn btn-sm" style="margin-bottom:0">Add</button>
+        </select></div>
+      <div class="f" id="addTgt" style="display:none"><label>Target URL</label>
+        <input type="text" name="target" placeholder="https://andresanz.com" style="width:220px"></div>
+      <div class="f" id="addPort" style="display:none"><label>Port</label>
+        <input type="number" name="port" placeholder="4092" style="width:80px"></div>
+      <div class="f"><label>Note</label>
+        <input type="text" name="note" placeholder="optional" style="width:160px"></div>
+      <button type="submit" class="btn btn-primary">Add</button>
     </div>
   </form>
-</div>
+</details>
 
-<!-- Toolbar: search + filter -->
-<div class="toolbar">
-  <input type="text" id="searchInput" placeholder="Search domains, notes, redirect targets…" oninput="applyFilter()">
-  <button class="filter-btn active" data-filter="all" onclick="setFilter(this)">All (<%= sites.length %>)</button>
-  <button class="filter-btn" data-filter="live" onclick="setFilter(this)">Live (<%= sites.filter(s=>s.state==='live').length %>)</button>
-  <button class="filter-btn" data-filter="redirect" onclick="setFilter(this)">Redirect (<%= sites.filter(s=>s.state==='redirect').length %>)</button>
-  <button class="filter-btn" data-filter="parked" onclick="setFilter(this)">Parked (<%= sites.filter(s=>s.state==='parked').length %>)</button>
-  <% if (mismatchCount) { %>
-    <button class="filter-btn" data-filter="mismatch" onclick="setFilter(this)" style="color:#b45309;border-color:#fcd34d">⚠ Mismatched (<%= mismatchCount %>)</button>
+<!-- Search -->
+<form method="GET" action="/sites" class="toolbar">
+  <input type="text" name="q" value="<%= q %>" placeholder="Search domains…">
+  <% if (stateFilter) { %><input type="hidden" name="state" value="<%= stateFilter %>"><% } %>
+  <button type="submit" class="btn">Search</button>
+  <% if (q || stateFilter) { %>
+    <a href="/sites" class="chip">× clear</a>
   <% } %>
-</div>
+</form>
 
-<!-- Sites table -->
-<div class="card" style="padding:0;overflow:hidden">
+<!-- Table -->
+<div class="card" style="padding:0; overflow:hidden">
   <% if (!sites.length) { %>
-    <p style="padding:2rem;color:var(--muted)">No sites in registry.</p>
+    <p style="padding:2rem; color:var(--muted); text-align:center">No domains match.</p>
   <% } else { %>
-  <table class="sites-table" id="sitesTable">
+  <table class="sites-table">
     <thead>
       <tr>
         <th>Domain</th>
         <th>SSL</th>
         <th>State</th>
-        <th>Service</th>
-        <th>Posts</th>
+        <th>Target / Port</th>
         <th>Note</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
     <% sites.forEach(s => { %>
-      <tr class="site-row <%= s.mismatch ? 'mismatch' : '' %>"
-          data-domain="<%= s.domain %>"
-          data-state="<%= s.state %>"
-          data-note="<%= (s.note || '').toLowerCase() %>"
-          data-redirect="<%= (s.redirectTo || '').toLowerCase() %>"
-          data-mismatch="<%= s.mismatch ? '1' : '0' %>">
-        <!-- Domain -->
+      <tr>
         <td>
-          <a href="<%= s.url || 'https://' + s.domain %>" target="_blank" rel="noopener"
-             style="font-weight:600;text-decoration:none;color:var(--text)"><%= s.domain %></a>
-          <% if (s.mismatch) { %>
-            <span class="nginx-mismatch" title="Registry: <%= s.state %> · nginx: <%= s.nginxState %>">⚠ nginx:<%= s.nginxState %></span>
-          <% } else if (s.appRedirect) { %>
-            <span style="font-size:.7rem;color:var(--muted);margin-left:.4rem" title="Redirect handled by andresanz.com app (proxy_pass + redirects.json)">via app</span>
-          <% } %>
+          <a href="https://<%= s.domain %>" target="_blank" rel="noopener" style="font-weight:600; text-decoration:none; color:var(--text)"><%= s.domain %></a>
         </td>
-
-        <!-- SSL -->
         <td>
-          <span class="ssl-dot" style="background:<%= s.ssl ? '#16a34a' : '#d1d5db' %>"
-                title="<%= s.ssl ? 'Certificate present' : 'No SSL cert' %>"></span>
-        </td>
-
-        <!-- State badge -->
-        <td>
-          <span class="state-badge" style="background:<%= stateBg[s.state] || '#f3f4f6' %>;color:<%= stateColor[s.state] || '#374151' %>"><%= s.state %></span>
-          <% if (s.state === 'redirect' && s.redirectTo) { %>
-            <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">→ <%= s.redirectTo %></div>
-          <% } %>
-        </td>
-
-        <!-- Service status -->
-        <td>
-          <% if (s.state === 'live') { %>
-            <span class="svc-dot" style="background:<%= svcColor[s.svcStatus] || '#6b7280' %>"></span>
-            <span style="font-size:.8rem;color:var(--muted)"><%= s.svcStatus || '—' %><% if (s.port) { %> :<%= s.port %><% } %></span>
+          <% if (s.ssl_active) { %>
+            <span class="ssl-dot" style="background:#16a34a" title="cert present"></span>
           <% } else { %>
-            <span style="color:var(--muted);font-size:.8rem">—</span>
+            <form method="POST" action="/sites/<%= s.domain %>/ssl" style="display:inline" onsubmit="return confirm('Issue SSL cert for <%= s.domain %>? Requires DNS pointing here.')">
+              <button type="submit" class="btn btn-sm" style="font-size:.7rem; padding:.15rem .4rem" title="issue cert">🔓 SSL</button>
+            </form>
           <% } %>
         </td>
-
-        <!-- Post count -->
-        <td style="color:var(--muted);font-size:.82rem">
-          <%= typeof s.postCount !== 'undefined' ? s.postCount : '—' %>
-        </td>
-
-        <!-- Note -->
-        <td style="color:var(--muted);font-size:.8rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          <%= s.note || '' %>
-        </td>
-
-        <!-- Actions -->
         <td>
-          <div class="action-row">
-            <% if (s.managed === 'redirects') { %>
-              <a href="/redirects" class="btn btn-sm">Manage →</a>
-            <% } else { %>
-              <% if (s.mismatch) { %>
-                <form method="POST" action="/sites/<%= s.domain %>/sync" class="state-form"
-                      title="Push registry state (<%= s.state %>) to nginx">
-                  <button type="submit" class="btn btn-sm" style="color:#b45309;border-color:#fcd34d">⟳ Sync</button>
-                </form>
-              <% } %>
-              <% if (s.state === 'live') { %>
-                <form method="POST" action="/sites/<%= s.domain %>/restart" class="state-form">
-                  <button type="submit" class="btn btn-sm">Restart</button>
-                </form>
-                <a href="/sites/<%= s.domain %>/settings" class="btn btn-sm">Settings</a>
-              <% } %>
-              <button class="btn btn-sm"
-                      data-domain="<%= s.domain %>"
-                      data-state="<%= s.state %>"
-                      data-redirect="<%= s.redirectTo || '' %>"
-                      onclick="openStateModal(this)">
-                Change state
-              </button>
-              <form method="POST" action="/sites/<%= s.domain %>/remove" class="state-form"
-                    onsubmit="return confirm('Remove <%= s.domain %> from registry?')">
-                <button type="submit" class="btn btn-sm btn-danger">×</button>
+          <span class="state-badge" style="background:<%= stateBg[s.state] %>; color:<%= stateColor[s.state] %>"><%= s.state %></span>
+        </td>
+        <td style="font-size:.78rem; color:var(--muted); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+          <% if (s.state === 'redirect') { %>→ <%= s.target || '—' %><% } %>
+          <% if (s.state === 'live') { %>:<%= s.port || '—' %><% if (s.runtime) { %> <span style="color:#16a34a">●</span><% } %><% } %>
+          <% if (s.state === 'parked') { %>—<% } %>
+        </td>
+        <td style="color:var(--muted); font-size:.78rem; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap"><%= s.note || '' %></td>
+        <td>
+          <details>
+            <summary style="cursor:pointer; font-size:.78rem; color:#2563eb">edit</summary>
+            <form method="POST" action="/sites/<%= s.domain %>/save" class="row-form" style="margin-top:.5rem">
+              <select name="state">
+                <% ['live','redirect','parked'].forEach(st => { %>
+                  <option value="<%= st %>" <%= s.state===st?'selected':'' %>><%= st %></option>
+                <% }) %>
+              </select>
+              <input type="text"   name="target" value="<%= s.target || '' %>" placeholder="target URL" style="width:180px">
+              <input type="number" name="port"   value="<%= s.port || '' %>"   placeholder="port"      style="width:70px">
+              <label style="font-size:.75rem"><input type="checkbox" name="preserve_path" value="1" <%= s.preserve_path?'checked':'' %>> path</label>
+              <input type="text"   name="note"   value="<%= s.note || '' %>"   placeholder="note"      style="width:140px">
+              <button type="submit" class="btn btn-sm">save</button>
+            </form>
+            <div style="margin-top:.4rem; display:flex; gap:.3rem">
+              <form method="POST" action="/sites/<%= s.domain %>/sync" style="display:inline">
+                <button type="submit" class="btn btn-sm">⟳ sync nginx</button>
               </form>
-            <% } %>
-          </div>
+              <form method="POST" action="/sites/<%= s.domain %>/remove" style="display:inline" onsubmit="return confirm('Remove <%= s.domain %> from registry AND nginx?')">
+                <button type="submit" class="btn btn-sm btn-danger">delete</button>
+              </form>
+            </div>
+          </details>
         </td>
       </tr>
     <% }) %>
     </tbody>
   </table>
-  <p id="noMatch" style="display:none;padding:2rem;color:var(--muted);text-align:center">No matches.</p>
   <% } %>
 </div>
-
-<!-- State change modal -->
-<div class="modal-overlay" id="stateModal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-box">
-    <h3 id="modalTitle">Change state</h3>
-    <form method="POST" id="stateForm">
-      <input type="hidden" name="state" id="stateInput">
-      <input type="hidden" name="redirectTo" id="redirectToInput">
-
-      <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem">
-        <button type="button" class="btn" onclick="setModalState('live')">Live — proxy to Node app</button>
-        <button type="button" class="btn" onclick="setModalState('parked')">Parked — static holding page</button>
-        <button type="button" class="btn" onclick="showRedirectPrompt()">Redirect → another domain</button>
-      </div>
-
-      <div id="redirectPrompt" style="display:none;margin-bottom:1rem">
-        <label style="font-size:.82rem;display:block;margin-bottom:.3rem">Redirect to</label>
-        <input type="text" id="redirectTargetInput" placeholder="https://andresanz.com"
-               style="width:100%;padding:.4rem .6rem;font-size:.875rem">
-      </div>
-
-      <div style="display:flex;gap:.5rem;justify-content:flex-end">
-        <button type="button" class="btn" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="confirmBtn">Confirm</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-let currentFilter = 'all';
-let currentSearch = '';
-
-function setFilter(btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentFilter = btn.dataset.filter;
-  applyFilter();
-}
-
-function applyFilter() {
-  currentSearch = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-  let shown = 0;
-  document.querySelectorAll('.site-row').forEach(row => {
-    const domain   = row.dataset.domain.toLowerCase();
-    const note     = row.dataset.note;
-    const redirect = row.dataset.redirect;
-    const state    = row.dataset.state;
-    const mismatch = row.dataset.mismatch === '1';
-
-    let pass = true;
-    if (currentFilter === 'mismatch') pass = mismatch;
-    else if (currentFilter !== 'all') pass = (state === currentFilter);
-
-    if (pass && currentSearch) {
-      pass = domain.includes(currentSearch) || note.includes(currentSearch) || redirect.includes(currentSearch);
-    }
-    row.style.display = pass ? '' : 'none';
-    if (pass) shown++;
-  });
-  document.getElementById('noMatch').style.display = shown ? 'none' : '';
-}
-
-function toggleRedirectTo(val) {
-  document.getElementById('redirectToWrap').style.display = val === 'redirect' ? '' : 'none';
-}
-
-function openStateModal(btn) {
-  const domain   = btn.dataset.domain;
-  const redirect = btn.dataset.redirect || '';
-  document.getElementById('modalTitle').textContent = 'Change state: ' + domain;
-  document.getElementById('stateForm').action = '/sites/' + domain + '/state';
-  document.getElementById('stateInput').value = '';
-  document.getElementById('redirectToInput').value = redirect;
-  document.getElementById('redirectPrompt').style.display = 'none';
-  document.getElementById('redirectTargetInput').value = redirect;
-  document.getElementById('confirmBtn').style.display = 'none';
-  document.getElementById('stateModal').classList.add('open');
-}
-
-function setModalState(state) {
-  document.getElementById('stateInput').value = state;
-  document.getElementById('redirectPrompt').style.display = 'none';
-  document.getElementById('confirmBtn').style.display = '';
-}
-
-function showRedirectPrompt() {
-  document.getElementById('stateInput').value = 'redirect';
-  document.getElementById('redirectPrompt').style.display = '';
-  document.getElementById('confirmBtn').style.display = '';
-}
-
-document.getElementById('stateForm').addEventListener('submit', function() {
-  const t = document.getElementById('redirectTargetInput').value.trim();
-  if (document.getElementById('stateInput').value === 'redirect') {
-    document.getElementById('redirectToInput').value = t;
-  }
-});
-
-function closeModal() {
-  document.getElementById('stateModal').classList.remove('open');
-}
-</script>
 
 <%- include('partials/foot') %>

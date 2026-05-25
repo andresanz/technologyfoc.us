@@ -1,388 +1,184 @@
 'use strict';
 
-const express = require('express');
-const router  = express.Router();
-const fs      = require('fs');
-const path    = require('path');
+// Unified /sites — domains registry backed by SQLite (admin/data/domains.db)
+// Replaces the previous sites.json + redirects.json setup.
+
+const express   = require('express');
+const fs        = require('fs');
 const { execSync } = require('child_process');
 
-const sitesLib = require('../lib/sites');
-const nginx    = require('../lib/nginx');
+const db        = require('../lib/domains-db');
+const nginxBld  = require('../lib/nginx-build');
+const sitesLib  = require('../lib/sites');
 
-const REGISTRY     = path.join(__dirname, '../sites.json');
-const REDIRECTS_DB = path.join(__dirname, '../data/redirects.json');
+const router = express.Router();
 
-// ── Registry helpers ──────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function readRegistry() {
-  try { return JSON.parse(fs.readFileSync(REGISTRY, 'utf8')); }
-  catch { return []; }
+function getAll(filter = {}) {
+  let sql = 'SELECT * FROM domains WHERE 1=1';
+  const params = [];
+  if (filter.q)     { sql += ' AND domain LIKE ?'; params.push(`%${filter.q}%`); }
+  if (filter.state) { sql += ' AND state = ?';     params.push(filter.state); }
+  sql += ' ORDER BY domain ASC';
+  return db.prepare(sql).all(...params);
 }
 
-function writeRegistry(list) {
-  fs.writeFileSync(REGISTRY, JSON.stringify(list, null, 2) + '\n', 'utf8');
+function getOne(domain) {
+  return db.prepare('SELECT * FROM domains WHERE domain = ?').get(domain);
 }
 
-function findSite(list, domain) {
-  return list.find(s => s.domain === domain);
+function reloadNginx() {
+  try { execSync('nginx -t && systemctl reload nginx', { timeout: 10000 }); return { ok: true }; }
+  catch (e) { return { ok: false, err: e.stderr?.toString() || e.message }; }
 }
 
-function readManagedRedirects() {
-  try { return JSON.parse(fs.readFileSync(REDIRECTS_DB, 'utf8')); }
-  catch { return []; }
+function enrich(row) {
+  return {
+    ...row,
+    ssl_active: nginxBld.hasCert(row.domain) ? 1 : 0,
+    runtime:    row.state === 'live' ? sitesLib.getSite(row.domain) : null,
+  };
 }
 
-// ── GET /sites ────────────────────────────────────────────────────────────────
+// ── GET /sites — list + filter ────────────────────────────────────────────────
 
 router.get('/', (req, res) => {
-  const registry = readRegistry();
-  const registryDomains = new Set(registry.map(s => s.domain));
-
-  // Pull in domains managed by /redirects that aren't already in sites.json
-  const managedRedirects = readManagedRedirects()
-    .filter(r => !registryDomains.has(r.domain))
-    .map(r => ({
-      domain:     r.domain,
-      state:      'redirect',
-      redirectTo: r.to,
-      note:       r.note || '',
-      managed:    'redirects', // flag: managed by /redirects, not sites.json
-    }));
-
-  const combined = [...registry, ...managedRedirects];
-
-  // Enrich live sites with runtime data from lib/sites
-  const sites = combined.map(entry => {
-    const enriched = { ...entry };
-    if (entry.state === 'live') {
-      const runtime = sitesLib.getSite(entry.domain);
-      if (runtime) {
-        enriched.title      = runtime.title;
-        enriched.port       = runtime.port;
-        enriched.postCount  = runtime.postCount;
-        enriched.svcStatus  = runtime.status;
-        enriched.url        = runtime.url;
-      }
-    }
-    enriched.nginxState = nginx.getState(entry.domain);
-    enriched.ssl        = nginx.hasCert(entry.domain);
-    enriched.mismatch   = enriched.nginxState !== entry.state && enriched.nginxState !== 'unconfigured';
-
-    // Suppress mismatch for "app-level redirect" pattern:
-    // registry says redirect + nginx proxies to localhost. In that setup the redirect
-    // happens inside the app (redirects.json) — not a real mismatch.
-    if (enriched.mismatch && entry.state === 'redirect' && enriched.nginxState === 'live') {
-      const conf = nginx.readConfig(entry.domain);
-      if (conf && /proxy_pass\s+http:\/\/(?:127\.0\.0\.1|localhost):\d+/.test(conf)) {
-        enriched.mismatch    = false;
-        enriched.appRedirect = true;
-      }
-    }
-    return enriched;
-  });
-
-  res.render('sites', { sites, flash: req.flash() });
+  const sites = getAll({ q: req.query.q, state: req.query.state }).map(enrich);
+  const counts = {
+    total:    db.prepare('SELECT COUNT(*) AS c FROM domains').get().c,
+    live:     db.prepare("SELECT COUNT(*) AS c FROM domains WHERE state='live'").get().c,
+    redirect: db.prepare("SELECT COUNT(*) AS c FROM domains WHERE state='redirect'").get().c,
+    parked:   db.prepare("SELECT COUNT(*) AS c FROM domains WHERE state='parked'").get().c,
+  };
+  res.render('sites', { sites, counts, q: req.query.q || '', stateFilter: req.query.state || '', flash: req.flash() });
 });
 
-// ── POST /sites/:domain/sync — push registry state to nginx ──────────────────
-router.post('/:domain/sync', (req, res) => {
-  const { domain } = req.params;
-  const registry = readRegistry();
-  const entry = findSite(registry, domain);
-  if (!entry) {
-    req.flash('error', `${domain} not in registry`);
-    return res.redirect('/sites');
-  }
-  try {
-    if (entry.state === 'live') {
-      const runtime = sitesLib.getSite(domain);
-      if (!runtime) throw new Error(`No live app for ${domain}`);
-      nginx.writeConfig(domain, nginx.nginxLive(domain, runtime.port));
-    } else if (entry.state === 'redirect') {
-      if (!entry.redirectTo) throw new Error('No redirectTo in registry');
-      nginx.writeConfig(domain, nginx.nginxRedirect(domain, entry.redirectTo));
-    } else if (entry.state === 'parked') {
-      nginx.writeConfig(domain, nginx.nginxParked(domain));
-    }
-    nginx.reload();
-    req.flash('success', `${domain} synced to ${entry.state}`);
-  } catch (e) {
-    req.flash('error', e.message);
-  }
-  res.redirect('/sites');
-});
-
-// ── POST /sites/sync-all — sync all mismatched domains ───────────────────────
-router.post('/sync-all', (req, res) => {
-  const registry = readRegistry();
-  const results  = { synced: 0, failed: [] };
-  for (const entry of registry) {
-    const current = nginx.getState(entry.domain);
-    if (current === entry.state || current === 'unconfigured') continue;
-    try {
-      if (entry.state === 'live') {
-        const runtime = sitesLib.getSite(entry.domain);
-        if (!runtime) throw new Error('no app');
-        nginx.writeConfig(entry.domain, nginx.nginxLive(entry.domain, runtime.port));
-      } else if (entry.state === 'redirect') {
-        if (!entry.redirectTo) throw new Error('no target');
-        nginx.writeConfig(entry.domain, nginx.nginxRedirect(entry.domain, entry.redirectTo));
-      } else if (entry.state === 'parked') {
-        nginx.writeConfig(entry.domain, nginx.nginxParked(entry.domain));
-      }
-      results.synced++;
-    } catch (e) {
-      results.failed.push(`${entry.domain}: ${e.message}`);
-    }
-  }
-  try { nginx.reload(); } catch (e) { results.failed.push(`reload: ${e.message}`); }
-  if (results.failed.length) {
-    req.flash('error', `Synced ${results.synced}, failed: ${results.failed.join('; ')}`);
-  } else {
-    req.flash('success', `Synced ${results.synced} domain(s) to nginx`);
-  }
-  res.redirect('/sites');
-});
-
-// ── GET /sites/new ────────────────────────────────────────────────────────────
-
-router.get('/new', (req, res) => {
-  const taken = readRegistry().map(s => s.domain);
-  res.render('site-new', { taken, flash: req.flash() });
-});
-
-// ── POST /sites/new/create ────────────────────────────────────────────────────
-
-router.post('/new/create', (req, res) => {
-  const { domain, port, email, title, description, author, awsKey, awsSecret, awsRegion, s3Bucket } = req.body;
-
-  const DOMAIN_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
-  if (!DOMAIN_RE.test(domain)) {
-    req.flash('error', 'Invalid domain name');
-    return res.redirect('/sites/new');
-  }
-
-  const registry = readRegistry();
-  if (findSite(registry, domain)) {
-    req.flash('error', `${domain} is already in the registry`);
-    return res.redirect('/sites/new');
-  }
-
-  try {
-    const siteDir = `/var/www/${domain}`;
-    const svcName = `blog-${domain.replace(/\./g, '-')}`;
-    const adminKey = require('crypto').randomBytes(24).toString('hex');
-
-    // Clone the blog template from the existing andresanz.com repo
-    execSync(`git clone /var/www/andresanz.com ${siteDir} --no-hardlinks`, { timeout: 30000 });
-
-    // Write .env
-    const env = [
-      `SITE_DOMAIN=${domain}`,
-      `SITE_URL=https://${domain}`,
-      `SITE_TITLE=${title || domain}`,
-      `SITE_DESCRIPTION=${description || ''}`,
-      `SITE_AUTHOR=${author || ''}`,
-      `PORT=${port}`,
-      `ADMIN_KEY=${adminKey}`,
-      awsKey        ? `AWS_ACCESS_KEY_ID=${awsKey}`         : '',
-      awsSecret     ? `AWS_SECRET_ACCESS_KEY=${awsSecret}`  : '',
-      `AWS_REGION=${awsRegion || 'us-east-1'}`,
-      s3Bucket      ? `S3_BUCKET=${s3Bucket}`               : '',
-    ].filter(Boolean).join('\n');
-    fs.writeFileSync(path.join(siteDir, '.env'), env + '\n', 'utf8');
-
-    // Write systemd unit
-    const unit = `[Unit]
-Description=${domain} blog
-After=network.target
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=${siteDir}
-ExecStart=/usr/bin/node core/server.js
-Restart=on-failure
-RestartSec=5
-EnvironmentFile=${siteDir}/.env
-
-[Install]
-WantedBy=multi-user.target
-`;
-    fs.writeFileSync(`/etc/systemd/system/${svcName}.service`, unit, 'utf8');
-    execSync(`systemctl daemon-reload && systemctl enable ${svcName} && systemctl start ${svcName}`, { timeout: 15000 });
-
-    // Nginx config (no cert yet — certbot must be run separately)
-    nginx.writeConfig(domain, nginx.nginxLive(domain, port));
-    nginx.reload();
-
-    // Issue cert if DNS resolves to this server
-    try {
-      execSync(`certbot --nginx -d ${domain} -d www.${domain} --non-interactive --agree-tos -m ${email} --redirect`, { timeout: 60000 });
-      // Rewrite config now that cert exists
-      nginx.writeConfig(domain, nginx.nginxLive(domain, port));
-      nginx.reload();
-    } catch (certErr) {
-      req.flash('error', `Site created but SSL cert failed — run certbot manually. (${certErr.message})`);
-    }
-
-    // Add to registry
-    registry.push({ domain, state: 'live', note: title || '' });
-    writeRegistry(registry);
-
-    req.flash('success', `${domain} is live on port ${port}`);
-    res.redirect('/sites');
-  } catch (e) {
-    req.flash('error', e.message);
-    res.redirect('/sites/new');
-  }
-});
-
-// ── POST /sites/add — add an existing/parked domain to registry ───────────────
+// ── POST /sites/add — create domain ───────────────────────────────────────────
 
 router.post('/add', (req, res) => {
-  const { domain, state, redirectTo, note } = req.body;
+  const { domain, state = 'parked', target = '', port = '', note = '' } = req.body;
   const DOMAIN_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
   if (!DOMAIN_RE.test(domain)) {
     req.flash('error', 'Invalid domain');
     return res.redirect('/sites');
   }
-
-  const registry = readRegistry();
-  if (findSite(registry, domain)) {
-    req.flash('error', `${domain} already in registry`);
+  if (getOne(domain)) {
+    req.flash('error', `${domain} already exists`);
     return res.redirect('/sites');
   }
-
-  const entry = { domain, state: state || 'parked', note: note || '' };
-  if (state === 'redirect' && redirectTo) entry.redirectTo = redirectTo;
-  registry.push(entry);
-  writeRegistry(registry);
-
+  db.prepare(`
+    INSERT INTO domains (domain, state, target, port, note, source)
+    VALUES (?, ?, ?, ?, ?, 'admin')
+  `).run(domain.trim().toLowerCase(), state, target || null, port ? parseInt(port,10) : null, note || null);
   req.flash('success', `${domain} added`);
   res.redirect('/sites');
+});
+
+// ── POST /sites/:domain/save — update fields ─────────────────────────────────
+
+router.post('/:domain/save', (req, res) => {
+  const { state, target, port, preserve_path, note } = req.body;
+  const row = getOne(req.params.domain);
+  if (!row) { req.flash('error', 'Not found'); return res.redirect('/sites'); }
+
+  db.prepare(`
+    UPDATE domains SET
+      state         = ?,
+      target        = ?,
+      port          = ?,
+      preserve_path = ?,
+      note          = ?,
+      updated_at    = datetime('now')
+    WHERE id = ?
+  `).run(
+    state || row.state,
+    target || null,
+    port ? parseInt(port, 10) : null,
+    preserve_path === '1' || preserve_path === 'on' || preserve_path === true ? 1 : 0,
+    note || null,
+    row.id,
+  );
+  req.flash('success', `${row.domain} saved`);
+  res.redirect('/sites');
+});
+
+// ── POST /sites/:domain/sync — push registry state to nginx ──────────────────
+
+router.post('/:domain/sync', (req, res) => {
+  const row = getOne(req.params.domain);
+  if (!row) { req.flash('error', 'Not found'); return res.redirect('/sites'); }
+  try {
+    nginxBld.write(row);
+    const r = reloadNginx();
+    if (!r.ok) throw new Error(r.err);
+    db.prepare("INSERT INTO domain_events (domain_id, type, message) VALUES (?, 'sync', ?)")
+      .run(row.id, `synced as ${row.state}`);
+    req.flash('success', `${row.domain} → nginx (${row.state})`);
+  } catch (e) {
+    req.flash('error', `sync failed: ${e.message}`);
+  }
+  res.redirect('/sites');
+});
+
+// ── POST /sites/sync-all — push every registry entry to nginx ────────────────
+
+router.post('/sync-all', (req, res) => {
+  const all = getAll();
+  let ok = 0, fail = [];
+  for (const row of all) {
+    try { nginxBld.write(row); ok++; }
+    catch (e) { fail.push(`${row.domain}: ${e.message}`); }
+  }
+  const r = reloadNginx();
+  if (!r.ok) fail.push(`reload: ${r.err}`);
+  if (fail.length) req.flash('error', `Synced ${ok}, ${fail.length} failed: ${fail.join('; ')}`);
+  else             req.flash('success', `Synced ${ok} domains to nginx`);
+  res.redirect('/sites');
+});
+
+// ── POST /sites/:domain/ssl — provision SSL cert via certbot ─────────────────
+
+router.post('/:domain/ssl', (req, res) => {
+  const row = getOne(req.params.domain);
+  if (!row) return res.status(404).json({ error: 'not found' });
+  try {
+    execSync(
+      `certbot certonly --webroot -w /var/www/certbot -d ${row.domain} -d www.${row.domain} ` +
+      `--non-interactive --agree-tos -m ${process.env.CERTBOT_EMAIL || 'sanz.andre@gmail.com'}`,
+      { timeout: 90_000 }
+    );
+    nginxBld.write(row);
+    reloadNginx();
+    db.prepare("UPDATE domains SET ssl_active=1, updated_at=datetime('now') WHERE id=?").run(row.id);
+    db.prepare("INSERT INTO domain_events (domain_id, type, message) VALUES (?, 'ssl', 'cert issued')")
+      .run(row.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ── POST /sites/:domain/remove ────────────────────────────────────────────────
 
 router.post('/:domain/remove', (req, res) => {
-  const { domain } = req.params;
-  const registry = readRegistry().filter(s => s.domain !== domain);
-  writeRegistry(registry);
-  req.flash('success', `${domain} removed from registry`);
+  const row = getOne(req.params.domain);
+  if (!row) { req.flash('error', 'Not found'); return res.redirect('/sites'); }
+  try { nginxBld.remove(row.domain); reloadNginx(); } catch {}
+  db.prepare('DELETE FROM domains WHERE id = ?').run(row.id);
+  req.flash('success', `${row.domain} removed`);
   res.redirect('/sites');
 });
 
-// ── POST /sites/:domain/state — change state ──────────────────────────────────
+// ── GET /sites/:domain/events — JSON log of changes ──────────────────────────
 
-router.post('/:domain/state', (req, res) => {
-  const { domain } = req.params;
-  const { state, redirectTo } = req.body;
-
-  const registry = readRegistry();
-  const entry    = findSite(registry, domain);
-  if (!entry) {
-    req.flash('error', 'Domain not found in registry');
-    return res.redirect('/sites');
-  }
-
-  try {
-    if (state === 'live') {
-      const runtime = sitesLib.getSite(domain);
-      if (!runtime) throw new Error(`No app.js / .env found in /var/www/${domain} — can't go live`);
-      nginx.writeConfig(domain, nginx.nginxLive(domain, runtime.port));
-      nginx.reload();
-      sitesLib.startService(domain);
-      entry.state = 'live';
-      delete entry.redirectTo;
-
-    } else if (state === 'parked') {
-      nginx.writeConfig(domain, nginx.nginxParked(domain));
-      nginx.reload();
-      try { sitesLib.stopService(domain); } catch { /* no service to stop */ }
-      entry.state = 'parked';
-      delete entry.redirectTo;
-
-    } else if (state === 'redirect') {
-      if (!redirectTo) throw new Error('redirectTo is required');
-      nginx.writeConfig(domain, nginx.nginxRedirect(domain, redirectTo));
-      nginx.reload();
-      try { sitesLib.stopService(domain); } catch { /* no service to stop */ }
-      entry.state      = 'redirect';
-      entry.redirectTo = redirectTo;
-
-    } else {
-      throw new Error('Unknown state: ' + state);
-    }
-
-    writeRegistry(registry);
-    req.flash('success', `${domain} → ${state}`);
-  } catch (e) {
-    req.flash('error', e.message);
-  }
-
-  res.redirect('/sites');
-});
-
-// ── POST /sites/:domain/restart ───────────────────────────────────────────────
-
-router.post('/:domain/restart', (req, res) => {
-  const { domain } = req.params;
-  try {
-    sitesLib.restartService(domain);
-    req.flash('success', `${domain} restarted`);
-  } catch (e) {
-    req.flash('error', e.message);
-  }
-  res.redirect('/sites');
-});
-
-// ── GET /sites/:domain/settings ───────────────────────────────────────────────
-
-router.get('/:domain/settings', (req, res) => {
-  const { domain } = req.params;
-  const site = sitesLib.getSite(domain);
-  if (!site) {
-    req.flash('error', `No live site found for ${domain}`);
-    return res.redirect('/sites');
-  }
-  res.render('site-settings', { site, flash: req.flash() });
-});
-
-// ── POST /sites/:domain/settings ─────────────────────────────────────────────
-
-router.post('/:domain/settings', (req, res) => {
-  const { domain } = req.params;
-  const { title, description, author, siteUrl, hideAuthor, gaId, awsKey, awsSecret, awsRegion, s3Bucket } = req.body;
-  try {
-    const changes = {
-      SITE_TITLE:       title,
-      SITE_DESCRIPTION: description,
-      SITE_AUTHOR:      author,
-      SITE_URL:         siteUrl,
-      HIDE_AUTHOR:      hideAuthor === 'true' ? 'true' : 'false',
-      GA_ID:            gaId || '',
-      AWS_REGION:       awsRegion || 'us-east-1',
-      S3_BUCKET:        s3Bucket || '',
-    };
-    if (awsKey)    changes.AWS_ACCESS_KEY_ID     = awsKey;
-    if (awsSecret) changes.AWS_SECRET_ACCESS_KEY = awsSecret;
-
-    sitesLib.saveSettings(domain, changes);
-    sitesLib.restartService(domain);
-    req.flash('success', 'Settings saved and service restarted');
-  } catch (e) {
-    req.flash('error', e.message);
-  }
-  res.redirect(`/sites/${domain}/settings`);
-});
-
-// ── GET /sites/:domain/logs (JSON) ────────────────────────────────────────────
-
-router.get('/:domain/logs', (req, res) => {
-  const { domain } = req.params;
-  const lines = parseInt(req.query.lines) || 50;
-  res.json({ logs: sitesLib.serviceLogs(domain, lines) });
+router.get('/:domain/events', (req, res) => {
+  const row = getOne(req.params.domain);
+  if (!row) return res.status(404).json({ error: 'not found' });
+  const events = db.prepare(
+    'SELECT * FROM domain_events WHERE domain_id = ? ORDER BY created_at DESC LIMIT 50'
+  ).all(row.id);
+  res.json(events);
 });
 
 module.exports = router;
