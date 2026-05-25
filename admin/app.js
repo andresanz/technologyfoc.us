@@ -127,7 +127,6 @@ app.use('/links',         requireAuth, require('./routes/links'));
 app.use('/claude',        requireAuth, require('./routes/claude'));
 app.use('/volume',        requireAuth, require('./routes/volume'));
 app.use('/cron',          requireAuth, require('./routes/cron'));
-app.use('/shortlinks',         requireAuth, require('./routes/shortlinks'));
 app.use('/server/webhooks',    requireAuth, require('./routes/webhooks'));
 
 // ── Quick reference notes ─────────────────────────────────────────────────────
