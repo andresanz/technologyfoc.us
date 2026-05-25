@@ -142,6 +142,8 @@
              style="font-weight:600;text-decoration:none;color:var(--text)"><%= s.domain %></a>
           <% if (s.mismatch) { %>
             <span class="nginx-mismatch" title="Registry: <%= s.state %> · nginx: <%= s.nginxState %>">⚠ nginx:<%= s.nginxState %></span>
+          <% } else if (s.appRedirect) { %>
+            <span style="font-size:.7rem;color:var(--muted);margin-left:.4rem" title="Redirect handled by andresanz.com app (proxy_pass + redirects.json)">via app</span>
           <% } %>
         </td>
 
