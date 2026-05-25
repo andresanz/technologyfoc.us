@@ -70,6 +70,7 @@ module.exports = function createPostsRouter(postsLib, pagesLib, privatePostsLib)
         code: 404, message: 'Post not found',
       });
     }
+    if (post.redirect) return res.redirect(301, post.redirect);
     // Compute prev/next based on date order (newest → oldest)
     const all = postsLib.getAll();
     const idx = all.findIndex(p => p.slug === post.slug);

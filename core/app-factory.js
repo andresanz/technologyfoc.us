@@ -181,7 +181,6 @@ function createApp(siteDir) {
   app.use('/private', require('./routes/private')(privatePostsLib, privatePagesLib, gratitudeFile));
   app.use('/upload',  require('./routes/upload')());
   app.use('/feed',    require('./routes/feed')(postsLib));
-  app.use('/r',       require('./routes/shortlinks'));
   app.use('/',        require('./routes/seo')(postsLib, pagesLib));
 
   // ── Home page edit shortcut ───────────────────────────────────────────────

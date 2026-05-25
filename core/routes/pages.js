@@ -19,6 +19,7 @@ module.exports = function createPagesRouter(pagesLib, postsLib) {
   router.get('/:slug', (req, res, next) => {
     const page = pagesLib.getBySlug(req.params.slug);
     if (!page) return next();
+    if (page.redirect) return res.redirect(301, page.redirect);
 
     const html = processShortcodes(page.html || '', postsLib, { page: req.query.page });
     res.render('page', {
