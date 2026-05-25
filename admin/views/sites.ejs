@@ -3,43 +3,75 @@
   const stateColor = { live: '#16a34a', parked: '#6b7280', redirect: '#2563eb' };
   const stateBg    = { live: '#dcfce7', parked: '#f3f4f6', redirect: '#dbeafe' };
   const svcColor   = { active: '#16a34a', inactive: '#6b7280', failed: '#dc2626' };
+  const mismatchCount = sites.filter(s => s.mismatch).length;
 -%>
 <%- include('partials/head') %>
 
 <style>
 .sites-table { width:100%;border-collapse:collapse;font-size:.875rem; }
-.sites-table th { text-align:left;padding:.6rem .75rem;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap; }
+.sites-table th { text-align:left;padding:.6rem .75rem;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em; }
 .sites-table td { padding:.65rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle; }
 .sites-table tr:last-child td { border-bottom:none; }
 .sites-table tr:hover td { background:var(--surface2); }
+.sites-table tr.mismatch td { background:#fef3c7; }
+.sites-table tr.mismatch:hover td { background:#fde68a; }
+
 .state-badge { display:inline-block;padding:.15em .55em;border-radius:4px;font-size:.72rem;font-weight:700;letter-spacing:.02em; }
 .svc-dot { display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.35rem;flex-shrink:0; }
-.nginx-mismatch { font-size:.72rem;color:var(--warning,#b45309);margin-left:.4rem; }
+.ssl-dot { display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+.nginx-mismatch { font-size:.72rem;color:#b45309;margin-left:.4rem;font-weight:500; }
 .action-row { display:flex;gap:.4rem;align-items:center;justify-content:flex-end;flex-wrap:wrap; }
 
-.add-row { display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.5rem }
+.toolbar { display:flex;gap:.75rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap; }
+.toolbar input[type=text] { flex:1;min-width:200px;padding:.45rem .7rem;font-size:.875rem; }
+.toolbar .filter-btn { padding:.35rem .7rem;font-size:.78rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:500; }
+.toolbar .filter-btn.active { background:var(--accent,#2563eb);color:#fff;border-color:var(--accent,#2563eb); }
+
+.add-row { display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:0 }
 .add-row input, .add-row select { height:2rem;padding:0 .6rem;font-size:.82rem; }
 .add-row label { font-size:.78rem;color:var(--muted);display:block;margin-bottom:.2rem }
 .add-row .f { display:flex;flex-direction:column }
 #redirectToWrap { display:none }
 
+.inline-state { display:inline-flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden; }
+.inline-state button { padding:.25rem .5rem;font-size:.72rem;font-weight:500;border:none;background:transparent;color:var(--muted);cursor:pointer;border-right:1px solid var(--border); }
+.inline-state button:last-child { border-right:none; }
+.inline-state button:hover { background:var(--surface2);color:var(--text); }
+.inline-state button.active { background:var(--accent,#2563eb);color:#fff; }
+
+.sync-banner { background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:.65rem 1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center; }
+.sync-banner-text { color:#92400e;font-size:.85rem;font-weight:500; }
+
 .state-form { display:inline }
 .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center }
 .modal-overlay.open { display:flex }
-.modal-box { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;width:340px;max-width:95vw }
+.modal-box { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;width:380px;max-width:95vw }
 .modal-box h3 { margin:0 0 1rem;font-size:1rem }
 </style>
 
 <div class="page-header">
-  <div><h1>Sites</h1></div>
-  <div><a href="/sites/new" class="btn btn-primary">+ New site</a></div>
+  <div>
+    <h1>Sites</h1>
+    <div style="color:var(--muted);font-size:.85rem;margin-top:.25rem">
+      <%= sites.length %> domains
+      <% if (mismatchCount) { %> · <span style="color:#b45309;font-weight:600"><%= mismatchCount %> out of sync</span><% } %>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem">
+    <% if (mismatchCount) { %>
+      <form method="POST" action="/sites/sync-all" style="display:inline" onsubmit="return confirm('Sync all <%= mismatchCount %> mismatched domains to nginx?')">
+        <button type="submit" class="btn">⟳ Sync all (<%= mismatchCount %>)</button>
+      </form>
+    <% } %>
+    <a href="/sites/new" class="btn btn-primary">+ New site</a>
+  </div>
 </div>
 
 <%- include('partials/flash') %>
 
-<!-- Add existing domain -->
-<div class="card" style="padding:1rem;margin-bottom:1.5rem">
-  <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.75rem">Add domain to registry</div>
+<!-- Add domain to registry -->
+<div class="card" style="padding:1rem;margin-bottom:1rem">
+  <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.65rem">Add domain to registry</div>
   <form method="POST" action="/sites/add">
     <div class="add-row">
       <div class="f">
@@ -67,15 +99,28 @@
   </form>
 </div>
 
+<!-- Toolbar: search + filter -->
+<div class="toolbar">
+  <input type="text" id="searchInput" placeholder="Search domains, notes, redirect targets…" oninput="applyFilter()">
+  <button class="filter-btn active" data-filter="all" onclick="setFilter(this)">All (<%= sites.length %>)</button>
+  <button class="filter-btn" data-filter="live" onclick="setFilter(this)">Live (<%= sites.filter(s=>s.state==='live').length %>)</button>
+  <button class="filter-btn" data-filter="redirect" onclick="setFilter(this)">Redirect (<%= sites.filter(s=>s.state==='redirect').length %>)</button>
+  <button class="filter-btn" data-filter="parked" onclick="setFilter(this)">Parked (<%= sites.filter(s=>s.state==='parked').length %>)</button>
+  <% if (mismatchCount) { %>
+    <button class="filter-btn" data-filter="mismatch" onclick="setFilter(this)" style="color:#b45309;border-color:#fcd34d">⚠ Mismatched (<%= mismatchCount %>)</button>
+  <% } %>
+</div>
+
 <!-- Sites table -->
 <div class="card" style="padding:0;overflow:hidden">
   <% if (!sites.length) { %>
     <p style="padding:2rem;color:var(--muted)">No sites in registry.</p>
   <% } else { %>
-  <table class="sites-table">
+  <table class="sites-table" id="sitesTable">
     <thead>
       <tr>
         <th>Domain</th>
+        <th>SSL</th>
         <th>State</th>
         <th>Service</th>
         <th>Posts</th>
@@ -85,21 +130,32 @@
     </thead>
     <tbody>
     <% sites.forEach(s => { %>
-      <tr>
+      <tr class="site-row <%= s.mismatch ? 'mismatch' : '' %>"
+          data-domain="<%= s.domain %>"
+          data-state="<%= s.state %>"
+          data-note="<%= (s.note || '').toLowerCase() %>"
+          data-redirect="<%= (s.redirectTo || '').toLowerCase() %>"
+          data-mismatch="<%= s.mismatch ? '1' : '0' %>">
         <!-- Domain -->
         <td>
           <a href="<%= s.url || 'https://' + s.domain %>" target="_blank" rel="noopener"
              style="font-weight:600;text-decoration:none;color:var(--text)"><%= s.domain %></a>
-          <% if (s.nginxState && s.nginxState !== s.state && s.nginxState !== 'unconfigured') { %>
-            <span class="nginx-mismatch" title="nginx shows '<%= s.nginxState %>' but registry says '<%= s.state %>'">⚠ nginx:<%= s.nginxState %></span>
+          <% if (s.mismatch) { %>
+            <span class="nginx-mismatch" title="Registry: <%= s.state %> · nginx: <%= s.nginxState %>">⚠ nginx:<%= s.nginxState %></span>
           <% } %>
+        </td>
+
+        <!-- SSL -->
+        <td>
+          <span class="ssl-dot" style="background:<%= s.ssl ? '#16a34a' : '#d1d5db' %>"
+                title="<%= s.ssl ? 'Certificate present' : 'No SSL cert' %>"></span>
         </td>
 
         <!-- State badge -->
         <td>
           <span class="state-badge" style="background:<%= stateBg[s.state] || '#f3f4f6' %>;color:<%= stateColor[s.state] || '#374151' %>"><%= s.state %></span>
           <% if (s.state === 'redirect' && s.redirectTo) { %>
-            <span style="font-size:.78rem;color:var(--muted);margin-left:.35rem">→ <%= s.redirectTo %></span>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">→ <%= s.redirectTo %></div>
           <% } %>
         </td>
 
@@ -129,6 +185,12 @@
             <% if (s.managed === 'redirects') { %>
               <a href="/redirects" class="btn btn-sm">Manage →</a>
             <% } else { %>
+              <% if (s.mismatch) { %>
+                <form method="POST" action="/sites/<%= s.domain %>/sync" class="state-form"
+                      title="Push registry state (<%= s.state %>) to nginx">
+                  <button type="submit" class="btn btn-sm" style="color:#b45309;border-color:#fcd34d">⟳ Sync</button>
+                </form>
+              <% } %>
               <% if (s.state === 'live') { %>
                 <form method="POST" action="/sites/<%= s.domain %>/restart" class="state-form">
                   <button type="submit" class="btn btn-sm">Restart</button>
@@ -153,6 +215,7 @@
     <% }) %>
     </tbody>
   </table>
+  <p id="noMatch" style="display:none;padding:2rem;color:var(--muted);text-align:center">No matches.</p>
   <% } %>
 </div>
 
@@ -185,6 +248,39 @@
 </div>
 
 <script>
+let currentFilter = 'all';
+let currentSearch = '';
+
+function setFilter(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.filter;
+  applyFilter();
+}
+
+function applyFilter() {
+  currentSearch = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  let shown = 0;
+  document.querySelectorAll('.site-row').forEach(row => {
+    const domain   = row.dataset.domain.toLowerCase();
+    const note     = row.dataset.note;
+    const redirect = row.dataset.redirect;
+    const state    = row.dataset.state;
+    const mismatch = row.dataset.mismatch === '1';
+
+    let pass = true;
+    if (currentFilter === 'mismatch') pass = mismatch;
+    else if (currentFilter !== 'all') pass = (state === currentFilter);
+
+    if (pass && currentSearch) {
+      pass = domain.includes(currentSearch) || note.includes(currentSearch) || redirect.includes(currentSearch);
+    }
+    row.style.display = pass ? '' : 'none';
+    if (pass) shown++;
+  });
+  document.getElementById('noMatch').style.display = shown ? 'none' : '';
+}
+
 function toggleRedirectTo(val) {
   document.getElementById('redirectToWrap').style.display = val === 'redirect' ? '' : 'none';
 }

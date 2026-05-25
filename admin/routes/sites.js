@@ -65,10 +65,72 @@ router.get('/', (req, res) => {
       }
     }
     enriched.nginxState = nginx.getState(entry.domain);
+    enriched.ssl        = nginx.hasCert(entry.domain);
+    enriched.mismatch   = enriched.nginxState !== entry.state && enriched.nginxState !== 'unconfigured';
     return enriched;
   });
 
   res.render('sites', { sites, flash: req.flash() });
+});
+
+// ── POST /sites/:domain/sync — push registry state to nginx ──────────────────
+router.post('/:domain/sync', (req, res) => {
+  const { domain } = req.params;
+  const registry = readRegistry();
+  const entry = findSite(registry, domain);
+  if (!entry) {
+    req.flash('error', `${domain} not in registry`);
+    return res.redirect('/sites');
+  }
+  try {
+    if (entry.state === 'live') {
+      const runtime = sitesLib.getSite(domain);
+      if (!runtime) throw new Error(`No live app for ${domain}`);
+      nginx.writeConfig(domain, nginx.nginxLive(domain, runtime.port));
+    } else if (entry.state === 'redirect') {
+      if (!entry.redirectTo) throw new Error('No redirectTo in registry');
+      nginx.writeConfig(domain, nginx.nginxRedirect(domain, entry.redirectTo));
+    } else if (entry.state === 'parked') {
+      nginx.writeConfig(domain, nginx.nginxParked(domain));
+    }
+    nginx.reload();
+    req.flash('success', `${domain} synced to ${entry.state}`);
+  } catch (e) {
+    req.flash('error', e.message);
+  }
+  res.redirect('/sites');
+});
+
+// ── POST /sites/sync-all — sync all mismatched domains ───────────────────────
+router.post('/sync-all', (req, res) => {
+  const registry = readRegistry();
+  const results  = { synced: 0, failed: [] };
+  for (const entry of registry) {
+    const current = nginx.getState(entry.domain);
+    if (current === entry.state || current === 'unconfigured') continue;
+    try {
+      if (entry.state === 'live') {
+        const runtime = sitesLib.getSite(entry.domain);
+        if (!runtime) throw new Error('no app');
+        nginx.writeConfig(entry.domain, nginx.nginxLive(entry.domain, runtime.port));
+      } else if (entry.state === 'redirect') {
+        if (!entry.redirectTo) throw new Error('no target');
+        nginx.writeConfig(entry.domain, nginx.nginxRedirect(entry.domain, entry.redirectTo));
+      } else if (entry.state === 'parked') {
+        nginx.writeConfig(entry.domain, nginx.nginxParked(entry.domain));
+      }
+      results.synced++;
+    } catch (e) {
+      results.failed.push(`${entry.domain}: ${e.message}`);
+    }
+  }
+  try { nginx.reload(); } catch (e) { results.failed.push(`reload: ${e.message}`); }
+  if (results.failed.length) {
+    req.flash('error', `Synced ${results.synced}, failed: ${results.failed.join('; ')}`);
+  } else {
+    req.flash('success', `Synced ${results.synced} domain(s) to nginx`);
+  }
+  res.redirect('/sites');
 });
 
 // ── GET /sites/new ────────────────────────────────────────────────────────────

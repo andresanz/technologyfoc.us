@@ -127,4 +127,4 @@ function getState(domain) {
   return 'unknown';
 }
 
-module.exports = { nginxLive, nginxRedirect, nginxParked, writeConfig, reload, readConfig, getState };
+module.exports = { nginxLive, nginxRedirect, nginxParked, writeConfig, reload, readConfig, getState, hasCert };
