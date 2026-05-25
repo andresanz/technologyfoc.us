@@ -42,7 +42,7 @@ const hljs       = require('highlight.js');
 // ── Base instance ─────────────────────────────────────────────────────────────
 const md = new MarkdownIt({
   html:        true,   // allow raw HTML in source
-  linkify:     true,   // auto-link bare URLs
+  linkify:     true,   // auto-link explicit URLs (http://, https://, mailto:)
   typographer: true,   // smart quotes, dashes, ellipsis
   highlight(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
@@ -56,6 +56,9 @@ const md = new MarkdownIt({
 });
 
 // ── Plugins ───────────────────────────────────────────────────────────────────
+
+// Don't auto-link bare domain names like "914.io" — only explicit URLs (http://, mailto:)
+md.linkify.set({ fuzzyLink: false });
 
 // {.class #id attr=val} on any block or inline element
 md.use(attrs, { leftDelimiter: '{', rightDelimiter: '}', allowedAttributes: [] });
