@@ -71,6 +71,9 @@ legend    { padding: 0 .5rem; font-size: .8rem; font-weight: 600; color: var(--m
   padding: .75rem 0;
 }
 .nav-brand { font-weight: 700; color: var(--text); font-size: .95rem; text-decoration: none; white-space: nowrap; }
+.site-switcher { display: inline-flex; margin-left: .6rem; }
+.site-switcher-select { font-size: .78rem; padding: .25rem 1.5rem .25rem .55rem; background: var(--surface2,#f3f4f6); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; font-weight: 500; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>"); background-repeat: no-repeat; background-position: right .45rem center; }
+.site-switcher-select:hover { border-color: var(--text); }
 .nav-links  { display: flex; gap: .5rem; align-items: center; font-size: .82rem; flex-wrap: nowrap; }
 .nav-links a { color: var(--muted); white-space: nowrap; }
 .nav-links a:hover { color: var(--text); text-decoration: none; }

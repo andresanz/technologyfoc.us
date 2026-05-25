@@ -23,9 +23,45 @@ function getAll() {
     .sort((a, b) => a.domain.localeCompare(b.domain));
 }
 
+// ── Discover sub-sites (live under /var/www/<main>/sites/<sub>) ──────────────
+// Returns lightweight entries [{domain, parent, dir}] — useful for switcher UI
+function getSubSites(parent = 'andresanz.com') {
+  const subDir = path.join(SITES_ROOT, parent, 'sites');
+  if (!fs.existsSync(subDir)) return [];
+  return fs.readdirSync(subDir)
+    .filter(name => {
+      const dir = path.join(subDir, name);
+      return fs.statSync(dir).isDirectory() &&
+             fs.existsSync(path.join(dir, 'app.js'));
+    })
+    .map(name => getSite(name)) // getSite resolves via path detection below
+    .filter(Boolean)
+    .sort((a, b) => a.domain.localeCompare(b.domain));
+}
+
+// ── All editable sites: main + sub-sites ─────────────────────────────────────
+function getEditable(main = 'andresanz.com') {
+  const result = [];
+  const mainSite = getSite(main);
+  if (mainSite) result.push(mainSite);
+  result.push(...getSubSites(main));
+  return result;
+}
+
+// ── Resolve a site directory for a given domain ──────────────────────────────
+// Checks /var/www/<domain> first, then /var/www/andresanz.com/sites/<domain>
+function resolveSiteDir(domain) {
+  const direct = path.join(SITES_ROOT, domain);
+  if (fs.existsSync(path.join(direct, '.env'))) return direct;
+  const sub = path.join(SITES_ROOT, 'andresanz.com', 'sites', domain);
+  if (fs.existsSync(path.join(sub, '.env'))) return sub;
+  return null;
+}
+
 // ── Get a single site by domain ───────────────────────────────────────────────
 function getSite(domain) {
-  const siteDir = path.join(SITES_ROOT, domain);
+  const siteDir = resolveSiteDir(domain);
+  if (!siteDir) return null;
   const envFile = path.join(siteDir, '.env');
 
   if (!fs.existsSync(envFile)) return null;
@@ -193,4 +229,4 @@ function nginxPort(domain) {
   } catch { return null; }
 }
 
-module.exports = { getAll, getSite, saveSettings, savePort, nginxPort, restartService, stopService, startService, serviceLogs, bustCache };
+module.exports = { getAll, getSite, getSubSites, getEditable, resolveSiteDir, saveSettings, savePort, nginxPort, restartService, stopService, startService, serviceLogs, bustCache };

@@ -85,13 +85,33 @@ app.use((req, res, next) => {
   next();
 });
 
-// Single-site: attach the site object to every request
+// Multi-site: attach the active site to every request based on cookie ──────
 const sitesLib = require('./lib/sites');
-const SITE_DOMAIN = process.env.SITE_DOMAIN || 'andresanz.com';
+const DEFAULT_SITE = process.env.SITE_DOMAIN || 'andresanz.com';
 app.use((req, res, next) => {
-  req.site = sitesLib.getSite(SITE_DOMAIN);
-  res.locals.siteUrl = req.site?.url || '';
+  const editable = sitesLib.getEditable(DEFAULT_SITE);
+  const editableDomains = editable.map(s => s.domain);
+  const cookieSite = (req.headers.cookie || '').match(/(?:^|;\s*)admin_site=([^;]+)/)?.[1];
+  const active = (cookieSite && editableDomains.includes(decodeURIComponent(cookieSite)))
+    ? decodeURIComponent(cookieSite)
+    : DEFAULT_SITE;
+
+  req.site = sitesLib.getSite(active);
+  res.locals.siteUrl       = req.site?.url || '';
+  res.locals.activeSite    = active;
+  res.locals.editableSites = editable; // for the switcher UI
   next();
+});
+
+// POST /switch-site — set the active site cookie and bounce back
+app.post('/switch-site', (req, res) => {
+  const domain   = (req.body?.domain || '').trim();
+  const editable = sitesLib.getEditable(DEFAULT_SITE).map(s => s.domain);
+  if (!editable.includes(domain)) {
+    return res.redirect(req.headers.referer || '/');
+  }
+  res.setHeader('Set-Cookie', `admin_site=${encodeURIComponent(domain)}; Path=/; Max-Age=31536000; SameSite=Lax`);
+  res.redirect(req.headers.referer || '/');
 });
 
 // ── Routes ───────────────────────────────────────────────────────────────────

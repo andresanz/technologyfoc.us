@@ -11,6 +11,15 @@
 <nav class="topnav">
   <div class="nav-inner">
     <a href="/server" class="nav-brand">⚙ Admin<% if (typeof gitHash !== 'undefined' && gitHash) { %> <span style="font-size:0.65em;opacity:0.45;font-weight:400"><%= gitHash %></span><% } %></a>
+    <% if (typeof editableSites !== 'undefined' && editableSites.length > 1) { %>
+      <form method="POST" action="/switch-site" class="site-switcher" id="siteSwitcherForm">
+        <select name="domain" onchange="document.getElementById('siteSwitcherForm').submit()" class="site-switcher-select" title="Switch active site">
+          <% editableSites.forEach(function(s) { %>
+            <option value="<%= s.domain %>" <%= s.domain === activeSite ? 'selected' : '' %>><%= s.domain %></option>
+          <% }) %>
+        </select>
+      </form>
+    <% } %>
     <button class="nav-hamburger" id="navToggle" aria-label="Menu">
       <span></span><span></span><span></span>
     </button>
