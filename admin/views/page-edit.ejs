@@ -54,6 +54,10 @@
           <input type="checkbox" name="draft" value="1" <%= page.draft ? 'checked' : '' %>>
           Save as draft
         </label>
+
+        <label style="margin-top:.75rem">Redirect URL
+          <input type="url" name="redirect" value="<%= page.redirect || '' %>" placeholder="https://… (redirects visitors here)">
+        </label>
       </section>
 
       <section class="card">

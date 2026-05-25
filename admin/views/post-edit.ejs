@@ -77,6 +77,10 @@
           <textarea name="excerpt" rows="3" placeholder="Short description for post list…"><%= post.excerpt %></textarea>
         </label>
 
+        <label>Redirect URL
+          <input type="url" name="redirect" value="<%= post.redirect || '' %>" placeholder="https://… (redirects visitors here)">
+        </label>
+
         <label>Cover image
           <div class="image-input-row">
             <input type="text" name="image" id="imageUrl" value="<%= post.image %>" placeholder="/images/…">

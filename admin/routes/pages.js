@@ -48,7 +48,7 @@ router.post('/new', async (req, res) => {
 
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const { title, slug, order, nav, draft, body } = req.body;
+  const { title, slug, order, nav, draft, body, redirect } = req.body;
   const finalSlug = slug || postsLib.slugify(title);
   const filename  = `${finalSlug}.md`;
 
@@ -58,6 +58,7 @@ router.post('/new', async (req, res) => {
       order: order ? parseInt(order, 10) : undefined,
       nav:   nav !== '0',
       draft: !!draft,
+      redirect: redirect || undefined,
       body,
     });
     await sitesLib.bustCache(site).catch(() => {});
@@ -94,7 +95,7 @@ router.post('/edit/:filename', async (req, res) => {
   const dir = isPrivate ? site.privatePagesDir : site.pagesDir;
   const dirParam = isPrivate ? '?dir=private-pages' : '';
 
-  const { title, slug, order, nav, draft, body } = req.body;
+  const { title, slug, order, nav, draft, body, redirect } = req.body;
 
   // Preserve the existing date — pages have no date input
   const existing = postsLib.read(dir, req.params.filename);
@@ -107,6 +108,7 @@ router.post('/edit/:filename', async (req, res) => {
       order: order ? parseInt(order, 10) : undefined,
       nav:   nav === '1',
       draft: !!draft,
+      redirect: redirect || undefined,
       body,
     });
     await sitesLib.bustCache(site).catch(() => {});

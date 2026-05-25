@@ -132,13 +132,13 @@ router.get('/new', (req, res) => {
 router.post('/new', async (req, res) => {
   const site = req.site;
 
-  const { title, slug, date, tags, excerpt, image, draft, body, visibility } = req.body;
+  const { title, slug, date, tags, excerpt, image, draft, body, visibility, redirect } = req.body;
   const finalSlug = slug || postsLib.slugify(title);
   const filename  = `${finalSlug}.md`;
   const dir       = visibility === 'private' ? site.privatePostsDir : site.postsDir;
 
   try {
-    postsLib.write(dir, filename, { title, slug: finalSlug, date, tags, excerpt, image, draft: !!draft, body });
+    postsLib.write(dir, filename, { title, slug: finalSlug, date, tags, excerpt, image, draft: !!draft, redirect: redirect || undefined, body });
     await site.bustCache().catch(() => {});
     gitLib.autoCommit(site, `Create ${visibility === 'private' ? 'private ' : ''}post: ${title}`);
     req.flash('success', `Post "${title}" created`);
@@ -172,7 +172,7 @@ router.get('/edit/:filename', (req, res) => {
 router.post('/edit/:filename', async (req, res) => {
   const site = req.site;
 
-  const { title, slug, date, tags, excerpt, image, draft, body, visibility, originalVisibility } = req.body;
+  const { title, slug, date, tags, excerpt, image, draft, body, visibility, originalVisibility, redirect } = req.body;
   const currentDir  = originalVisibility === 'private' ? site.privatePostsDir : site.postsDir;
   const targetDir   = visibility === 'private'         ? site.privatePostsDir : site.postsDir;
   const dirParam    = visibility === 'private' ? '?dir=private-posts' : '';
@@ -182,7 +182,7 @@ router.post('/edit/:filename', async (req, res) => {
     if (visibility !== originalVisibility) {
       postsLib.remove(currentDir, req.params.filename);
     }
-    postsLib.write(targetDir, req.params.filename, { title, slug, date, tags, excerpt, image, draft: !!draft, body });
+    postsLib.write(targetDir, req.params.filename, { title, slug, date, tags, excerpt, image, draft: !!draft, redirect: redirect || undefined, body });
     await site.bustCache().catch(() => {});
     gitLib.autoCommit(site, `Save post: ${title}`);
     req.flash('success', 'Post saved');
