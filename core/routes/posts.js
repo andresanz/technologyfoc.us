@@ -54,7 +54,7 @@ module.exports = function createPostsRouter(postsLib, pagesLib, privatePostsLib)
 
   // ── Single post ───────────────────────────────────────────────────────────
   // /post/:slug/edit  — redirect to admin editor
-  router.get('/post/:slug/edit', (req, res) => {
+  router.get(['/post/:slug/edit', '/posts/:slug/edit'], (req, res) => {
     const post   = postsLib.getBySlug(req.params.slug);
     if (!post) return res.redirect('/');
     const adminUrl = process.env.ADMIN_URL || 'https://admin.andresanz.com';
