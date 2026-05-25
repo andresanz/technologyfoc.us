@@ -110,13 +110,24 @@ function getSite(domain) {
     pageCount,
     status:      serviceStatus(domain),
     serviceName: domain === 'andresanz.com' ? 'andresanz' : `blog-${domain.replace(/\./g, '-')}`,
-    bustCache:   () => bustCache({ port: cfg.PORT || '3000', adminKey: cfg.ADMIN_KEY || '' }),
+    bustCache:   () => bustCache({ domain, port: cfg.PORT || '3000', adminKey: cfg.ADMIN_KEY || '' }),
   };
 }
 
 // ── systemctl helpers ─────────────────────────────────────────────────────────
+// Service naming varies: andresanz.com → "andresanz"; sub-sites use "<name>-<tld>"
+// (e.g. "914-io"); older sites used "blog-<name>-<tld>". Find whichever exists.
 function svcName(domain) {
-  return domain === 'andresanz.com' ? 'andresanz' : `blog-${domain.replace(/\./g, '-')}`;
+  if (domain === 'andresanz.com') return 'andresanz';
+  const bare = domain.replace(/\./g, '-');
+  const candidates = [bare, `blog-${bare}`];
+  for (const name of candidates) {
+    try {
+      execSync(`systemctl cat ${name}.service`, { stdio: 'ignore', timeout: 2000 });
+      return name;
+    } catch { /* try next */ }
+  }
+  return bare; // fall back; downstream commands will error sensibly
 }
 
 function serviceStatus(domain) {
@@ -156,13 +167,28 @@ function serviceLogs(domain, lines = 50) {
 }
 
 // ── Post cache bust ───────────────────────────────────────────────────────────
+// If the running process has a stale ADMIN_KEY (mismatch with the .env on disk),
+// the bust will 401. In that case we restart the service — which guarantees a
+// fresh cache anyway — and the next bust will work.
 async function bustCache(site) {
   const url = `http://127.0.0.1:${site.port}/_bust`;
-  const res = await fetch(url, {
-    method:  'POST',
-    headers: { 'X-Admin-Key': site.adminKey },
-  });
-  return res.ok;
+  try {
+    const res = await fetch(url, {
+      method:  'POST',
+      headers: { 'X-Admin-Key': site.adminKey },
+    });
+    if (res.ok) return true;
+    if (res.status === 401 && site.domain) {
+      // Stale key — restart picks up the new .env and clears cache
+      console.warn(`[bust] 401 on ${site.domain}, restarting service to reload env`);
+      try { restartService(site.domain); } catch (e) { console.error('[bust] restart failed:', e.message); }
+      return true; // service restart is a successful cache clear
+    }
+    return false;
+  } catch (e) {
+    console.error('[bust] error:', e.message);
+    return false;
+  }
 }
 
 // ── Save site settings (.env) ─────────────────────────────────────────────────
