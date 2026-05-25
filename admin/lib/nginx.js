@@ -122,8 +122,8 @@ function getState(domain) {
   if (!conf) return 'unconfigured';
   if (/proxy_pass/.test(conf))                    return 'live';
   if (/root\s+\/var\/www\/parked/.test(conf))     return 'parked';
-  if (/return 301\s+https?:\/\//.test(conf) &&
-      !/return 301\s+https?:\/\/\$host/.test(conf)) return 'redirect';
+  // Real redirect = a 301 to a literal URL (excludes the $host HTTPS upgrade block)
+  if (/return\s+301\s+https?:\/\/[^$\s]/.test(conf)) return 'redirect';
   return 'unknown';
 }
 
