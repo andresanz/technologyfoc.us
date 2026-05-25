@@ -17,34 +17,51 @@ function run(cmd, cwd) {
   }
 }
 
-function ensureRepo(dir) {
-  const gitDir = path.join(dir, '.git');
-  if (!fs.existsSync(gitDir)) {
-    run('git init', dir);
-    run(`git config user.name "${GIT_USER}"`, dir);
-    run(`git config user.email "${GIT_EMAIL}"`, dir);
-
-    const gitignore = path.join(dir, '.gitignore');
-    if (!fs.existsSync(gitignore)) {
-      fs.writeFileSync(gitignore, 'node_modules/\n.env\n*.log\n');
-    }
-
-    run('git add -A', dir);
-    const hasFiles = run('git status --porcelain', dir);
-    if (hasFiles) run('git commit -m "Initial snapshot"', dir);
+// Walk up from `dir` to find the real .git root. Returns the directory
+// containing .git, or null if none exists above /var/www.
+function findRepoRoot(dir) {
+  let cur = path.resolve(dir);
+  const stop = path.parse(cur).root;
+  while (cur && cur !== stop) {
+    if (fs.existsSync(path.join(cur, '.git'))) return cur;
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
   }
+  return null;
+}
+
+function ensureRepo(dir) {
+  // If we're inside an existing repo (e.g. a sub-site under andresanz.com),
+  // use that repo — do NOT git init a nested one.
+  const existing = findRepoRoot(dir);
+  if (existing) return existing;
+
+  // Otherwise initialise a fresh repo at this directory.
+  run('git init', dir);
+  run(`git config user.name "${GIT_USER}"`, dir);
+  run(`git config user.email "${GIT_EMAIL}"`, dir);
+
+  const gitignore = path.join(dir, '.gitignore');
+  if (!fs.existsSync(gitignore)) {
+    fs.writeFileSync(gitignore, 'node_modules/\n.env\n*.log\n');
+  }
+
+  run('git add -A', dir);
+  const hasFiles = run('git status --porcelain', dir);
+  if (hasFiles) run('git commit -m "Initial snapshot"', dir);
+  return dir;
 }
 
 function autoCommit(site, message) {
   try {
-    const dir = site.dir;
-    ensureRepo(dir);
-    run('git add -A', dir);
-    const dirty = run('git status --porcelain', dir);
+    const repoRoot = ensureRepo(site.dir);
+    run('git add -A', repoRoot);
+    const dirty = run('git status --porcelain', repoRoot);
     if (dirty) {
       const safe = message.replace(/"/g, "'").replace(/\n/g, ' ');
-      run(`git commit -m "${safe}"`, dir);
-      run('git push origin HEAD --quiet', dir);
+      run(`git commit -m "${safe}"`, repoRoot);
+      run('git push origin HEAD --quiet', repoRoot);
     }
   } catch (e) {
     console.error('[git] autoCommit failed:', e.message);
@@ -53,10 +70,10 @@ function autoCommit(site, message) {
 
 function log(site, limit = 20) {
   try {
-    ensureRepo(site.dir);
+    const repoRoot = ensureRepo(site.dir);
     const out = run(
       `git log --pretty=format:"%h|%ad|%s" --date=format:"%b %d %Y %H:%M" -n ${limit}`,
-      site.dir
+      repoRoot
     );
     if (!out) return [];
     return out.split('\n').map(line => {
@@ -70,7 +87,8 @@ function log(site, limit = 20) {
 
 function diff(site, hash) {
   try {
-    return run(`git show --stat ${hash}`, site.dir);
+    const repoRoot = findRepoRoot(site.dir) || site.dir;
+    return run(`git show --stat ${hash}`, repoRoot);
   } catch {
     return '';
   }
