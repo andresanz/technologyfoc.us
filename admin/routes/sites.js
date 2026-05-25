@@ -69,14 +69,13 @@ router.get('/', (req, res) => {
     enriched.mismatch   = enriched.nginxState !== entry.state && enriched.nginxState !== 'unconfigured';
 
     // Suppress mismatch for "app-level redirect" pattern:
-    // registry says redirect + nginx proxies to the andresanz.com app (port matches).
-    // In that setup the redirect happens inside the app via redirects.json — not a real mismatch.
+    // registry says redirect + nginx proxies to localhost. In that setup the redirect
+    // happens inside the app (redirects.json) — not a real mismatch.
     if (enriched.mismatch && entry.state === 'redirect' && enriched.nginxState === 'live') {
       const conf = nginx.readConfig(entry.domain);
-      const appPort = (sitesLib.getSite('andresanz.com') || {}).port;
-      if (conf && appPort && new RegExp(`proxy_pass\\s+http://127\\.0\\.0\\.1:${appPort}\\b`).test(conf)) {
-        enriched.mismatch  = false;
-        enriched.appRedirect = true; // flag for the UI
+      if (conf && /proxy_pass\s+http:\/\/(?:127\.0\.0\.1|localhost):\d+/.test(conf)) {
+        enriched.mismatch    = false;
+        enriched.appRedirect = true;
       }
     }
     return enriched;
