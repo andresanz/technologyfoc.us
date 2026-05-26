@@ -129,7 +129,6 @@ app.use('/server/backups', requireAuth, require('./routes/backup'));
 app.use('/server/bans',    requireAuth, require('./routes/bans'));
 app.use('/waf',            requireAuth, require('./routes/waf'));
 app.use('/analytics',      requireAuth, require('./routes/analytics'));
-app.use('/redirects',      requireAuth, require('./routes/redirects'));
 app.use('/templates',     requireAuth, require('./routes/templates'));
 app.use('/sharp',         requireAuth, require('./routes/sharp'));
 app.use('/logs',          requireAuth, require('./routes/logs'));
