@@ -49,10 +49,15 @@ json_str() {
 # ── Service checks ─────────────────────────────────────────────────────────────
 SERVICES_JSON=""
 INFRA_SVCS="nginx redis-server fail2ban postfix ssh cron"
-ALL_BLOG_SVCS=$(systemctl list-units 'blog-*.service' --no-pager --no-legend 2>/dev/null \
-  | awk '{print $1}' | sed 's/.service$//' | tr '\n' ' ' || true)
+# Platform-managed services live as plain unit files in /etc/systemd/system/.
+# Filter out infra/system stuff so we don't double-list nginx etc.
+PLATFORM_SVCS=$(ls /etc/systemd/system/*.service 2>/dev/null \
+  | xargs -n1 basename 2>/dev/null \
+  | sed 's/\.service$//' \
+  | grep -Ev '^(nginx|redis-server|fail2ban|postfix|ssh|cron|systemd-.*|getty.*|gratitude-bot|certbot.*)$' \
+  | sort -u | tr '\n' ' ')
 
-for svc in $INFRA_SVCS $ALL_BLOG_SVCS; do
+for svc in $INFRA_SVCS $PLATFORM_SVCS; do
   [ -z "$svc" ] && continue
   status=$(check_service "$svc")
   [ -n "$SERVICES_JSON" ] && SERVICES_JSON+=","
