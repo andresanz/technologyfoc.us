@@ -1,7 +1,7 @@
 'use strict';
 const { BetaAnalyticsDataClient } = require('@google-analytics/data');
 
-const KEY_FILE = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/var/www/andresanz.com/config/ga4-key.json';
+const KEY_FILE = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/var/www/technologyfoc.us/config/ga4-key.json';
 
 const PROPERTY_MAP = {
   'andresanz.com':             '337889293',

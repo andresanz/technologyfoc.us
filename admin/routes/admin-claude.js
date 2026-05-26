@@ -6,7 +6,7 @@ const path    = require('path');
 const os      = require('os');
 
 const SITES = [
-  { id:'andresanz',             label:'andresanz.com',             dir:'/var/www/andresanz.com' },
+  { id:'andresanz',             label:'andresanz.com',             dir:'/var/www/technologyfoc.us' },
   { id:'randomcategory',        label:'randomcategory.com',        dir:'/var/www/randomcategory.com' },
   { id:'sanz-me',               label:'sanz.me',                   dir:'/var/www/sanz.me' },
   { id:'914io',                 label:'914.io',                    dir:'/var/www/914.io' },

@@ -5,11 +5,11 @@ After=network.target
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/var/www/andresanz.com
+WorkingDirectory=/var/www/technologyfoc.us
 ExecStart=/usr/bin/node app.js
 Restart=on-failure
 RestartSec=5
-EnvironmentFile=/var/www/andresanz.com/.env
+EnvironmentFile=/var/www/technologyfoc.us/.env
 StandardOutput=journal
 StandardError=journal
 
