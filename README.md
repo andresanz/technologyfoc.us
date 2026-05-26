@@ -1,106 +1,78 @@
-# andresanz-sites
+# technologyfoc.us
 
-Monorepo for all sites and services running on server02 (45.33.73.105 / Ubuntu 24.04).
+Single-platform multi-site blog network. Markdown + EJS + Express + SQLite, hosted on a Linode VPS.
 
-## Structure
+## Architecture
 
 ```
-packages/
-  blog-core/          # Shared blog engine (views, middleware, helpers)
-  blog-admin/         # Admin panel — port 4098
-  redirect-service/   # Domain redirect handler — port 4099
-
-sites/
-  914.io/             # port 4090
-  andresanz.com/      # port 4091
-  randomcategory.com/ # port 4092
-  samsanz.info/       # port 4093
-  sanz.me/            # port 4094
-  therandomactofwriting.com/ # port 4095
-
-scripts/
-  webhook-deploy.js   # GitHub webhook handler — port 4101
-  .env.deploy         # Webhook + Telegram config (gitignored)
+/var/www/technologyfoc.us/           ← platform root (this repo)
+├── admin/                           ← unified admin (port 4000)
+├── core/                            ← shared engine — app-factory, posts/pages libs, markdown renderer
+├── scripts/                         ← deploy + utility scripts
+└── sites/
+    ├── andresanz.com/               (port 3000)
+    ├── 914.io/                      (port 4090)
+    └── randomcategory.com/          (port 4091)
 ```
 
-## Services
+Each `sites/<domain>/` is a self-contained Node app: `app.js`, `.env`, `content/`, optional `public/`.
 
-All services are managed by systemd. Each site and package has its own service unit.
+## Domain & redirect management
 
-| Service | Port | Unit |
+- **Source of truth:** `admin/data/domains.db` (SQLite, `domains` table)
+- **Admin UI:** https://admin.technologyfoc.us/sites
+- All redirects are direct nginx 301s (no per-app interception)
+- Adding a domain in the admin → optional nginx config write → optional SSL cert provisioning
+
+## Production
+
+- Host: server02 (Linode, 45.33.73.105, Ubuntu 24.04)
+- DNS: most domains via Linode; some via Cloudflare. A records → 45.33.73.105
+- nginx reverse proxy with ModSecurity (rules loaded once at `http{}` scope in `/etc/nginx/nginx.conf`)
+- certbot for SSL (webroot mode, `/var/www/certbot`)
+- Service user: `www-data`
+- Filesystem ACLs ensure `www-data` always has rwx on `/var/www/technologyfoc.us/` no matter who creates files
+
+## Service map
+
+| Service | Port | Domain |
 |---|---|---|
-| blog-admin | 4098 | blog-admin.service |
-| redirect-service | 4099 | redirect-service.service |
-| 914.io | 4090 | blog-914-io.service |
-| andresanz.com | 4091 | blog-andresanz-com.service |
-| randomcategory.com | 4092 | blog-randomcategory-com.service |
-| samsanz.info | 4093 | blog-samsanz-info.service |
-| sanz.me | 4094 | blog-sanz-me.service |
-| therandomactofwriting.com | 4095 | blog-therandomactofwriting-com.service |
-| webhook deploy | 4101 | monorepo-deploy.service |
+| `andresanz-admin` | 4000 | admin.technologyfoc.us |
+| `andresanz` | 3000 | andresanz.com (+ technologyfoc.us, + 80 redirect targets) |
+| `914-io` | 4090 | 914.io |
+| `randomcategory-com` | 4091 | randomcategory.com |
+| `andresanz-deploy` | — | GitHub webhook → `git pull` + restart |
 
-```bash
-# Check all services
-systemctl is-active blog-admin redirect-service blog-914-io blog-andresanz-com
-
-# Restart a service
-systemctl restart blog-admin
-```
+Service names: `<domain-dashed>` for everything except `andresanz` (legacy).
 
 ## Deploy
 
-Push to `main` → GitHub webhook → `git pull` → targeted service restarts → Telegram notification.
-
-The webhook server (`scripts/webhook-deploy.js`) maps changed file paths to services:
-- `packages/blog-core/**` → restarts all 6 site services
-- `packages/blog-admin/**` → restarts blog-admin
-- `packages/redirect-service/**` → restarts redirect-service
-- `sites/andresanz.com/**` → restarts blog-andresanz-com only
-- etc.
-
-Webhook URL: `https://admin.server02.andresanz.com/webhook/deploy`
-
-## nginx
-
-Each domain has a vhost in `/etc/nginx/sites-available/`. All SSL certs managed by certbot (Let's Encrypt), auto-renewing via systemd timer.
-
-Domain redirects (e.g. sanzarts.com → sanzdesign.com) are handled by redirect-service reading `packages/blog-admin/data/redirects.json`.
-
-## Runtime Data (gitignored)
-
-These files are managed at runtime and are **not tracked in git**:
-
-```
-packages/blog-admin/data/redirects.json
-packages/blog-admin/data/links.json
-packages/blog-admin/data/gratitude-prompts.json
-packages/blog-admin/data/gratitude-state.json
-packages/blog-admin/data/overthinking-config.json
-packages/blog-admin/data/post-templates.json
-packages/blog-admin/data/quickref-notes.txt
+```bash
+ssh root@45.33.73.105
+cd /var/www/technologyfoc.us
+git pull
+systemctl restart andresanz andresanz-admin   # or whichever is relevant
 ```
 
-Edit redirects via the admin panel: `https://admin.server02.andresanz.com/redirects`
+Or push to `main` → webhook does the pull + restart automatically.
 
-## Environment Files
+## Local dev
 
-Each package and site has a `.env` file (gitignored). If lost, restore from `/var/www/<site>/.env` on the old per-site directories (still present on disk as backup).
+```bash
+git clone git@github.com:andresanz/technologyfoc.us.git ~/Development/github/technologyfoc.us
+cd ~/Development/github/technologyfoc.us
+npm install
+cd admin && npm install
+```
 
-## Cron Jobs
+## Stack
 
-| Schedule | Job |
-|---|---|
-| Daily 2am | `git-push-all.sh` — auto-commits and pushes monorepo |
-| Every 10 min | Gratitude reply check |
-| 9–9:30pm ET (random) | Gratitude prompt send |
-| Every 10 min, 9am–9pm | Overthinking send |
-| Mon 3am | Weekly reboot |
-| Mon 2am | apt update/upgrade |
-| Every 2h | Log collection, maintenance |
+- Node.js 22, Express 4, EJS, markdown-it
+- better-sqlite3 for admin registry + analytics
+- AWS S3 (us-east-1) for image storage
+- ModSecurity v3 + OWASP CRS
+- systemd, certbot, nginx 1.24+
 
-## Telegram
+## Editing content for a sub-site
 
-Deploy notifications sent via [@andresanz_server01_bot](https://t.me/andresanz_server01_bot) to chat ID `7868137008`.
-\
-
-
+The admin has a **site switcher** in the topbar — pick the site, and all editors (Write/Posts/Pages/Media/Nav/Gratitude) act on that site's content directory.
