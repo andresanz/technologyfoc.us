@@ -13,9 +13,10 @@ const PARKED_ROOT     = process.env.PARKED_ROOT           || '/var/www/parked';
 const MODSEC_RULES    = process.env.MODSEC_RULES          || '/etc/nginx/modsec/main.conf';
 
 function modsecBlock() {
-  // ModSecurity is configured on the box; include if the rules file exists.
+  // ModSecurity rules are loaded once at the http{} level in nginx.conf.
+  // Per-server-block we only emit the on/off toggle.
   if (fs.existsSync(MODSEC_RULES)) {
-    return `    modsecurity on;\n    modsecurity_rules_file ${MODSEC_RULES};\n`;
+    return `    modsecurity on;\n`;
   }
   return '';
 }
