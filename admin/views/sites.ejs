@@ -70,9 +70,28 @@
   </a>
 </div>
 
-<!-- Add new domain -->
+<!-- Provision new sub-site (full bootstrap) -->
 <details class="card" style="padding:1rem; margin-bottom:1rem">
-  <summary style="cursor:pointer; font-weight:600; font-size:.85rem">+ Add domain</summary>
+  <summary style="cursor:pointer; font-weight:600; font-size:.85rem; color:#16a34a">⚡ Provision new live sub-site</summary>
+  <form method="POST" action="/sites/provision" style="margin-top:.75rem" onsubmit="return confirm('Provision a new sub-site? Creates dir, app.js, .env, systemd unit, nginx config, SSL cert.')">
+    <div class="add-row">
+      <div class="f"><label>Domain</label>
+        <input type="text" name="domain" placeholder="example.com" required style="width:200px"></div>
+      <div class="f"><label>Port (1024-65535)</label>
+        <input type="number" name="port" placeholder="4092" min="1024" max="65535" required style="width:100px"></div>
+      <div class="f"><label>Title</label>
+        <input type="text" name="title" placeholder="Site title" style="width:200px"></div>
+      <button type="submit" class="btn btn-primary">⚡ Provision</button>
+    </div>
+    <p style="font-size:.72rem; color:var(--muted); margin-top:.5rem">
+      Creates <code>/var/www/andresanz.com/sites/&lt;domain&gt;/</code>, a systemd unit, nginx config, and an SSL cert. DNS for the domain must already point to this server.
+    </p>
+  </form>
+</details>
+
+<!-- Add existing domain to registry (no provisioning) -->
+<details class="card" style="padding:1rem; margin-bottom:1rem">
+  <summary style="cursor:pointer; font-weight:600; font-size:.85rem">+ Add domain (registry only)</summary>
   <form method="POST" action="/sites/add" style="margin-top:.75rem">
     <div class="add-row">
       <div class="f"><label>Domain</label>
@@ -155,7 +174,8 @@
               </select>
               <input type="text"   name="target" value="<%= s.target || '' %>" placeholder="target URL" style="width:180px">
               <input type="number" name="port"   value="<%= s.port || '' %>"   placeholder="port"      style="width:70px">
-              <label style="font-size:.75rem"><input type="checkbox" name="preserve_path" value="1" <%= s.preserve_path?'checked':'' %>> path</label>
+              <label style="font-size:.75rem" title="Append the original request path to redirect target"><input type="checkbox" name="preserve_path" value="1" <%= s.preserve_path?'checked':'' %>> path</label>
+              <label style="font-size:.75rem" title="Sync to nginx (uncheck to leave config hand-managed)"><input type="checkbox" name="nginx_managed" value="1" <%= s.nginx_managed?'checked':'' %>> nginx</label>
               <input type="text"   name="note"   value="<%= s.note || '' %>"   placeholder="note"      style="width:140px">
               <button type="submit" class="btn btn-sm">save</button>
             </form>

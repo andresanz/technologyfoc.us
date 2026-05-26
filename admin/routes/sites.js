@@ -75,10 +75,119 @@ router.post('/add', (req, res) => {
   res.redirect('/sites');
 });
 
+// ── POST /sites/provision — full sub-site bootstrap (dir, .env, systemd, nginx, cert) ──
+
+router.post('/provision', (req, res) => {
+  const { domain, port, title = '' } = req.body;
+  const fsp     = require('fs');
+  const pathLib = require('path');
+  const DOMAIN_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
+
+  if (!DOMAIN_RE.test(domain)) { req.flash('error', 'Invalid domain');     return res.redirect('/sites'); }
+  if (!port || +port < 1024 || +port > 65535) { req.flash('error', 'Port must be 1024–65535'); return res.redirect('/sites'); }
+  if (getOne(domain))           { req.flash('error', `${domain} exists`);    return res.redirect('/sites'); }
+
+  // Port-collision check
+  const used = db.prepare('SELECT domain FROM domains WHERE port = ?').get(parseInt(port,10));
+  if (used) { req.flash('error', `Port ${port} already used by ${used.domain}`); return res.redirect('/sites'); }
+
+  const siteDir = `/var/www/andresanz.com/sites/${domain}`;
+  const svcName = domain.replace(/\./g, '-');
+  const safeTitle = title || domain;
+  const adminKey  = require('crypto').randomBytes(24).toString('hex');
+
+  try {
+    // 1. Site dir + scaffolding
+    fsp.mkdirSync(pathLib.join(siteDir, 'content', 'pages'), { recursive: true });
+    fsp.mkdirSync(pathLib.join(siteDir, 'content', 'posts'), { recursive: true });
+
+    fsp.writeFileSync(pathLib.join(siteDir, 'app.js'),
+`require('dotenv').config();
+const createApp = require('../../core/app-factory');
+const app = createApp(__dirname);
+const PORT = process.env.PORT || ${port};
+app.listen(PORT, '127.0.0.1', () => console.log(\`[${domain}] listening on http://127.0.0.1:\${PORT}\`));
+`);
+
+    if (!fsp.existsSync(pathLib.join(siteDir, '.env'))) {
+      fsp.writeFileSync(pathLib.join(siteDir, '.env'),
+`SITE_DOMAIN=${domain}
+SITE_URL=https://${domain}
+SITE_TITLE=${safeTitle}
+PORT=${port}
+ADMIN_KEY=${adminKey}
+`);
+    }
+
+    if (!fsp.existsSync(pathLib.join(siteDir, 'content/pages/home.md'))) {
+      fsp.writeFileSync(pathLib.join(siteDir, 'content/pages/home.md'),
+`---
+title: Home
+slug: home
+---
+
+Welcome to ${domain}
+`);
+    }
+
+    // 2. systemd unit
+    fsp.writeFileSync(`/etc/systemd/system/${svcName}.service`,
+`[Unit]
+Description=${domain} site
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=${siteDir}
+ExecStart=/usr/bin/node --max-old-space-size=256 app.js
+Restart=on-failure
+RestartSec=5
+UMask=002
+
+[Install]
+WantedBy=multi-user.target
+`);
+
+    execSync(`systemctl daemon-reload && systemctl enable --now ${svcName}`, { timeout: 15000 });
+
+    // 3. Insert into registry + write nginx
+    db.prepare(`
+      INSERT INTO domains (domain, state, port, note, source, nginx_managed)
+      VALUES (?, 'live', ?, ?, 'provision', 1)
+    `).run(domain, parseInt(port,10), title || null);
+    const row = getOne(domain);
+
+    nginxBld.write(row);
+    reloadNginx();
+
+    // 4. Issue SSL cert
+    try {
+      execSync(
+        `certbot certonly --webroot -w /var/www/certbot -d ${domain} -d www.${domain} ` +
+        `--non-interactive --agree-tos -m ${process.env.CERTBOT_EMAIL || 'sanz.andre@gmail.com'}`,
+        { timeout: 60000 }
+      );
+      // Rewrite with HTTPS now that the cert exists
+      nginxBld.write(row);
+      reloadNginx();
+      db.prepare("UPDATE domains SET ssl_active=1, updated_at=datetime('now') WHERE id=?").run(row.id);
+    } catch (e) {
+      req.flash('error', `${domain} provisioned but SSL failed: ${e.message}. Click 🔓 to retry.`);
+      return res.redirect('/sites');
+    }
+
+    req.flash('success', `${domain} provisioned on port ${port} with SSL — try it in a sec`);
+    res.redirect('/sites');
+  } catch (e) {
+    req.flash('error', `Provision failed: ${e.message}`);
+    res.redirect('/sites');
+  }
+});
+
 // ── POST /sites/:domain/save — update fields ─────────────────────────────────
 
 router.post('/:domain/save', (req, res) => {
-  const { state, target, port, preserve_path, note } = req.body;
+  const { state, target, port, preserve_path, note, nginx_managed } = req.body;
   const row = getOne(req.params.domain);
   if (!row) { req.flash('error', 'Not found'); return res.redirect('/sites'); }
 
@@ -89,6 +198,7 @@ router.post('/:domain/save', (req, res) => {
       port          = ?,
       preserve_path = ?,
       note          = ?,
+      nginx_managed = ?,
       updated_at    = datetime('now')
     WHERE id = ?
   `).run(
@@ -97,6 +207,7 @@ router.post('/:domain/save', (req, res) => {
     port ? parseInt(port, 10) : null,
     preserve_path === '1' || preserve_path === 'on' || preserve_path === true ? 1 : 0,
     note || null,
+    nginx_managed === '1' || nginx_managed === 'on' || nginx_managed === true ? 1 : 0,
     row.id,
   );
   req.flash('success', `${row.domain} saved`);
