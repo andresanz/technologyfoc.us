@@ -24,23 +24,58 @@
       <span></span><span></span><span></span>
     </button>
     <div class="nav-links" id="navLinks">
-      <a href="/write">Write</a>
-      <a href="/posts">Posts</a>
-      <a href="/pages">Pages</a>
-      <a href="/media">Media</a>
-      <a href="/analytics">Analytics</a>
-      <a href="/gratitude-prompts">Gratitude</a>
-      <a href="/server/nav">Nav</a>
-      <div class="nav-drop" id="navDrop">
-        <button class="nav-drop-btn" onclick="toggleDrop(event)">More ▾</button>
-        <div class="nav-drop-menu">
-          <a href="/sites">Sites</a>
-          <a href="/domains">Domains</a>
-          <a href="/waf">WAF</a>
-          <a href="/logs">Logs</a>
-          <a href="/server">Server</a>
+
+      <a href="/write" class="nav-cta">Write</a>
+
+      <div class="nav-drop">
+        <button class="nav-drop-btn" data-drop="content">Content ▾</button>
+        <div class="nav-drop-menu" data-drop-menu="content">
+          <a href="/posts">Posts</a>
+          <a href="/pages">Pages</a>
+          <a href="/media">Media</a>
+          <a href="/posts/tags">Tags</a>
+          <a href="/server/nav">Nav</a>
+          <a href="/server/css">CSS</a>
+          <a href="/gratitude-prompts">Gratitude</a>
+          <a href="/templates">Templates</a>
+          <a href="/links">Links</a>
         </div>
       </div>
+
+      <div class="nav-drop">
+        <button class="nav-drop-btn" data-drop="insights">Insights ▾</button>
+        <div class="nav-drop-menu" data-drop-menu="insights">
+          <a href="/analytics">Analytics</a>
+          <a href="/server/history">History</a>
+        </div>
+      </div>
+
+      <div class="nav-drop">
+        <button class="nav-drop-btn" data-drop="platform">Platform ▾</button>
+        <div class="nav-drop-menu" data-drop-menu="platform">
+          <a href="/sites">Sites</a>
+          <a href="/domains">Domains (DNS)</a>
+          <a href="/waf">WAF</a>
+          <a href="/server/webhooks">Webhooks</a>
+          <a href="/cron">Cron</a>
+          <a href="/server/backups">Backups</a>
+          <a href="/s3">S3</a>
+          <a href="/github">GitHub</a>
+        </div>
+      </div>
+
+      <div class="nav-drop">
+        <button class="nav-drop-btn" data-drop="server">Server ▾</button>
+        <div class="nav-drop-menu" data-drop-menu="server">
+          <a href="/server">Health</a>
+          <a href="/server/logs">Logs</a>
+          <a href="/server/bans">Bans</a>
+          <a href="/server/nginx">Nginx</a>
+          <a href="/mac">Mac mounts</a>
+          <a href="/volume">Volume</a>
+        </div>
+      </div>
+
       <form method="POST" action="/logout" style="display:inline">
         <button type="submit" class="btn-link">Sign out</button>
       </form>
@@ -52,12 +87,18 @@
     this.classList.toggle('open');
     document.getElementById('navLinks').classList.toggle('open');
   });
-  function toggleDrop(e) {
-    e.stopPropagation();
-    document.getElementById('navDrop').classList.toggle('open');
-  }
+  // Multi-dropdown: clicking a button opens its menu and closes the others
+  document.querySelectorAll('.nav-drop-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var parent = btn.parentElement;
+      var wasOpen = parent.classList.contains('open');
+      document.querySelectorAll('.nav-drop.open').forEach(function(d) { d.classList.remove('open'); });
+      if (!wasOpen) parent.classList.add('open');
+    });
+  });
   document.addEventListener('click', function() {
-    document.getElementById('navDrop') && document.getElementById('navDrop').classList.remove('open');
+    document.querySelectorAll('.nav-drop.open').forEach(function(d) { d.classList.remove('open'); });
   });
 </script>
 <main>
