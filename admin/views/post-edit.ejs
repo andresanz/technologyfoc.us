@@ -59,7 +59,7 @@
         </label>
 
         <label>Date
-          <input type="datetime-local" name="date" value="<%= post.date %>">
+          <input type="datetime-local" name="date" value="<%= (String(post.date || '').length === 10 ? post.date + 'T00:00' : (post.date || '')) %>">
         </label>
 
         <label>Tags
