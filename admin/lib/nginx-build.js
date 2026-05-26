@@ -10,6 +10,15 @@ const path = require('path');
 const SITES_AVAILABLE = process.env.NGINX_SITES_AVAILABLE || '/etc/nginx/sites-available';
 const SITES_ENABLED   = process.env.NGINX_SITES_ENABLED   || '/etc/nginx/sites-enabled';
 const PARKED_ROOT     = process.env.PARKED_ROOT           || '/var/www/parked';
+const MODSEC_RULES    = process.env.MODSEC_RULES          || '/etc/nginx/modsec/main.conf';
+
+function modsecBlock() {
+  // ModSecurity is configured on the box; include if the rules file exists.
+  if (fs.existsSync(MODSEC_RULES)) {
+    return `    modsecurity on;\n    modsecurity_rules_file ${MODSEC_RULES};\n`;
+  }
+  return '';
+}
 
 function hasCert(domain) {
   return fs.existsSync(`/etc/letsencrypt/live/${domain}/fullchain.pem`);
@@ -47,17 +56,18 @@ function buildConfig(row) {
   const body  = buildBody(row);
   const cert  = hasCert(row.domain);
 
+  const ms = modsecBlock();
+
   const http80 = `server {
-    listen 80; listen [::]:80;
+${ms}    listen 80; listen [::]:80;
     server_name ${names};
     location /.well-known/acme-challenge/ { root /var/www/certbot; }
     location / { return 301 https://$host$request_uri; }
 }`;
 
   if (!cert) {
-    // HTTP-only; replace the 301 with the actual body so the domain works pre-SSL
     return `server {
-    listen 80; listen [::]:80;
+${ms}    listen 80; listen [::]:80;
     server_name ${names};
     location /.well-known/acme-challenge/ { root /var/www/certbot; }
 ${body}
@@ -65,7 +75,7 @@ ${body}
   }
 
   const https443 = `server {
-    listen 443 ssl http2; listen [::]:443 ssl http2;
+${ms}    listen 443 ssl http2; listen [::]:443 ssl http2;
     server_name ${names};
 
     ssl_certificate     /etc/letsencrypt/live/${row.domain}/fullchain.pem;

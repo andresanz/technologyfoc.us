@@ -108,10 +108,18 @@ router.post('/:domain/save', (req, res) => {
 router.post('/:domain/sync', (req, res) => {
   const row = getOne(req.params.domain);
   if (!row) { req.flash('error', 'Not found'); return res.redirect('/sites'); }
+  const src  = nginxBld.confPath(row.domain);
+  const snap = fs.existsSync(src) ? fs.readFileSync(src) : null;
   try {
     nginxBld.write(row);
-    const r = reloadNginx();
-    if (!r.ok) throw new Error(r.err);
+    try { execSync('nginx -t 2>&1', { timeout: 10000 }); }
+    catch (e) {
+      // Restore
+      if (snap) fs.writeFileSync(src, snap);
+      else      try { fs.unlinkSync(src); } catch {}
+      throw new Error(`nginx -t failed: ${e.stdout?.toString() || e.message}`);
+    }
+    execSync('systemctl reload nginx', { timeout: 10000 });
     db.prepare("INSERT INTO domain_events (domain_id, type, message) VALUES (?, 'sync', ?)")
       .run(row.id, `synced as ${row.state}`);
     req.flash('success', `${row.domain} → nginx (${row.state})`);
@@ -122,18 +130,52 @@ router.post('/:domain/sync', (req, res) => {
 });
 
 // ── POST /sites/sync-all — push every registry entry to nginx ────────────────
+// Safety net: snapshots sites-available before writing. If nginx -t fails,
+// restores the snapshot so production never serves a broken config.
 
 router.post('/sync-all', (req, res) => {
+  const path  = require('path');
+  const os    = require('os');
+  const snap  = fs.mkdtempSync(path.join(os.tmpdir(), 'nginx-snap-'));
+
   const all = getAll();
   let ok = 0, fail = [];
-  for (const row of all) {
-    try { nginxBld.write(row); ok++; }
-    catch (e) { fail.push(`${row.domain}: ${e.message}`); }
+
+  try {
+    // 1. Snapshot only the files we're about to touch
+    for (const row of all) {
+      const src = nginxBld.confPath(row.domain);
+      if (fs.existsSync(src)) fs.copyFileSync(src, path.join(snap, row.domain));
+    }
+
+    // 2. Write new configs
+    for (const row of all) {
+      try { nginxBld.write(row); ok++; }
+      catch (e) { fail.push(`${row.domain}: ${e.message}`); }
+    }
+
+    // 3. Test nginx — if it fails, restore
+    try {
+      execSync('nginx -t 2>&1', { timeout: 10000 });
+    } catch (e) {
+      // Restore snapshot
+      for (const f of fs.readdirSync(snap)) {
+        fs.copyFileSync(path.join(snap, f), nginxBld.confPath(f));
+      }
+      throw new Error(`nginx -t failed, configs restored: ${e.stdout?.toString() || e.message}`);
+    }
+
+    // 4. Reload
+    execSync('systemctl reload nginx', { timeout: 10000 });
+
+    if (fail.length) req.flash('error', `Synced ${ok}, ${fail.length} failed: ${fail.slice(0,3).join('; ')}${fail.length>3?'…':''}`);
+    else             req.flash('success', `Synced ${ok} domains to nginx`);
+  } catch (e) {
+    req.flash('error', `sync-all aborted: ${e.message}`);
+  } finally {
+    // cleanup snapshot
+    try { fs.rmSync(snap, { recursive: true, force: true }); } catch {}
   }
-  const r = reloadNginx();
-  if (!r.ok) fail.push(`reload: ${r.err}`);
-  if (fail.length) req.flash('error', `Synced ${ok}, ${fail.length} failed: ${fail.join('; ')}`);
-  else             req.flash('success', `Synced ${ok} domains to nginx`);
   res.redirect('/sites');
 });
 
