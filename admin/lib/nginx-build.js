@@ -56,10 +56,10 @@ function buildConfig(row) {
   const body  = buildBody(row);
   const cert  = hasCert(row.domain);
 
-  const ms = modsecBlock();
+  const ms = modsecBlock(); // only goes in the active-traffic block to avoid rule-ID dup
 
   const http80 = `server {
-${ms}    listen 80; listen [::]:80;
+    listen 80; listen [::]:80;
     server_name ${names};
     location /.well-known/acme-challenge/ { root /var/www/certbot; }
     location / { return 301 https://$host$request_uri; }
