@@ -9,6 +9,6 @@
   padding: 0rem 0;
 }
 
-* {
-  background: $F5F5F5 !important;
+body {
+  background: #f5f5f5;
 }
