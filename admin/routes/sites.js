@@ -138,7 +138,8 @@ router.post('/sync-all', (req, res) => {
   const os    = require('os');
   const snap  = fs.mkdtempSync(path.join(os.tmpdir(), 'nginx-snap-'));
 
-  const all = getAll();
+  // Skip domains explicitly marked as unmanaged (e.g. andresanz.com with custom config)
+  const all = getAll().filter(r => r.nginx_managed !== 0);
   let ok = 0, fail = [];
 
   try {
