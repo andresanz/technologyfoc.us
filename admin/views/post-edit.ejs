@@ -22,6 +22,71 @@
 </div>
 <%- include('partials/flash') %>
 
+<details class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
+  <summary style="padding:.6rem 1rem;cursor:pointer;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:space-between;list-style:none">
+    <span>📖 Quick Reference</span>
+    <button type="button" id="qrEditBtn" style="background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:0" onclick="event.preventDefault();event.stopPropagation();">Edit notes</button>
+  </summary>
+  <div style="padding:.75rem 1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;font-size:.78rem;border-top:1px solid var(--border)">
+
+    <!-- Video -->
+    <div>
+      <div class="qr-label">Video embed</div>
+      <code class="qr-code">[video src="…/video.mp4"]</code>
+      <table data-nosort class="qr-table">
+        <tr><td class="qr-attr">src="…"</td><td class="qr-desc">URL <em>(required)</em></td></tr>
+        <tr><td class="qr-attr">poster="…"</td><td class="qr-desc">thumbnail</td></tr>
+        <tr><td class="qr-attr">loop</td><td class="qr-desc">loop continuously</td></tr>
+        <tr><td class="qr-attr">autoplay</td><td class="qr-desc">autoplay muted</td></tr>
+      </table>
+    </div>
+
+    <!-- Callouts -->
+    <div>
+      <div class="qr-label">Callout boxes</div>
+      <code class="qr-code" style="white-space:pre">:::tip Title
+Your content here.
+:::</code>
+      <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem">
+        <span style="border-left:3px solid #3b82f6;background:#eff6ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#1d4ed8">note</span>
+        <span style="border-left:3px solid #22c55e;background:#f0fdf4;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#15803d">tip</span>
+        <span style="border-left:3px solid #f59e0b;background:#fffbeb;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b45309">warning</span>
+        <span style="border-left:3px solid #ef4444;background:#fef2f2;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b91c1c">danger</span>
+        <span style="border-left:3px solid #06b6d4;background:#ecfeff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#0e7490">info</span>
+        <span style="border-left:3px solid #8b5cf6;background:#faf5ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#6d28d9">quote</span>
+      </div>
+    </div>
+
+    <!-- Image captions -->
+    <div>
+      <div class="qr-label">Image captions</div>
+      <code class="qr-code" style="white-space:pre">![photo](url.jpg)
+
+*Caption text here*</code>
+      <div style="color:var(--muted);margin-top:.35rem">Italic line right after image → caption</div>
+      <code class="qr-code" style="margin-top:.35rem">![alt](url.jpg "Caption here")</code>
+      <div style="color:var(--muted);margin-top:.25rem">Or use title in the image link</div>
+    </div>
+
+    <!-- Custom notes -->
+    <div>
+      <div id="qrNotesDisplay">
+        <div class="qr-label">Notes</div>
+        <div id="qrNotesText" style="color:var(--muted);white-space:pre-wrap;font-size:.78rem;min-height:1.5rem">Loading…</div>
+      </div>
+      <div id="qrNotesEdit" style="display:none">
+        <div class="qr-label">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(one per line, plain text)</span></div>
+        <textarea id="qrNotesInput" style="width:100%;min-height:80px;font-size:.78rem;padding:.4rem .5rem;border:1px solid var(--border);border-radius:4px;resize:vertical;font-family:var(--mono,monospace)"></textarea>
+        <div style="display:flex;gap:.5rem;margin-top:.4rem">
+          <button type="button" id="qrSaveBtn" class="btn btn-sm btn-primary">Save</button>
+          <button type="button" id="qrCancelBtn" class="btn btn-sm">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</details>
+
 <form id="post-form" method="POST" action="<%= action %>">
   <div class="edit-layout">
 
@@ -130,68 +195,6 @@
         <div id="uploadedUrls"></div>
       </section>
 
-      <section class="card" style="padding:0;overflow:hidden">
-        <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:space-between">
-          Quick Reference
-          <button type="button" id="qrEditBtn" style="background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:0">Edit notes</button>
-        </div>
-        <div class="qr-scroll" style="max-height:420px;overflow-y:scroll;padding:.75rem 1rem;display:flex;flex-direction:column;gap:1.1rem;font-size:.78rem">
-
-          <!-- Video -->
-          <div>
-            <div class="qr-label">Video embed</div>
-            <code class="qr-code">[video src="…/video.mp4"]</code>
-            <table data-nosort class="qr-table">
-              <tr><td class="qr-attr">src="…"</td><td class="qr-desc">URL <em>(required)</em></td></tr>
-              <tr><td class="qr-attr">poster="…"</td><td class="qr-desc">thumbnail</td></tr>
-              <tr><td class="qr-attr">loop</td><td class="qr-desc">loop continuously</td></tr>
-              <tr><td class="qr-attr">autoplay</td><td class="qr-desc">autoplay muted</td></tr>
-            </table>
-          </div>
-
-          <!-- Callouts -->
-          <div>
-            <div class="qr-label">Callout boxes</div>
-            <code class="qr-code" style="white-space:pre">:::tip Title
-Your content here.
-:::</code>
-            <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem">
-              <span style="border-left:3px solid #3b82f6;background:#eff6ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#1d4ed8">note</span>
-              <span style="border-left:3px solid #22c55e;background:#f0fdf4;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#15803d">tip</span>
-              <span style="border-left:3px solid #f59e0b;background:#fffbeb;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b45309">warning</span>
-              <span style="border-left:3px solid #ef4444;background:#fef2f2;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#b91c1c">danger</span>
-              <span style="border-left:3px solid #06b6d4;background:#ecfeff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#0e7490">info</span>
-              <span style="border-left:3px solid #8b5cf6;background:#faf5ff;padding:.15rem .4rem;border-radius:0 3px 3px 0;font-size:.72rem;color:#6d28d9">quote</span>
-            </div>
-          </div>
-
-          <!-- Image captions -->
-          <div>
-            <div class="qr-label">Image captions</div>
-            <code class="qr-code" style="white-space:pre">![photo](url.jpg)
-
-*Caption text here*</code>
-            <div style="color:var(--muted);margin-top:.35rem">Italic line right after image → caption</div>
-            <code class="qr-code" style="margin-top:.35rem">![alt](url.jpg "Caption here")</code>
-            <div style="color:var(--muted);margin-top:.25rem">Or use title in the image link</div>
-          </div>
-
-          <!-- Custom notes -->
-          <div id="qrNotesDisplay">
-            <div class="qr-label">Notes</div>
-            <div id="qrNotesText" style="color:var(--muted);white-space:pre-wrap;font-size:.78rem;min-height:1.5rem">Loading…</div>
-          </div>
-          <div id="qrNotesEdit" style="display:none">
-            <div class="qr-label">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(one per line, plain text)</span></div>
-            <textarea id="qrNotesInput" style="width:100%;min-height:80px;font-size:.78rem;padding:.4rem .5rem;border:1px solid var(--border);border-radius:4px;resize:vertical;font-family:var(--mono,monospace)"></textarea>
-            <div style="display:flex;gap:.5rem;margin-top:.4rem">
-              <button type="button" id="qrSaveBtn" class="btn btn-sm btn-primary">Save</button>
-              <button type="button" id="qrCancelBtn" class="btn btn-sm">Cancel</button>
-            </div>
-          </div>
-
-        </div>
-      </section>
     </aside>
   </div>
 </form>
