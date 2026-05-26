@@ -64,7 +64,8 @@ main.container { flex: 1; padding-top: 1.5rem; padding-bottom: 3rem; }
 }
 .site-title {
   font-weight: 700;
-  font-size: 2rem;
+  font-size: 3.25rem;
+  letter-spacing: 0.08em;
   color: var(--text);
   text-decoration: none;
 }
