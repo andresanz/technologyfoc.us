@@ -91,7 +91,9 @@ router.post('/provision', (req, res) => {
   const used = db.prepare('SELECT domain FROM domains WHERE port = ?').get(parseInt(port,10));
   if (used) { req.flash('error', `Port ${port} already used by ${used.domain}`); return res.redirect('/sites'); }
 
-  const siteDir = `/var/www/andresanz.com/sites/${domain}`;
+  // Provision into PLATFORM_ROOT/sites/<domain>
+  const PLATFORM_ROOT = process.env.PLATFORM_ROOT || pathLib.join(__dirname, '..', '..');
+  const siteDir = pathLib.join(PLATFORM_ROOT, 'sites', domain);
   const svcName = domain.replace(/\./g, '-');
   const safeTitle = title || domain;
   const adminKey  = require('crypto').randomBytes(24).toString('hex');

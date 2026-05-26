@@ -5,56 +5,44 @@ const path         = require('path');
 const { execSync } = require('child_process');
 const dotenv       = require('dotenv');
 
-const SITES_ROOT   = process.env.SITES_ROOT || '/var/www';
-const SKIP_DIRS    = new Set(['blog-core', 'blog-admin', 'html', 'certbot', 'server02']);
+// Platform root — admin lives here, all sites under {PLATFORM_ROOT}/sites/<domain>/
+const PLATFORM_ROOT = process.env.PLATFORM_ROOT || path.join(__dirname, '..', '..');
+const SITES_DIR     = path.join(PLATFORM_ROOT, 'sites');
 
-// ── Discover all sites ────────────────────────────────────────────────────────
+// Legacy: SITES_ROOT used to be /var/www with one dir per site. Kept for callers
+// not yet migrated, but new code should use PLATFORM_ROOT/sites/.
+const SITES_ROOT = process.env.SITES_ROOT || '/var/www';
+const SKIP_DIRS  = new Set(['blog-core', 'blog-admin', 'html', 'certbot', 'server02']);
+
+// ── Discover all editable sites under PLATFORM_ROOT/sites/ ────────────────────
 function getAll() {
-  return fs.readdirSync(SITES_ROOT)
+  if (!fs.existsSync(SITES_DIR)) return [];
+  return fs.readdirSync(SITES_DIR)
     .filter(name => {
-      if (SKIP_DIRS.has(name)) return false;
-      const siteDir = path.join(SITES_ROOT, name);
-      return fs.statSync(siteDir).isDirectory() &&
-             fs.existsSync(path.join(siteDir, 'app.js')) &&
-             fs.existsSync(path.join(siteDir, '.env'));
+      const dir = path.join(SITES_DIR, name);
+      return fs.statSync(dir).isDirectory() &&
+             fs.existsSync(path.join(dir, 'app.js')) &&
+             fs.existsSync(path.join(dir, '.env'));
     })
     .map(name => getSite(name))
     .filter(Boolean)
     .sort((a, b) => a.domain.localeCompare(b.domain));
 }
 
-// ── Discover sub-sites (live under /var/www/<main>/sites/<sub>) ──────────────
-// Returns lightweight entries [{domain, parent, dir}] — useful for switcher UI
-function getSubSites(parent = 'andresanz.com') {
-  const subDir = path.join(SITES_ROOT, parent, 'sites');
-  if (!fs.existsSync(subDir)) return [];
-  return fs.readdirSync(subDir)
-    .filter(name => {
-      const dir = path.join(subDir, name);
-      return fs.statSync(dir).isDirectory() &&
-             fs.existsSync(path.join(dir, 'app.js'));
-    })
-    .map(name => getSite(name)) // getSite resolves via path detection below
-    .filter(Boolean)
-    .sort((a, b) => a.domain.localeCompare(b.domain));
-}
-
-// ── All editable sites: main + sub-sites ─────────────────────────────────────
-function getEditable(main = 'andresanz.com') {
-  const result = [];
-  const mainSite = getSite(main);
-  if (mainSite) result.push(mainSite);
-  result.push(...getSubSites(main));
-  return result;
-}
+// Kept for any caller still using the old name. All sites are now "sub-sites"
+// from the platform's perspective.
+const getSubSites = () => getAll();
+const getEditable = () => getAll();
 
 // ── Resolve a site directory for a given domain ──────────────────────────────
-// Checks /var/www/<domain> first, then /var/www/andresanz.com/sites/<domain>
 function resolveSiteDir(domain) {
+  const dir = path.join(SITES_DIR, domain);
+  if (fs.existsSync(path.join(dir, '.env'))) return dir;
+  // Backward-compat for pre-restructure layout
+  const legacy = path.join(SITES_ROOT, 'andresanz.com', 'sites', domain);
+  if (fs.existsSync(path.join(legacy, '.env'))) return legacy;
   const direct = path.join(SITES_ROOT, domain);
   if (fs.existsSync(path.join(direct, '.env'))) return direct;
-  const sub = path.join(SITES_ROOT, 'andresanz.com', 'sites', domain);
-  if (fs.existsSync(path.join(sub, '.env'))) return sub;
   return null;
 }
 
@@ -109,25 +97,26 @@ function getSite(domain) {
     privatePostCount,
     pageCount,
     status:      serviceStatus(domain),
-    serviceName: domain === 'andresanz.com' ? 'andresanz' : `blog-${domain.replace(/\./g, '-')}`,
+    serviceName: svcName(domain),
     bustCache:   () => bustCache({ domain, port: cfg.PORT || '3000', adminKey: cfg.ADMIN_KEY || '' }),
   };
 }
 
 // ── systemctl helpers ─────────────────────────────────────────────────────────
-// Service naming varies: andresanz.com → "andresanz"; sub-sites use "<name>-<tld>"
-// (e.g. "914-io"); older sites used "blog-<name>-<tld>". Find whichever exists.
+// Service naming: bare dash-replaced (914-io, randomcategory-com). The legacy
+// "andresanz" service has no -com suffix; check that first, then dash form.
 function svcName(domain) {
-  if (domain === 'andresanz.com') return 'andresanz';
   const bare = domain.replace(/\./g, '-');
-  const candidates = [bare, `blog-${bare}`];
+  const candidates = domain === 'andresanz.com'
+    ? ['andresanz', 'andresanz-com', bare]
+    : [bare, `blog-${bare}`];
   for (const name of candidates) {
     try {
       execSync(`systemctl cat ${name}.service`, { stdio: 'ignore', timeout: 2000 });
       return name;
     } catch { /* try next */ }
   }
-  return bare; // fall back; downstream commands will error sensibly
+  return bare;
 }
 
 function serviceStatus(domain) {
