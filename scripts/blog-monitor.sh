@@ -54,7 +54,7 @@ INFRA_SVCS="nginx redis-server fail2ban postfix ssh cron"
 PLATFORM_SVCS=$(ls /etc/systemd/system/*.service 2>/dev/null \
   | xargs -n1 basename 2>/dev/null \
   | sed 's/\.service$//' \
-  | grep -Ev '^(nginx|redis-server|fail2ban|postfix|ssh|cron|systemd-.*|getty.*|gratitude-bot|certbot.*)$' \
+  | grep -Ev '^(nginx|redis-server|fail2ban|postfix|ssh|cron|systemd-.*|getty.*|gratitude-bot|certbot.*|dbus-org\.freedesktop\..*|redis|syslog|rsyslog)$' \
   | sort -u | tr '\n' ' ')
 
 for svc in $INFRA_SVCS $PLATFORM_SVCS; do
