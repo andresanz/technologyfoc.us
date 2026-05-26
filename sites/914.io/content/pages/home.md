@@ -1,8 +1,8 @@
 ---
 title: 914.io
-date: '2026-05-21T00:00'
+date: '2026-05-21T04:00'
 slug: home
-nav: false
+nav: true
 ---
 
-welcome to 914.io.
+welcome to 914.io | [email](mailto:sanz.andre@gmail.com)
