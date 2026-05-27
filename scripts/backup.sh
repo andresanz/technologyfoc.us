@@ -18,8 +18,14 @@ S3_BUCKET="${BACKUP_S3_BUCKET:-andresanz-com}"
 S3_PREFIX="${BACKUP_S3_PREFIX:-backups/platform}"
 STAGING="${BACKUP_STAGING:-/tmp/platform-backup}"
 
-# Load AWS creds from platform .env
-set -a; . "$PLATFORM_ROOT/.env"; set +a
+# Load only the AWS env vars we need (avoids sourcing whole .env which breaks on values with spaces)
+while IFS='=' read -r k v; do
+  case "$k" in
+    AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|AWS_REGION|AWS_DEFAULT_REGION)
+      export "$k"="$v" ;;
+  esac
+done < <(grep -E '^(AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|AWS_REGION|AWS_DEFAULT_REGION)=' "$PLATFORM_ROOT/.env")
+export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-${AWS_REGION:-us-east-1}}"
 
 ts=$(date +%Y%m%d-%H%M%S)
 day=$(date +%Y-%m-%d)
