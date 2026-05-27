@@ -377,7 +377,7 @@ main.container:has(.home-page) { padding-top: 0; }
 }
 
 .post-card h2 { font-size: var(--fs-2xl); font-family: var(--font-ui); font-weight: 300; margin: 0; line-height: 1.1; color: var(--text); }
-.post-body .post-card h2 { border-bottom: none; padding-bottom: 0; }
+.post-body .post-card h2 { border-bottom: none; padding-bottom: 0; margin: 0; line-height: 1.1; }
 .excerpt { color: var(--muted); font-size: var(--fs-base); font-family: var(--font-ui); margin: 0; }
 
 .empty { color: var(--muted); }
