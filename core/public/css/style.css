@@ -326,7 +326,7 @@ main.container:has(.home-page) { padding-top: 0; }
   color: #fff;
 }
 
-.post-card-body { padding: var(--s-4) var(--s-5) var(--s-5); }
+.post-card-body { padding: var(--s-3) var(--s-5) var(--s-4); }
 
 /* ── Post kicker — date + tags above title ───────────────────────────────── */
 .post-kicker {
@@ -376,9 +376,9 @@ main.container:has(.home-page) { padding-top: 0; }
   border-bottom: 1px solid var(--border);
 }
 
-.post-card h2 { font-size: var(--fs-3xl); font-family: var(--font-ui); font-weight: 100; margin: 0 0 var(--s-2); line-height: var(--lh-snug); color: var(--text); }
+.post-card h2 { font-size: var(--fs-3xl); font-family: var(--font-ui); font-weight: 100; margin: 0 0 var(--s-2); line-height: 1.15; color: var(--text); }
 .post-body .post-card h2 { border-bottom: none; padding-bottom: 0; }
-.excerpt { color: var(--muted); font-size: var(--fs-base); font-family: var(--font-ui); }
+.excerpt { color: var(--muted); font-size: var(--fs-base); font-family: var(--font-ui); margin: 0; }
 
 .empty { color: var(--muted); }
 
