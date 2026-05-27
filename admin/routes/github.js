@@ -45,7 +45,7 @@ function getRepoInfo(dir, name) {
 
 // GET /github
 router.get('/', (req, res) => {
-  const repos = [getRepoInfo(APP_DIR, 'andresanz.com')];
+  const repos = [getRepoInfo(APP_DIR, 'technologyfoc.us')];
   res.render('github', { pageTitle: 'GitHub', repos, flash: req.flash() });
 });
 

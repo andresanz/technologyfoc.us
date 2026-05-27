@@ -84,7 +84,7 @@
         <td style="color:var(--muted);font-size:.8rem;white-space:nowrap"><%= repo.lastPush || '—' %></td>
         <td>
           <% (repo.commits || []).slice(0,3).forEach((c, i) => { %>
-            <div class="gh-commit" style="<%= i > 0 ? 'opacity:.5' : '' %>">
+            <div class="gh-commit" style="<%= (repo.ahead > 0 && i < repo.ahead) ? 'opacity:1;font-weight:600' : 'opacity:.6' %>">
               <code><%= c.hash %></code>
               <span class="cmsg"><%= c.msg %></span>
               <span class="ctime"><%= c.time %></span>
@@ -92,9 +92,11 @@
           <% }) %>
         </td>
         <td style="text-align:right">
-          <form method="POST" action="/github/push/<%= encodeURIComponent(repo.name) %>">
-            <button class="btn btn-sm">Push</button>
-          </form>
+          <% if (repo.ahead > 0 || repo.dirty) { %>
+            <form method="POST" action="/github/push/<%= encodeURIComponent(repo.name) %>">
+              <button class="btn btn-sm">Push</button>
+            </form>
+          <% } %>
         </td>
       </tr>
       <% }) %>
