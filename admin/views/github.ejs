@@ -95,11 +95,11 @@
           <% }) %>
         </td>
         <td style="text-align:right">
-          <% if (repo.ahead > 0 || repo.dirty) { %>
-            <form method="POST" action="/github/push/<%= encodeURIComponent(repo.name) %>">
-              <button class="btn btn-sm">Push</button>
-            </form>
-          <% } %>
+          <% const canPush = (repo.ahead || 0) > 0 || repo.dirty; %>
+          <form method="POST" action="/github/push/<%= encodeURIComponent(repo.name) %>">
+            <button class="btn btn-sm" <%= canPush ? '' : 'disabled' %>
+                    title="<%= canPush ? 'Push pending commits' : 'Nothing to push' %>">Push</button>
+          </form>
         </td>
       </tr>
       <% }) %>

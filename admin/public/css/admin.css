@@ -127,6 +127,8 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 }
 .btn:hover    { background: #e5e7eb; border-color: #d1d5db; text-decoration: none; }
 .btn:active   { opacity: .85; }
+.btn:disabled, .btn[disabled] { opacity: .4; cursor: not-allowed; background: var(--surface2); border-color: var(--border); }
+.btn:disabled:hover, .btn[disabled]:hover { background: var(--surface2); border-color: var(--border); }
 .btn-primary  { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
 .btn-danger   { background: transparent; border-color: var(--danger); color: var(--danger); }
