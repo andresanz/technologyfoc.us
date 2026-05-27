@@ -188,7 +188,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 .post-table td .btn-sm { min-height: 26px; padding: .2rem .55rem; }
 .post-table tr:hover td { background: #f9fafb; }
 .row-actions { display: flex; gap: .35rem; white-space: nowrap; }
-.post-table td:last-child { white-space: nowrap; text-align: right; padding-right: 0; }
+.post-table td:last-child { white-space: nowrap; text-align: right; padding-right: .75rem; }
 .tag { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: .1em .55em; font-size: .72rem; color: var(--muted); margin-right: .2rem; }
 
 /* ── Posts table — mobile cards ──────────────────────────────────────────── */
