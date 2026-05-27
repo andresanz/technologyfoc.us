@@ -53,7 +53,7 @@ function deploy(payload) {
   } catch (e) {
     const err = (e.stderr || Buffer.alloc(0)).toString().trim();
     console.error('[deploy] git pull failed:', err);
-    telegram(`❌ <b>andresanz.com deploy FAILED</b> – git pull\n${err}`);
+    telegram(`❌ <b>technologyfoc.us deploy FAILED</b> – git pull\n${err}`);
     return;
   }
 
@@ -93,7 +93,7 @@ function deploy(payload) {
   }
 
   telegram(
-    `<b>andresanz.com</b> · ${branch} · ${pusher}\n` +
+    `<b>technologyfoc.us</b> · ${branch} · ${pusher}\n` +
     `#${deployNum} · <code>${shortHash}</code> · ${files.length} file(s)\n` +
     `<i>${commitMsg}</i>` +
     (errors.length ? `\n\n${errors.join('\n')}` : '')
