@@ -183,8 +183,9 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 
 /* ── Posts table — desktop ───────────────────────────────────────────────── */
 .post-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-.post-table th { text-align: left; padding: .6rem .75rem; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
-.post-table td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.post-table th { text-align: left; padding: .5rem .75rem; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+.post-table td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.post-table td .btn-sm { min-height: 26px; padding: .2rem .55rem; }
 .post-table tr:hover td { background: #f9fafb; }
 .row-actions { display: flex; gap: .35rem; white-space: nowrap; }
 .post-table td:last-child { white-space: nowrap; text-align: right; padding-right: 0; }
