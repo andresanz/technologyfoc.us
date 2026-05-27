@@ -122,6 +122,7 @@ app.use('/webhook/telegram', require('./routes/telegram-webhook'));
 app.use('/',          require('./routes/auth'));
 app.use('/dashboard', requireAuth, require('./routes/dashboard'));
 app.use('/search',    requireAuth, require('./routes/search'));
+app.use('/security',  requireAuth, require('./routes/security'));
 app.use('/posts',  requireAuth, require('./routes/posts'));
 app.use('/pages',  requireAuth, require('./routes/pages'));
 app.use('/media',  requireAuth, require('./routes/media'));

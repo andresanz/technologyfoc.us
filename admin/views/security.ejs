@@ -1,0 +1,141 @@
+<%
+  pageTitle = 'Security';
+  const ok    = audit.filter(a => a.status === 'ok').length;
+  const warn  = audit.filter(a => a.status === 'warn').length;
+  const crit  = audit.filter(a => a.status === 'crit').length;
+  const grade = crit > 0 ? 'crit' : warn > 0 ? 'warn' : 'ok';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.sec-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.75rem; margin-bottom:1.5rem; }
+.sec-card { background:var(--surface,#fff); border:1px solid var(--border); border-radius:8px; padding:.85rem 1rem; }
+.sec-card.warn { border-left:3px solid #f59e0b; }
+.sec-card.crit { border-left:3px solid #dc2626; }
+.sec-card.ok   { border-left:3px solid #16a34a; }
+.sec-card .v { font-size:1.65rem; font-weight:700; line-height:1; }
+.sec-card .v.warn { color:#b45309; }
+.sec-card .v.crit { color:#dc2626; }
+.sec-card .v.ok   { color:#16a34a; }
+.sec-card .l { font-size:.72rem; color:var(--muted); margin-top:.3rem; text-transform:uppercase; letter-spacing:.06em; }
+
+.sec-section { margin-bottom:1.75rem; }
+.sec-section h2 { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .65rem; }
+
+.audit-tbl { width:100%; border-collapse:collapse; background:var(--surface,#fff); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.audit-tbl td { padding:.55rem .85rem; border-bottom:1px solid var(--border); font-size:.88rem; vertical-align:top; }
+.audit-tbl tr:last-child td { border-bottom:none; }
+.audit-tbl tr.warn { background:#fffbeb; }
+.audit-tbl tr.crit { background:#fef2f2; }
+.audit-tbl .badge { display:inline-block; padding:.12em .55em; border-radius:4px; font-size:.72rem; font-weight:700; text-transform:uppercase; }
+.audit-tbl .badge-ok   { background:#d1fae5; color:#065f46; }
+.audit-tbl .badge-warn { background:#fef3c7; color:#92400e; }
+.audit-tbl .badge-crit { background:#fee2e2; color:#991b1b; }
+.audit-tbl .fix { color:var(--muted); font-size:.78rem; margin-top:.25rem; font-family:var(--mono,monospace); }
+
+.jail-card { background:var(--surface,#fff); border:1px solid var(--border); border-radius:6px; padding:.6rem .85rem; margin-bottom:.5rem; }
+.jail-head { display:flex; justify-content:space-between; font-size:.88rem; font-weight:600; }
+.ip-list { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.5rem; }
+.ip-list code { background:var(--surface2,#f3f4f6); padding:.15em .5em; border-radius:3px; font-size:.78rem; }
+.ip-list form { display:inline; }
+.ip-list button { background:transparent; border:1px solid var(--border); padding:0 .3em; font-size:.72rem; cursor:pointer; border-radius:3px; margin-left:.15em; color:var(--muted); }
+.ip-list button:hover { color:#dc2626; border-color:#dc2626; }
+</style>
+
+<div class="page-header">
+  <div><h1>Security</h1></div>
+  <div>
+    <a href="/waf" class="btn">WAF detail →</a>
+    <a href="/server/bans" class="btn">Ban log →</a>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<!-- Top-line cards -->
+<div class="sec-grid">
+  <div class="sec-card <%= grade %>">
+    <div class="v <%= grade %>"><%= crit > 0 ? crit + ' crit' : (warn > 0 ? warn + ' warn' : 'OK') %></div>
+    <div class="l">Audit · <%= ok %>/<%= audit.length %> passing</div>
+  </div>
+  <% if (waf.installed) { %>
+    <a href="/waf" class="sec-card" style="text-decoration:none;color:inherit">
+      <div class="v"><%= waf.today.toLocaleString() %></div>
+      <div class="l">WAF blocks today (<%= waf.mode %>)</div>
+    </a>
+  <% } %>
+  <div class="sec-card <%= fail2ban.totalBanned > 0 ? 'warn' : '' %>">
+    <div class="v <%= fail2ban.totalBanned > 0 ? 'warn' : '' %>"><%= fail2ban.totalBanned %></div>
+    <div class="l">fail2ban — currently banned</div>
+  </div>
+  <div class="sec-card <%= ssh.failedLast24 > 100 ? 'warn' : '' %>">
+    <div class="v <%= ssh.failedLast24 > 100 ? 'warn' : '' %>"><%= ssh.failedLast24.toLocaleString() %></div>
+    <div class="l">SSH failed logins (24h) · <%= ssh.acceptedLast24 %> accepted</div>
+  </div>
+</div>
+
+<!-- System audit -->
+<div class="sec-section">
+  <h2>System audit</h2>
+  <table class="audit-tbl">
+    <% audit.forEach(a => { %>
+      <tr class="<%= a.status %>">
+        <td style="width:120px"><span class="badge badge-<%= a.status %>"><%= a.status %></span></td>
+        <td style="font-weight:600;width:200px"><%= a.label %></td>
+        <td>
+          <%= a.detail %>
+          <% if (a.fix) { %><div class="fix">→ <%= a.fix %></div><% } %>
+        </td>
+      </tr>
+    <% }) %>
+  </table>
+</div>
+
+<!-- fail2ban jails -->
+<% if (fail2ban.running && fail2ban.jails.length) { %>
+<div class="sec-section">
+  <h2>Active jails</h2>
+  <% fail2ban.jails.forEach(j => { %>
+    <div class="jail-card">
+      <div class="jail-head">
+        <span><%= j.name %></span>
+        <span style="color:var(--muted);font-weight:400;font-size:.82rem">
+          <%= j.banned %> banned · <%= j.failed %> currently failing · <%= j.total %> all-time
+        </span>
+      </div>
+      <% if (j.ips.length) { %>
+        <div class="ip-list">
+          <% j.ips.forEach(ip => { %>
+            <span>
+              <code><%= ip %></code>
+              <form method="POST" action="/security/unban">
+                <input type="hidden" name="jail" value="<%= j.name %>">
+                <input type="hidden" name="ip" value="<%= ip %>">
+                <button title="Unban">×</button>
+              </form>
+            </span>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  <% }) %>
+</div>
+<% } %>
+
+<!-- WAF top attackers -->
+<% if (waf.installed && waf.topIps && waf.topIps.length) { %>
+<div class="sec-section">
+  <h2>Top WAF-blocked IPs (recent)</h2>
+  <table class="audit-tbl">
+    <% waf.topIps.forEach(([ip, count]) => { %>
+      <tr>
+        <td style="width:200px;font-family:var(--mono,monospace)"><code><%= ip %></code></td>
+        <td><%= count %> blocks</td>
+        <td><a href="/waf?q=<%= encodeURIComponent(ip) %>">View events</a></td>
+      </tr>
+    <% }) %>
+  </table>
+</div>
+<% } %>
+
+<%- include('partials/foot') %>
