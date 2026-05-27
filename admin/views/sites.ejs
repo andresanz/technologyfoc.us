@@ -177,6 +177,8 @@
               <label style="font-size:.75rem" title="Append the original request path to redirect target"><input type="checkbox" name="preserve_path" value="1" <%= s.preserve_path?'checked':'' %>> path</label>
               <label style="font-size:.75rem" title="Sync to nginx (uncheck to leave config hand-managed)"><input type="checkbox" name="nginx_managed" value="1" <%= s.nginx_managed?'checked':'' %>> nginx</label>
               <input type="text"   name="note"   value="<%= s.note || '' %>"   placeholder="note"      style="width:140px">
+              <input type="text"   name="s3_bucket"   value="<%= s.s3_bucket || '' %>"   placeholder="s3 bucket" title="if set, /images/ proxies to s3://<bucket>" style="width:130px">
+              <input type="number" name="max_body_mb" value="<%= s.max_body_mb || 1 %>"  title="client_max_body_size MB" min="1" max="500" style="width:60px">
               <button type="submit" class="btn btn-sm">save</button>
             </form>
             <div style="margin-top:.4rem; display:flex; gap:.3rem">

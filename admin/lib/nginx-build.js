@@ -75,6 +75,19 @@ ${body}
 }`;
   }
 
+  // Optional extras driven by DB columns
+  const maxBody = row.max_body_mb && row.max_body_mb > 1 ? `    client_max_body_size ${row.max_body_mb}M;\n` : '';
+  const s3Proxy = row.s3_bucket ? `
+    location /images/ {
+        proxy_pass https://${row.s3_bucket}.s3.us-east-1.amazonaws.com/images/;
+        proxy_set_header Host ${row.s3_bucket}.s3.us-east-1.amazonaws.com;
+        proxy_hide_header x-amz-id-2;
+        proxy_hide_header x-amz-request-id;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+` : '';
+
   const https443 = `server {
 ${ms}    listen 443 ssl http2; listen [::]:443 ssl http2;
     server_name ${names};
@@ -85,7 +98,7 @@ ${ms}    listen 443 ssl http2; listen [::]:443 ssl http2;
     ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
 
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-
+${maxBody}${s3Proxy}
 ${body}
 }`;
 

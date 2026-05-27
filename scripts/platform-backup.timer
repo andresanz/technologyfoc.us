@@ -1,0 +1,10 @@
+[Unit]
+Description=Run platform-backup nightly at 3am local
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=platform-backup.service
+
+[Install]
+WantedBy=timers.target

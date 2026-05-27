@@ -1,0 +1,9 @@
+[Unit]
+Description=Platform nightly backup → S3
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/technologyfoc.us
+ExecStart=/bin/bash /var/www/technologyfoc.us/scripts/backup.sh
+StandardOutput=journal
+StandardError=journal

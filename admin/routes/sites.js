@@ -189,7 +189,7 @@ WantedBy=multi-user.target
 // ── POST /sites/:domain/save — update fields ─────────────────────────────────
 
 router.post('/:domain/save', (req, res) => {
-  const { state, target, port, preserve_path, note, nginx_managed } = req.body;
+  const { state, target, port, preserve_path, note, nginx_managed, s3_bucket, max_body_mb } = req.body;
   const row = getOne(req.params.domain);
   if (!row) { req.flash('error', 'Not found'); return res.redirect('/sites'); }
 
@@ -201,6 +201,8 @@ router.post('/:domain/save', (req, res) => {
       preserve_path = ?,
       note          = ?,
       nginx_managed = ?,
+      s3_bucket     = ?,
+      max_body_mb   = ?,
       updated_at    = datetime('now')
     WHERE id = ?
   `).run(
@@ -210,6 +212,8 @@ router.post('/:domain/save', (req, res) => {
     preserve_path === '1' || preserve_path === 'on' || preserve_path === true ? 1 : 0,
     note || null,
     nginx_managed === '1' || nginx_managed === 'on' || nginx_managed === true ? 1 : 0,
+    s3_bucket || null,
+    max_body_mb ? Math.max(1, parseInt(max_body_mb, 10)) : 1,
     row.id,
   );
   req.flash('success', `${row.domain} saved`);

@@ -103,20 +103,11 @@ function getSite(domain) {
 }
 
 // ── systemctl helpers ─────────────────────────────────────────────────────────
-// Service naming: bare dash-replaced (914-io, randomcategory-com). The legacy
-// "andresanz" service has no -com suffix; check that first, then dash form.
+// Service naming convention: <domain-dashed>. e.g. 914.io → 914-io.
+// One legacy exception: andresanz.com → "andresanz" (no -com suffix).
+const LEGACY_SVC_NAMES = { 'andresanz.com': 'andresanz' };
 function svcName(domain) {
-  const bare = domain.replace(/\./g, '-');
-  const candidates = domain === 'andresanz.com'
-    ? ['andresanz', 'andresanz-com', bare]
-    : [bare, `blog-${bare}`];
-  for (const name of candidates) {
-    try {
-      execSync(`systemctl cat ${name}.service`, { stdio: 'ignore', timeout: 2000 });
-      return name;
-    } catch { /* try next */ }
-  }
-  return bare;
+  return LEGACY_SVC_NAMES[domain] || domain.replace(/\./g, '-');
 }
 
 function serviceStatus(domain) {

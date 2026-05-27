@@ -40,4 +40,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_domains_state ON domains(state);
 `);
 
+// Migrate: add optional columns on pre-existing DBs
+const cols = db.pragma('table_info(domains)').map(c => c.name);
+if (!cols.includes('s3_bucket'))   db.exec('ALTER TABLE domains ADD COLUMN s3_bucket TEXT');
+if (!cols.includes('max_body_mb')) db.exec('ALTER TABLE domains ADD COLUMN max_body_mb INTEGER NOT NULL DEFAULT 1');
+
 module.exports = db;
