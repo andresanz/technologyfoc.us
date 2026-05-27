@@ -130,12 +130,14 @@ function getNodeMem() {
       const args  = parts.slice(2).join(' ');
       const limitMatch = args.match(/--max-old-space-size=(\d+)/);
       const limit = limitMatch ? limitMatch[1]+'MB' : 'none';
-      // identify by script path
+      // Derive service name from the path
       let name = 'node';
-      if (args.includes('admin/app.js'))           name = 'andresanz-admin';
-      else if (args.includes('webhook-deploy'))    name = 'andresanz-deploy';
-      else if (args.includes('redirect-service'))  name = 'redirect-service';
-      else if (args.includes('andresanz.com/app')) name = 'andresanz';
+      const subSite = args.match(/sites\/([^/]+)\/app\.js/);
+      if (subSite) {
+        name = subSite[1].replace(/\./g, '-');           // 914.io → 914-io
+        if (subSite[1] === 'andresanz.com') name = 'andresanz';  // legacy: no -com suffix
+      } else if (args.includes('admin/app.js'))       name = 'andresanz-admin';
+      else if (args.includes('webhook-deploy'))       name = 'andresanz-deploy';
       return { name, limit, rss: Math.round(rss/1024)+'MB' };
     }).sort((a,b)=>a.name.localeCompare(b.name));
   } catch { return []; }
