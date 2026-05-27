@@ -206,9 +206,23 @@ function getEvents(limit = 200) {
   } catch { return []; }
 }
 
+// Count events for today by scanning only timestamp fields in the full log.
+// Avoids loading all 3000+ JSON events into memory.
+function getTodayCount() {
+  try {
+    const today = new Date();
+    const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const tag = `${MO[today.getMonth()]} ${today.getDate()}`; // e.g. "May 26"
+    const out = execSync(
+      `sudo /usr/bin/grep -c '"time_stamp":"[^"]*${tag} ' "${activeLog()}" 2>/dev/null || echo 0`,
+      { timeout: 5000 }
+    ).toString().trim();
+    return parseInt(out, 10) || 0;
+  } catch { return 0; }
+}
+
 function getStats(events, totalInLog = 0) {
-  const today = new Date().toISOString().slice(0, 10);
-  const todayCount = events.filter(e => e.time && e.time.startsWith(today)).length;
+  const todayCount = getTodayCount();
   const ipMap = {}, ipMeta = {}, ruleMap = {};
   for (const e of events) {
     if (e.ip) {
