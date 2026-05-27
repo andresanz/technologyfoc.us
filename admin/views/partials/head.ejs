@@ -26,6 +26,9 @@
     <div class="nav-links" id="navLinks">
 
       <a href="/write" class="nav-cta">Write</a>
+      <form method="GET" action="/search" class="nav-search">
+        <input type="text" name="q" placeholder="🔍 Search…" value="<%= typeof q !== 'undefined' ? q : '' %>">
+      </form>
 
       <div class="nav-drop">
         <button class="nav-drop-btn" data-drop="content">Content ▾</button>

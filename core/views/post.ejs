@@ -15,6 +15,9 @@
       <% post.tags.forEach(function(t) { %>
         <a href="/tag/<%= t %>" class="tag"><%= t %></a>
       <% }) %>
+      <% if (typeof views !== 'undefined' && views > 0) { %>
+        <span class="views" title="Page views (all time)">· <%= views.toLocaleString() %> view<%= views === 1 ? '' : 's' %></span>
+      <% } %>
     </div>
   </header>
 

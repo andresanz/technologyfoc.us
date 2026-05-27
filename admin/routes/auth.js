@@ -82,9 +82,9 @@ router.post('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-// Root redirect
+// Root: dashboard for authed users, login otherwise
 router.get('/', (req, res) => {
-  res.redirect(isAuthed(req) ? '/write' : '/login');
+  res.redirect(isAuthed(req) ? '/dashboard' : '/login');
 });
 
 module.exports = router;

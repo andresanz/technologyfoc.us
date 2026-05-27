@@ -169,4 +169,13 @@ function getDeviceStats(domain, days = 30) {
   `).all(since, ...da);
 }
 
-module.exports = { middleware, getStats, getDetail, getCountryStats, getDeviceStats };
+// Quick pageview count for a single path on a single domain. Used for inline "N views" badges.
+function pageViews(domain, pagePath) {
+  const _db = getDb();
+  if (!_db) return 0;
+  try {
+    return _db.prepare('SELECT COUNT(*) AS n FROM pageviews WHERE domain = ? AND path = ?').get(domain, pagePath).n;
+  } catch { return 0; }
+}
+
+module.exports = { middleware, getStats, getDetail, getCountryStats, getDeviceStats, pageViews };

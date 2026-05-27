@@ -1,0 +1,123 @@
+<%
+  pageTitle = site.title + ' · Dashboard';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.dash-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.75rem; margin-bottom:1.5rem; }
+.dash-card { background:var(--surface,#fff); border:1px solid var(--border); border-radius:8px; padding:.85rem 1rem; text-decoration:none; color:var(--text); transition:border-color .12s; }
+.dash-card:hover { border-color:#2563eb; }
+.dash-card .v { font-size:1.85rem; font-weight:700; line-height:1; }
+.dash-card .l { font-size:.72rem; color:var(--muted); margin-top:.3rem; text-transform:uppercase; letter-spacing:.06em; }
+.dash-card .v.warn   { color:#b45309; }
+.dash-card .v.crit   { color:#dc2626; }
+.dash-card .v.ok     { color:#16a34a; }
+
+.dash-row { display:grid; grid-template-columns:2fr 1fr; gap:1.25rem; margin-bottom:1.5rem; }
+@media (max-width:780px) { .dash-row { grid-template-columns:1fr; } }
+.dash-block h2 { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 .65rem; }
+.dash-block .card { padding:0; overflow:hidden; }
+
+.recent-post { display:block; padding:.6rem 1rem; border-bottom:1px solid var(--border); text-decoration:none; color:var(--text); }
+.recent-post:last-child { border-bottom:none; }
+.recent-post:hover { background:var(--surface2,#fafafa); }
+.recent-post .title { font-weight:600; font-size:.92rem; }
+.recent-post .meta  { font-size:.72rem; color:var(--muted); margin-top:.15rem; }
+
+.kv { display:flex; justify-content:space-between; padding:.4rem .85rem; border-bottom:1px solid var(--border); font-size:.85rem; }
+.kv:last-child { border-bottom:none; }
+.kv span { color:var(--muted); }
+
+.deploy-card { font-size:.85rem; }
+.deploy-card code { background:var(--surface2,#f3f4f6); padding:.1rem .35rem; border-radius:3px; font-size:.85em; }
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Dashboard <span style="font-size:.85rem;font-weight:400;color:var(--muted);margin-left:.5rem"><%= site.title %></span></h1>
+  </div>
+  <div>
+    <a href="/write" class="btn btn-primary">+ Write</a>
+  </div>
+</div>
+
+<%- include('partials/flash') %>
+
+<!-- Top stat cards -->
+<div class="dash-grid">
+  <a href="/analytics" class="dash-card">
+    <div class="v"><%= pv.today.toLocaleString() %></div>
+    <div class="l">Pageviews today</div>
+  </a>
+  <a href="/analytics?days=30" class="dash-card">
+    <div class="v"><%= pv.unique.toLocaleString() %></div>
+    <div class="l">Unique visitors (30d)</div>
+  </a>
+  <a href="/posts?status=drafts" class="dash-card">
+    <div class="v <%= drafts.length > 0 ? 'warn' : '' %>"><%= drafts.length %></div>
+    <div class="l">Drafts</div>
+  </a>
+  <a href="/sites" class="dash-card">
+    <div class="v"><%= domains.total %></div>
+    <div class="l">Domains (<%= domains.live %> live / <%= domains.redirect %> redir / <%= domains.parked %> parked)</div>
+  </a>
+  <% if (health) { %>
+    <a href="/server" class="dash-card">
+      <% const ovOk = health.overall === 'ok'; %>
+      <div class="v <%= ovOk ? 'ok' : 'crit' %>"><%= ovOk ? 'OK' : (health.overall || '?').toUpperCase() %></div>
+      <div class="l">Health · <%= health.services?.length || 0 %> services</div>
+    </a>
+  <% } %>
+</div>
+
+<div class="dash-row">
+  <!-- Recent posts -->
+  <div class="dash-block">
+    <h2>Recent posts</h2>
+    <div class="card">
+      <% if (!posts.length) { %>
+        <p style="padding:1.5rem;color:var(--muted);text-align:center">No published posts yet.</p>
+      <% } else { %>
+        <% posts.forEach(p => { %>
+          <a class="recent-post" href="/posts/edit/<%= p.filename %>">
+            <div class="title"><%= p.title %></div>
+            <div class="meta"><%= (p.dateStr || p.date || '').slice(0,10) %><% if (p.tags && p.tags.length) { %> · <%= p.tags.slice(0,3).join(', ') %><% } %></div>
+          </a>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Sidebar: deploy + sslish -->
+  <div class="dash-block">
+    <h2>Latest deploy</h2>
+    <div class="card deploy-card">
+      <% if (deploy) { %>
+        <div class="kv"><span>commit</span><code><%= deploy.hash %></code></div>
+        <div class="kv"><span>when</span><%= deploy.date %></div>
+        <div class="kv" style="display:block">
+          <span style="display:block;margin-bottom:.2rem">message</span>
+          <%= deploy.message %>
+        </div>
+      <% } else { %>
+        <p style="padding:1rem;color:var(--muted)">No git history available.</p>
+      <% } %>
+    </div>
+
+    <% if (health && health.ssl && health.ssl.length) { %>
+      <h2 style="margin-top:1.25rem">SSL expiry</h2>
+      <div class="card">
+        <% health.ssl.slice(0,6).forEach(c => { %>
+          <div class="kv">
+            <span><%= c.domain %></span>
+            <span style="color:<%= c.level === 'ok' ? '#16a34a' : (c.level === 'warn' ? '#b45309' : '#dc2626') %>">
+              <%= c.days %>d
+            </span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

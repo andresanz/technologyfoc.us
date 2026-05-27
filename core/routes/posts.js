@@ -62,6 +62,7 @@ module.exports = function createPostsRouter(postsLib, pagesLib, privatePostsLib)
     res.redirect(`${adminUrl}/posts/edit/${encodeURIComponent(fname)}`);
   });
 
+  const analytics = require('../lib/analytics');
   router.get(['/post/:slug', '/posts/:slug'], (req, res) => {
     const post = postsLib.getBySlug(req.params.slug);
     if (!post) {
@@ -71,12 +72,14 @@ module.exports = function createPostsRouter(postsLib, pagesLib, privatePostsLib)
       });
     }
     if (post.redirect) return res.redirect(301, post.redirect);
-    // Compute prev/next based on date order (newest → oldest)
     const all = postsLib.getAll();
     const idx = all.findIndex(p => p.slug === post.slug);
     const newer = idx > 0              ? all[idx - 1] : null;
     const older = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
-    res.render('post', { site: req.app.locals.siteConfig(), post, newer, older });
+    const cfg   = req.app.locals.siteConfig();
+    const domain = (cfg.url || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, '');
+    const views = analytics.pageViews(domain, `/post/${post.slug}`) + analytics.pageViews(domain, `/posts/${post.slug}`);
+    res.render('post', { site: cfg, post, newer, older, views });
   });
 
   // ── Cache bust ────────────────────────────────────────────────────────────

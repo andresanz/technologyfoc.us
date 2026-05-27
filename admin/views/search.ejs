@@ -1,0 +1,53 @@
+<%
+  pageTitle = (q ? `"${q}" · ` : '') + 'Search';
+-%>
+<%- include('partials/head') %>
+
+<style>
+.search-form { margin-bottom:1.5rem; display:flex; gap:.5rem; }
+.search-form input[type=text] { flex:1; padding:.55rem .9rem; font-size:1rem; }
+.result { background:var(--surface,#fff); border:1px solid var(--border); border-radius:6px; padding:.65rem .85rem; margin-bottom:.5rem; }
+.result-head { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; font-size:.72rem; margin-bottom:.3rem; }
+.tag-site { background:#dbeafe; color:#1d4ed8; padding:.08em .45em; border-radius:3px; font-weight:600; }
+.tag-type { background:#f3f4f6; color:#374151; padding:.08em .45em; border-radius:3px; }
+.tag-priv { background:#fef3c7; color:#92400e; padding:.08em .45em; border-radius:3px; }
+.result a.slug { font-weight:600; text-decoration:none; color:var(--text); font-size:.95rem; }
+.result a.slug:hover { text-decoration:underline; }
+.result .snippet { font-size:.82rem; color:var(--muted); margin-top:.3rem; font-family:var(--mono,monospace); }
+.result .snippet mark { background:#fef3c7; padding:0 .1em; }
+.empty { padding:2rem; text-align:center; color:var(--muted); }
+</style>
+
+<div class="page-header">
+  <div><h1>Search</h1></div>
+</div>
+
+<form method="GET" action="/search" class="search-form">
+  <input type="text" name="q" value="<%= q %>" placeholder="Search posts, pages, drafts (across all sites)…" autofocus>
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<% if (q) { %>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:.75rem"><%= results.length %> match<%= results.length===1?'':'es' %></p>
+  <% if (!results.length) { %>
+    <div class="empty">No matches.</div>
+  <% } else { %>
+    <% results.forEach(r => {
+      const re = new RegExp(q.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+      const snippet = r.snippet.replace(re, m => `<mark>${m}</mark>`);
+    -%>
+      <div class="result">
+        <div class="result-head">
+          <span class="tag-site"><%= r.site %></span>
+          <span class="tag-type"><%= r.type %></span>
+          <% if (r.privacy === 'private') { %><span class="tag-priv">private</span><% } %>
+          <span style="color:var(--muted)">line <%= r.line %></span>
+        </div>
+        <a class="slug" href="<%= r.editPath %>"><%= r.slug %></a>
+        <div class="snippet"><%- snippet %></div>
+      </div>
+    <% }) %>
+  <% } %>
+<% } %>
+
+<%- include('partials/foot') %>
