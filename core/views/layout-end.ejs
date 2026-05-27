@@ -39,12 +39,13 @@
     var img = e.target;
     if (img.tagName !== 'IMG') return;
     if (img.closest('a')) return;
+    if (img.classList.contains('nolb')) return;
     if (!img.closest('.post-body, .page-body, .post-cover-full') && !img.classList.contains('lb-img')) return;
     open(img.src, img.alt);
   });
   // cursor hint
   document.querySelectorAll('.post-body img, .page-body img, .post-cover-full, .lb-img').forEach(function(img) {
-    if (!img.closest('a')) img.style.cursor = 'zoom-in';
+    if (!img.closest('a') && !img.classList.contains('nolb')) img.style.cursor = 'zoom-in';
   });
 
   document.getElementById('lb-close').addEventListener('click', close);
