@@ -130,14 +130,16 @@ function getNodeMem() {
       const args  = parts.slice(2).join(' ');
       const limitMatch = args.match(/--max-old-space-size=(\d+)/);
       const limit = limitMatch ? limitMatch[1]+'MB' : 'none';
-      // Derive service name from the path
-      let name = 'node';
-      const subSite = args.match(/sites\/([^/]+)\/app\.js/);
+
+      // Resolve service name by reading /proc/<pid>/cwd (since args use relative paths)
+      let name = 'node', cwd = '';
+      try { cwd = require('fs').readlinkSync(`/proc/${pid}/cwd`); } catch {}
+      const subSite = cwd.match(/\/sites\/([^/]+)\/?$/);
       if (subSite) {
-        name = subSite[1].replace(/\./g, '-');           // 914.io → 914-io
-        if (subSite[1] === 'andresanz.com') name = 'andresanz';  // legacy: no -com suffix
-      } else if (args.includes('admin/app.js'))       name = 'andresanz-admin';
-      else if (args.includes('webhook-deploy'))       name = 'andresanz-deploy';
+        name = subSite[1] === 'andresanz.com' ? 'andresanz' : subSite[1].replace(/\./g, '-');
+      } else if (args.includes('admin/app.js'))    name = 'andresanz-admin';
+      else if (args.includes('webhook-deploy'))    name = 'andresanz-deploy';
+      else if (cwd.endsWith('/technologyfoc.us'))  name = 'andresanz-admin';  // admin runs at repo root cwd
       return { name, limit, rss: Math.round(rss/1024)+'MB' };
     }).sort((a,b)=>a.name.localeCompare(b.name));
   } catch { return []; }
