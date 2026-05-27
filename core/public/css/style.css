@@ -358,8 +358,8 @@ main.container:has(.home-page) { padding-top: 0; }
   color: var(--muted);
   text-decoration: none;
 }
-.tag:hover { background: var(--accent); border-color: var(--accent); color: #fff; text-decoration: none; }
-.post-cover .post-kicker .tag:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tag:hover { border-color: var(--accent); color: var(--accent); background: rgba(155, 179, 146, 0.12); text-decoration: none; }
+.post-cover .post-kicker .tag:hover { border-color: #fff; background: rgba(255, 255, 255, 0.28); color: #fff; }
 .tag-link { position: relative; z-index: 2; }
 
 /* Keep post-meta for single post pages */
