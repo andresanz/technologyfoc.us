@@ -153,9 +153,28 @@ router.post('/new', async (req, res) => {
 router.get('/edit/:filename', (req, res) => {
   const site = req.site;
 
-  const dir  = resolveDir(site, req);
-  const post = postsLib.read(dir, req.params.filename);
-  if (!post) return res.status(404).render('error', { code: 404, message: 'Post not found' });
+  let dir  = resolveDir(site, req);
+  let post = postsLib.read(dir, req.params.filename);
+
+  // Not in the active site — check every other editable site and auto-switch if found
+  if (!post) {
+    const sitesLib = require('../lib/sites');
+    const allSites = sitesLib.getEditable();
+    for (const s of allSites) {
+      if (s.domain === site.domain) continue;
+      const pub  = postsLib.read(s.postsDir, req.params.filename);
+      const priv = postsLib.read(s.privatePostsDir, req.params.filename);
+      const found = pub || priv;
+      if (found) {
+        // Switch active site to the one that owns this post, then re-render with it.
+        res.setHeader('Set-Cookie', `admin_site=${encodeURIComponent(s.domain)}; Path=/; Max-Age=31536000; SameSite=Lax`);
+        req.flash('success', `Switched to ${s.domain} (where this post lives)`);
+        const dirParam = priv ? '?dir=private-posts' : '';
+        return res.redirect(`/posts/edit/${req.params.filename}${dirParam}`);
+      }
+    }
+    return res.status(404).render('error', { code: 404, message: `Post "${req.params.filename}" not found in any site` });
+  }
 
   res.render('post-edit', {
     site,
