@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
   webhooks.push(await telegramInbound({
     label: 'Telegram → Gratitude replies',
     token: process.env.TELEGRAM_BOT_TOKEN,
-    expectedUrl: `${process.env.ADMIN_URL || 'https://admin.andresanz.com'}/webhook/telegram`,
+    expectedUrl: `${process.env.ADMIN_URL || 'https://admin.technologyfoc.us'}/webhook/telegram`,
     direction: 'inbound',
   }));
 

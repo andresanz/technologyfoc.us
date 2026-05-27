@@ -23,13 +23,13 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /webhook/telegram/setup?url=https://admin.andresanz.com/webhook/telegram
+// GET /webhook/telegram/setup?url=https://admin.technologyfoc.us/webhook/telegram
 // Registers the webhook URL with Telegram. Requires admin auth (mounted accordingly).
 router.get('/setup', async (req, res) => {
   const TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
   if (!TOKEN)  return res.status(500).send('TELEGRAM_BOT_TOKEN not set');
   if (!SECRET) return res.status(500).send('TELEGRAM_WEBHOOK_SECRET not set');
-  const url = req.query.url || `${process.env.ADMIN_URL || 'https://admin.andresanz.com'}/webhook/telegram`;
+  const url = req.query.url || `${process.env.ADMIN_URL || 'https://admin.technologyfoc.us'}/webhook/telegram`;
   try {
     const r = await fetch(`https://api.telegram.org/bot${TOKEN}/setWebhook`, {
       method: 'POST',
