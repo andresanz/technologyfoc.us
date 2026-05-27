@@ -69,26 +69,31 @@ function processShortcodes(html, postsLib, opts) {
 function renderPostList(posts) {
   if (!posts.length) return '';
   const cards = posts.map(p => {
-    const cover = p.coverImage
-      ? `<a href="/post/${p.slug}" class="post-cover"><img src="${esc(p.coverImage)}" alt="${esc(p.title)}"></a>`
-      : '';
     const tags = p.tags.map(t =>
-      `<a href="/tag/${esc(t)}" class="tag">${esc(t)}</a>`
+      `<a href="/tag/${esc(t)}" class="tag tag-link">${esc(t)}</a>`
     ).join('');
+    const kicker = `<div class="post-kicker">
+      <time datetime="${esc(p.dateISO)}">${esc(p.dateStr)}</time>
+      ${tags}
+    </div>`;
+    const coverBlock = p.coverImage
+      ? `<div class="post-cover">
+          <img src="${esc(p.coverImage)}" alt="${esc(p.title)}">
+          ${kicker}
+        </div>`
+      : '';
+    const bodyKicker = p.coverImage ? '' : kicker;
     const ex      = p.excerpt || '';
     const excerpt = ex
       ? `<p class="excerpt">${esc(ex.length > 140 ? ex.slice(0, 137) + '\u2026' : ex)}</p>`
       : '';
     return `<article class="post-card">
-  ${cover}
+  <a href="/post/${esc(p.slug)}" class="card-link" aria-label="${esc(p.title)}"></a>
+  ${coverBlock}
   <div class="post-card-body">
-    <div class="post-meta">
-      <time datetime="${esc(p.dateISO)}">${esc(p.dateStr)}</time>
-      ${tags}
-    </div>
-    <h2><a href="/post/${esc(p.slug)}">${esc(p.title)}</a></h2>
+    ${bodyKicker}
+    <h2>${esc(p.title)}</h2>
     ${excerpt}
-    <a href="/post/${esc(p.slug)}" class="read-more">Read more \u2192</a>
   </div>
 </article>`;
   });
