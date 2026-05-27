@@ -8,9 +8,13 @@ const path       = require('path');
 
 const BOT_TOKEN      = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID        = process.env.TELEGRAM_CHAT_ID;
-const BLOG           = process.env.GRATITUDE_BLOG || 'randomcategory.com';
-const SITES_ROOT     = process.env.SITES_ROOT || '/var/www';
-const GRATITUDE_FILE = path.join(SITES_ROOT, BLOG, 'content', 'gratitude.json');
+const BLOG           = process.env.GRATITUDE_BLOG || 'andresanz.com';
+// Resolve: prefer platform layout (sites/<blog>/content/), fall back to legacy /var/www/<blog>/content/
+const PLATFORM_ROOT  = process.env.PLATFORM_ROOT || path.join(__dirname, '..', '..');
+const _platformPath  = path.join(PLATFORM_ROOT, 'sites', BLOG, 'content', 'gratitude.json');
+const _legacyPath    = path.join('/var/www', BLOG, 'content', 'gratitude.json');
+const GRATITUDE_FILE = process.env.GRATITUDE_FILE
+  || (fs.existsSync(path.dirname(_platformPath)) ? _platformPath : _legacyPath);
 const STATE_FILE     = path.join(__dirname, '..', 'data', 'gratitude-state.json');
 const PROMPTS_FILE   = path.join(__dirname, '..', 'data', 'gratitude-prompts.json');
 
