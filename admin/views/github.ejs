@@ -39,9 +39,12 @@
     <p class="muted">All repos · updated on page load</p>
   </div>
   <div class="header-actions">
-    <form method="POST" action="/github/push">
-      <button class="btn btn-primary">↑ Push all</button>
-    </form>
+    <% const anyPending = (repos || []).some(r => (r.ahead || 0) > 0 || r.dirty); %>
+    <% if (anyPending) { %>
+      <form method="POST" action="/github/push">
+        <button class="btn btn-primary">↑ Push all</button>
+      </form>
+    <% } %>
   </div>
 </div>
 
