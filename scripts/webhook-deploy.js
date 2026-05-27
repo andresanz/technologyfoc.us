@@ -15,7 +15,29 @@ if (!GITHUB_WEBHOOK_SECRET) {
   process.exit(1);
 }
 
-const SERVICES = ['andresanz', 'andresanz-admin'];
+// Map filesystem path prefixes → systemd unit names to restart
+const RESTART_RULES = [
+  { match: /^admin\//,                       svc: 'andresanz-admin' },
+  { match: /^core\//,                        svc: '*'                }, // core touches everything
+  { match: /^sites\/andresanz\.com\//,       svc: 'andresanz'        },
+  { match: /^sites\/914\.io\//,              svc: '914-io'           },
+  { match: /^sites\/randomcategory\.com\//,  svc: 'randomcategory-com' },
+  { match: /^scripts\/webhook-deploy\.js$/,  svc: 'andresanz-deploy' },
+];
+const ALL_SITE_SERVICES = ['andresanz', '914-io', 'randomcategory-com', 'andresanz-admin'];
+
+function servicesToRestart(files) {
+  const set = new Set();
+  for (const f of files) {
+    for (const rule of RESTART_RULES) {
+      if (rule.match.test(f)) {
+        if (rule.svc === '*') ALL_SITE_SERVICES.forEach(s => set.add(s));
+        else set.add(rule.svc);
+      }
+    }
+  }
+  return [...set];
+}
 
 function telegram(text) {
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT) return;
@@ -80,8 +102,12 @@ function deploy(payload) {
     }
   }
 
-  // restart services
-  for (const svc of SERVICES) {
+  // restart only services whose files changed
+  const services = servicesToRestart(files);
+  // Defer self-restart until after telegram fires; otherwise we kill ourselves before notifying
+  const selfRestart = services.includes('andresanz-deploy');
+  for (const svc of services) {
+    if (svc === 'andresanz-deploy') continue;
     try {
       execSync(`systemctl restart ${svc}.service`, { stdio: 'pipe' });
       console.log(`[deploy] restarted ${svc}`);
@@ -92,12 +118,20 @@ function deploy(payload) {
     }
   }
 
+  const svcLine = services.length ? `\nrestarted: ${services.join(', ')}` : '';
   telegram(
     `<b>technologyfoc.us</b> · ${branch} · ${pusher}\n` +
     `#${deployNum} · <code>${shortHash}</code> · ${files.length} file(s)\n` +
-    `<i>${commitMsg}</i>` +
+    `<i>${commitMsg}</i>${svcLine}` +
     (errors.length ? `\n\n${errors.join('\n')}` : '')
   );
+
+  if (selfRestart) {
+    // detach + restart self so the notification finishes first
+    setTimeout(() => {
+      try { execSync('systemctl restart andresanz-deploy.service', { stdio: 'pipe' }); } catch {}
+    }, 500);
+  }
 }
 
 function verify(body, sig) {
