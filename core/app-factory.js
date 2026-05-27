@@ -158,7 +158,19 @@ function createApp(siteDir) {
     });
   });
 
-  // Post list also always reachable at /posts
+  // Post list also always reachable at /posts.
+  // If a page with slug 'posts' exists, render it (with [posts] shortcode support)
+  // — lets you write an intro then embed the list. Falls through to default index otherwise.
+  app.get('/posts', (req, res, next) => {
+    const override = pagesLib.getBySlug('posts');
+    if (!override) return next();
+    const html = processShortcodes(override.html || '', postsLib, { page: req.query.page });
+    res.render('page', {
+      site: app.locals.siteConfig(),
+      page: { ...override, html },
+    });
+  });
+
   app.get('/posts', (req, res) => {
     const page  = Math.max(1, parseInt(req.query.page) || 1);
     const all   = postsLib.getAll();
