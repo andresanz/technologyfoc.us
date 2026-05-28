@@ -213,28 +213,6 @@
 </section>
 
 <script>
-const LAST_STATUS = <%- JSON.stringify(last || null) %>;
-let pollInterval = null;
-
-function startPolling() {
-  if (pollInterval) return;
-  const btn = document.getElementById('backupBtn');
-  if (btn) { btn.innerHTML = '<span class="spinner-inline"></span>Running…'; btn.disabled = true; }
-  pollInterval = setInterval(async () => {
-    try {
-      const r = await fetch('/server/backups/status');
-      const d = await r.json();
-      if (!d.running && d.last !== LAST_STATUS) {
-        clearInterval(pollInterval);
-        window.location.reload();
-      }
-    } catch {}
-  }, 2000);
-}
-
-<% if (running) { %>startPolling();<% } %>
-function startBackup() { setTimeout(startPolling, 500); }
-
 async function toggleLog(boxId, url) {
   const box = document.getElementById(boxId);
   if (box.style.display === 'block') { box.style.display = 'none'; return; }
