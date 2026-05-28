@@ -81,6 +81,44 @@
 </div>
 <% } %>
 
+<%/* ── 0. Platform backup (new — andresanz-com/backups/platform/) ──────── */%>
+<% const latestPlat = platformBackups && platformBackups[0]; %>
+<section class="bk-section">
+  <div class="bk-head">
+    <h2>
+      Platform
+      <% if (latestPlat) { %><span class="pill pill-ok">latest <%= latestPlat.date %></span><% } else { %><span class="pill pill-muted">none</span><% } %>
+      <span class="bk-meta">andresanz-com/backups/platform · <%= platformBackups.length %> snapshot<%= platformBackups.length !== 1 ? 's' : '' %> · daily 3am · monthly restore drill</span>
+    </h2>
+    <div style="display:flex;gap:.5rem">
+      <form method="POST" action="/server/backups/platform/run" style="display:inline">
+        <button class="btn btn-sm">⏵ Run now</button>
+      </form>
+      <form method="POST" action="/server/backups/platform/drill" style="display:inline" title="Download latest backup, extract, verify DB + content integrity. Telegrams result.">
+        <button class="btn btn-sm">⟳ Test restore</button>
+      </form>
+    </div>
+  </div>
+  <% if (platformBackups.length) { %>
+    <table class="bk-table">
+      <thead><tr><th>Date</th><th>Size</th><th></th></tr></thead>
+      <tbody>
+        <% platformBackups.slice(0, 10).forEach(p => { %>
+          <tr>
+            <td><code><%= p.date %></code></td>
+            <td><%= p.size %></td>
+            <td style="text-align:right">
+              <a href="/server/backups/download?key=<%= encodeURIComponent(p.key) %>&bucket=andresanz-com" class="btn btn-sm">↓</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p class="bk-empty">No platform backups yet — run one now or wait for tonight at 3am.</p>
+  <% } %>
+</section>
+
 <%/* ── 1. Full server backups ─────────────────────────────────────────── */%>
 <% const latestSrv = backups[0]; const srvAgo = latestSrv ? ago(latestSrv.modified) : null; %>
 <section class="bk-section">

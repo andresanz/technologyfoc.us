@@ -124,15 +124,61 @@ function isRunning() {
   return fs.existsSync(FLAG_FILE);
 }
 
+// List the new platform-backup snapshots
+function listPlatformBackups() {
+  try {
+    const out = execSync(
+      `aws s3 ls s3://andresanz-com/backups/platform/`,
+      { timeout: 10000, env: awsEnv() }
+    ).toString().trim();
+    return out.split('\n').filter(Boolean).map(line => {
+      const parts = line.trim().split(/\s+/);
+      // "2026-05-27 20:42:45 4479917 2026-05-26.tar.gz"
+      return {
+        date: parts[3].replace(/\.tar\.gz$/, ''),
+        size: (parseInt(parts[2], 10) / (1024 * 1024)).toFixed(1) + ' MB',
+        key:  `backups/platform/${parts[3]}`,
+      };
+    }).reverse(); // newest first
+  } catch { return []; }
+}
+
+function platformTimerStatus() {
+  try {
+    const next  = execSync(`systemctl show platform-backup.timer -p NextElapseUSecRealtime --value`, { timeout: 3000 }).toString().trim();
+    const last  = execSync(`systemctl show platform-backup.service -p ExecMainExitTimestamp --value`, { timeout: 3000 }).toString().trim();
+    const drill = execSync(`systemctl show platform-restore-test.timer -p NextElapseUSecRealtime --value`, { timeout: 3000 }).toString().trim();
+    return { next, last, drill };
+  } catch { return {}; }
+}
+
 // GET /server/backups
 router.get('/', (req, res) => {
-  const backups        = listBackups();
-  const contentBackups = listContentBackups();
-  const localBackups   = listLocalBackups();
-  const macBackups     = listMacBackups();
-  const last           = lastStatus();
-  const running        = isRunning();
-  res.render('server-backups', { backups, contentBackups, localBackups, macBackups, last, bucket: BUCKET, running, flash: req.flash() });
+  const backups          = listBackups();
+  const contentBackups   = listContentBackups();
+  const localBackups     = listLocalBackups();
+  const macBackups       = listMacBackups();
+  const platformBackups  = listPlatformBackups();
+  const platformStatus   = platformTimerStatus();
+  const last             = lastStatus();
+  const running          = isRunning();
+  res.render('server-backups', { backups, contentBackups, localBackups, macBackups, platformBackups, platformStatus, last, bucket: BUCKET, running, flash: req.flash() });
+});
+
+// POST /server/backups/platform/run — fire platform backup now
+router.post('/platform/run', (req, res) => {
+  const child = spawn('sudo', ['systemctl', 'start', 'platform-backup.service'], { detached: true, stdio: 'ignore' });
+  child.unref();
+  req.flash('success', 'Platform backup started');
+  res.redirect('/server/backups');
+});
+
+// POST /server/backups/platform/drill — fire restore test now
+router.post('/platform/drill', (req, res) => {
+  const child = spawn('sudo', ['systemctl', 'start', 'platform-restore-test.service'], { detached: true, stdio: 'ignore' });
+  child.unref();
+  req.flash('success', 'Restore drill started — check Telegram for result');
+  res.redirect('/server/backups');
 });
 
 // POST /server/backups/content/run — fire content backup now
@@ -166,12 +212,15 @@ router.post('/run', (req, res) => {
 
 // GET /server/backups/download?key=... — presigned download URL
 router.get('/download', (req, res) => {
-  const { key } = req.query;
+  const { key, bucket } = req.query;
   if (!key) return res.status(400).send('Invalid key');
-  const ok = key.startsWith(`${CONFIG_PREFIX}/`) || key.startsWith(`${CONTENT_PREFIX}/`);
-  if (!ok) return res.status(400).send('Invalid key');
+  // Allow the legacy bucket prefixes, or the new platform-backup bucket
+  const okLegacy   = (bucket || BACKUP_BUCKET) === BACKUP_BUCKET && (key.startsWith(`${CONFIG_PREFIX}/`) || key.startsWith(`${CONTENT_PREFIX}/`));
+  const okPlatform = bucket === 'andresanz-com' && key.startsWith('backups/platform/');
+  if (!okLegacy && !okPlatform) return res.status(400).send('Invalid key');
+  const useBucket = okPlatform ? 'andresanz-com' : BACKUP_BUCKET;
   try {
-    const url = run(`aws s3 presign "s3://${BACKUP_BUCKET}/${key}" --expires-in 300`);
+    const url = run(`aws s3 presign "s3://${useBucket}/${key}" --expires-in 300`);
     res.redirect(url);
   } catch (e) { res.status(500).send(e.message); }
 });
