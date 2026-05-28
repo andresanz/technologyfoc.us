@@ -154,15 +154,11 @@ function platformTimerStatus() {
 
 // GET /server/backups
 router.get('/', (req, res) => {
-  const backups          = listBackups();
-  const contentBackups   = listContentBackups();
   const localBackups     = listLocalBackups();
   const macBackups       = listMacBackups();
   const platformBackups  = listPlatformBackups();
   const platformStatus   = platformTimerStatus();
-  const last             = lastStatus();
-  const running          = isRunning();
-  res.render('server-backups', { backups, contentBackups, localBackups, macBackups, platformBackups, platformStatus, last, bucket: BUCKET, running, flash: req.flash() });
+  res.render('server-backups', { localBackups, macBackups, platformBackups, platformStatus, bucket: BUCKET, running: false, flash: req.flash() });
 });
 
 // POST /server/backups/platform/run — fire platform backup now
