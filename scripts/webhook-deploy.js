@@ -120,7 +120,7 @@ function deploy(payload) {
 
   const svcLine = services.length ? `\nrestarted: ${services.join(', ')}` : '';
   telegram(
-    `<b>technologyfoc.us</b> · ${branch} · ${pusher}\n` +
+    `<b>technologyfoc.us</b> · ${branch}\n` +
     `#${deployNum} · <code>${shortHash}</code> · ${files.length} file(s)\n` +
     `<i>${commitMsg}</i>${svcLine}` +
     (errors.length ? `\n\n${errors.join('\n')}` : '')
