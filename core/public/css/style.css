@@ -330,7 +330,7 @@ main.container:has(.home-page) { padding-top: 0; }
   color: #fff;
 }
 
-.post-card-body { padding: var(--s-3) var(--s-5) var(--s-4); }
+.post-card-body { padding: var(--s-5) var(--s-5) var(--s-4); }
 
 /* ── Post kicker — date + tags above title ───────────────────────────────── */
 .post-kicker {
