@@ -121,28 +121,27 @@ function getStats() {
 
 // ── Node.js process memory snapshot ─────────────────────────────────────────
 function getNodeMem() {
-  try {
-    const lines = run("ps -eo pid,rss,args | grep -E 'node.*(app|webhook)' | grep -v grep").split('\n').filter(Boolean);
-    return lines.map(line => {
-      const parts = line.trim().split(/\s+/);
-      const pid   = parts[0];
-      const rss   = parseInt(parts[1]) || 0;
-      const args  = parts.slice(2).join(' ');
-      const limitMatch = args.match(/--max-old-space-size=(\d+)/);
-      const limit = limitMatch ? limitMatch[1]+'MB' : 'none';
-
-      // Resolve service name by reading /proc/<pid>/cwd (since args use relative paths)
-      let name = 'node', cwd = '';
-      try { cwd = require('fs').readlinkSync(`/proc/${pid}/cwd`); } catch {}
-      const subSite = cwd.match(/\/sites\/([^/]+)\/?$/);
-      if (subSite) {
-        name = subSite[1] === 'andresanz.com' ? 'andresanz' : subSite[1].replace(/\./g, '-');
-      } else if (args.includes('admin/app.js'))    name = 'andresanz-admin';
-      else if (args.includes('webhook-deploy'))    name = 'andresanz-deploy';
-      else if (cwd.endsWith('/technologyfoc.us'))  name = 'andresanz-admin';  // admin runs at repo root cwd
-      return { name, limit, rss: Math.round(rss/1024)+'MB' };
-    }).sort((a,b)=>a.name.localeCompare(b.name));
-  } catch { return []; }
+  // Enumerate known node services via systemctl — works regardless of process user
+  const services = ['andresanz', 'andresanz-admin', 'andresanz-deploy', '914-io', 'randomcategory-com'];
+  const results = [];
+  for (const name of services) {
+    try {
+      const pid = run(`systemctl show ${name} --property=MainPID --value`);
+      if (!pid || pid === '0') continue;
+      // RSS from ps (no permission issues)
+      const rssLine = run(`ps -o rss= -p ${pid}`);
+      const rssKB   = parseInt(rssLine.trim(), 10) || 0;
+      // --max-old-space-size from the unit's ExecStart
+      const execStart = run(`systemctl show ${name} --property=ExecStart --value`);
+      const limitMatch = execStart.match(/--max-old-space-size=(\d+)/);
+      results.push({
+        name,
+        limit: limitMatch ? limitMatch[1] + 'MB' : 'none',
+        rss:   Math.round(rssKB / 1024) + 'MB',
+      });
+    } catch { /* skip */ }
+  }
+  return results.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // ── GET /server ───────────────────────────────────────────────────────────────
