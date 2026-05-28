@@ -128,7 +128,7 @@ function isRunning() {
 function listPlatformBackups() {
   try {
     const out = execSync(
-      `aws s3 ls s3://andresanz-com/backups/platform/`,
+      `aws s3 ls s3://technologyfoc-us/backups/platform/`,
       { timeout: 10000, env: awsEnv() }
     ).toString().trim();
     return out.split('\n').filter(Boolean).map(line => {
@@ -216,9 +216,9 @@ router.get('/download', (req, res) => {
   if (!key) return res.status(400).send('Invalid key');
   // Allow the legacy bucket prefixes, or the new platform-backup bucket
   const okLegacy   = (bucket || BACKUP_BUCKET) === BACKUP_BUCKET && (key.startsWith(`${CONFIG_PREFIX}/`) || key.startsWith(`${CONTENT_PREFIX}/`));
-  const okPlatform = bucket === 'andresanz-com' && key.startsWith('backups/platform/');
+  const okPlatform = bucket === 'technologyfoc-us' && key.startsWith('backups/platform/');
   if (!okLegacy && !okPlatform) return res.status(400).send('Invalid key');
-  const useBucket = okPlatform ? 'andresanz-com' : BACKUP_BUCKET;
+  const useBucket = okPlatform ? 'technologyfoc-us' : BACKUP_BUCKET;
   try {
     const url = run(`aws s3 presign "s3://${useBucket}/${key}" --expires-in 300`);
     res.redirect(url);

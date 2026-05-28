@@ -5,7 +5,7 @@
 set -uo pipefail
 
 PLATFORM_ROOT="${PLATFORM_ROOT:-/var/www/technologyfoc.us}"
-S3_BUCKET="${BACKUP_S3_BUCKET:-andresanz-com}"
+S3_BUCKET="${BACKUP_S3_BUCKET:-technologyfoc-us}"
 S3_PREFIX="${BACKUP_S3_PREFIX:-backups/platform}"
 TEST_DIR="/tmp/backup-restore-test"
 

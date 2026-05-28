@@ -81,14 +81,14 @@
 </div>
 <% } %>
 
-<%/* ── 0. Platform backup (new — andresanz-com/backups/platform/) ──────── */%>
+<%/* ── 0. Platform backup (new — technologyfoc-us/backups/platform/) ──────── */%>
 <% const latestPlat = platformBackups && platformBackups[0]; %>
 <section class="bk-section">
   <div class="bk-head">
     <h2>
       Platform
       <% if (latestPlat) { %><span class="pill pill-ok">latest <%= latestPlat.date %></span><% } else { %><span class="pill pill-muted">none</span><% } %>
-      <span class="bk-meta">andresanz-com/backups/platform · <%= platformBackups.length %> snapshot<%= platformBackups.length !== 1 ? 's' : '' %> · daily 3am · monthly restore drill</span>
+      <span class="bk-meta">technologyfoc-us/backups/platform · <%= platformBackups.length %> snapshot<%= platformBackups.length !== 1 ? 's' : '' %> · daily 3am · monthly restore drill</span>
     </h2>
     <div style="display:flex;gap:.5rem">
       <form method="POST" action="/server/backups/platform/run" style="display:inline">
@@ -108,7 +108,7 @@
             <td><code><%= p.date %></code></td>
             <td><%= p.size %></td>
             <td style="text-align:right">
-              <a href="/server/backups/download?key=<%= encodeURIComponent(p.key) %>&bucket=andresanz-com" class="btn btn-sm">↓</a>
+              <a href="/server/backups/download?key=<%= encodeURIComponent(p.key) %>&bucket=technologyfoc-us" class="btn btn-sm">↓</a>
             </td>
           </tr>
         <% }) %>
