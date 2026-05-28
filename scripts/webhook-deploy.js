@@ -127,10 +127,13 @@ function deploy(payload) {
   );
 
   if (selfRestart) {
-    // detach + restart self so the notification finishes first
-    setTimeout(() => {
-      try { execSync('systemctl restart andresanz-deploy.service', { stdio: 'pipe' }); } catch {}
-    }, 500);
+    // Detach a subprocess that outlives this one. systemctl will SIGTERM us
+    // mid-flight, so we cannot await the restart — the new process picks up.
+    const { spawn } = require('child_process');
+    spawn('sh', ['-c', 'sleep 1 && systemctl restart andresanz-deploy.service'], {
+      detached: true,
+      stdio:    'ignore',
+    }).unref();
   }
 }
 
