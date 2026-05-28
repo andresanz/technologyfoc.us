@@ -7,8 +7,10 @@ const { loadState, loadEntries, deleteEntry, sendPrompt, checkReplies } = requir
 const { getNextFireTime } = require('../services/gratitude-scheduler');
 const router   = express.Router();
 
-const PROMPTS_FILE = path.join(__dirname, '..', 'data', 'gratitude-prompts.json');
-const BLOG_URL     = process.env.GRATITUDE_BLOG_URL || ('https://' + (process.env.GRATITUDE_BLOG || 'randomcategory.com'));
+const BLOG          = process.env.GRATITUDE_BLOG || 'andresanz.com';
+const PLATFORM_ROOT = process.env.PLATFORM_ROOT || path.join(__dirname, '..', '..');
+const PROMPTS_FILE  = path.join(PLATFORM_ROOT, 'sites', BLOG, 'data', 'gratitude-prompts.json');
+const BLOG_URL      = process.env.GRATITUDE_BLOG_URL || ('https://' + BLOG);
 
 function load() {
   try { return JSON.parse(fs.readFileSync(PROMPTS_FILE, 'utf8')); } catch { return []; }

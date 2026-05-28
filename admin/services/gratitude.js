@@ -9,14 +9,17 @@ const path       = require('path');
 const BOT_TOKEN      = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID        = process.env.TELEGRAM_CHAT_ID;
 const BLOG           = process.env.GRATITUDE_BLOG || 'andresanz.com';
-// Resolve: prefer platform layout (sites/<blog>/content/), fall back to legacy /var/www/<blog>/content/
 const PLATFORM_ROOT  = process.env.PLATFORM_ROOT || path.join(__dirname, '..', '..');
-const _platformPath  = path.join(PLATFORM_ROOT, 'sites', BLOG, 'content', 'gratitude.json');
-const _legacyPath    = path.join('/var/www', BLOG, 'content', 'gratitude.json');
-const GRATITUDE_FILE = process.env.GRATITUDE_FILE
-  || (fs.existsSync(path.dirname(_platformPath)) ? _platformPath : _legacyPath);
-const STATE_FILE     = path.join(__dirname, '..', 'data', 'gratitude-state.json');
-const PROMPTS_FILE   = path.join(__dirname, '..', 'data', 'gratitude-prompts.json');
+
+// Per-site layout: everything gratitude-related lives under sites/<blog>/.
+//   content/gratitude.json   — entries (visible to the public site renderer)
+//   data/gratitude-prompts.json — prompt pool (admin-only)
+//   data/gratitude-state.json   — schedule + last-fired (admin-only)
+const SITE_ROOT      = path.join(PLATFORM_ROOT, 'sites', BLOG);
+const GRATITUDE_FILE = process.env.GRATITUDE_FILE || path.join(SITE_ROOT, 'content', 'gratitude.json');
+const PROMPTS_FILE   = path.join(SITE_ROOT, 'data', 'gratitude-prompts.json');
+const STATE_FILE     = path.join(SITE_ROOT, 'data', 'gratitude-state.json');
+fs.mkdirSync(path.join(SITE_ROOT, 'data'), { recursive: true });
 
 const TGAPI = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
