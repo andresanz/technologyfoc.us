@@ -1,0 +1,9 @@
+[Unit]
+Description=Platform backup restore drill
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/technologyfoc.us
+ExecStart=/bin/bash /var/www/technologyfoc.us/scripts/restore-test.sh
+StandardOutput=journal
+StandardError=journal

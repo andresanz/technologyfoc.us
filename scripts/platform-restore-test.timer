@@ -1,0 +1,10 @@
+[Unit]
+Description=Run backup restore drill on the 1st of every month
+
+[Timer]
+OnCalendar=monthly
+Persistent=true
+Unit=platform-restore-test.service
+
+[Install]
+WantedBy=timers.target
