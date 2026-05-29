@@ -26,6 +26,14 @@ const RESTART_RULES = [
 ];
 const ALL_SITE_SERVICES = ['andresanz', '914-io', 'randomcategory-com', 'andresanz-admin'];
 
+const SVC_DISPLAY = {
+  'andresanz':        'andresanz.com',
+  'andresanz-admin':  'technologyfoc.us admin',
+  '914-io':           '914.io',
+  'randomcategory-com': 'randomcategory.com',
+  'andresanz-deploy': 'deploy service',
+};
+
 function servicesToRestart(files) {
   const set = new Set();
   for (const f of files) {
@@ -118,7 +126,9 @@ function deploy(payload) {
     }
   }
 
-  const svcLine = services.length ? `\nrestarted: ${services.join(', ')}` : '';
+  const svcLine = services.length
+    ? `\nrestarted: ${services.map(s => SVC_DISPLAY[s] || s).join(', ')}`
+    : '';
   telegram(
     `<b>technologyfoc.us</b> · ${branch}\n` +
     `#${deployNum} · <code>${shortHash}</code> · ${files.length} file(s)\n` +
