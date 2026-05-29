@@ -7,7 +7,7 @@ nav: true
 
 <div id="coming-soon-overlay" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:1rem 1.25rem;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,0.1);display:flex;align-items:flex-start;gap:0.75rem">
   <div style="flex:1">
-    <p style="margin:0 0 0.2rem;font-size:0.85rem;font-weight:600;color:#111">Version 2 is in the works.</p>
+    <p style="margin:0 0 0.2rem;font-size:0.85rem;font-weight:600;color:#111">Version 2 coming.</p>
     <p style="margin:0;font-size:0.8rem;color:#888;line-height:1.4"><a href="/about2">Click here</a> for a preview.</p>
   </div>
   <button onclick="document.getElementById('coming-soon-overlay').remove()" style="background:none;border:none;color:#bbb;font-size:1.1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0">&times;</button>
