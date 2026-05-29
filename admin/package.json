@@ -1,7 +1,7 @@
 {
-  "name": "blog-admin",
+  "name": "technologyfoc.us-admin",
   "version": "1.0.0",
-  "description": "Admin panel for managing blog sites",
+  "description": "technologyfoc.us admin panel",
   "main": "app.js",
   "engines": {
     "node": ">=16.0.0"

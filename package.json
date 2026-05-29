@@ -1,7 +1,7 @@
 {
-  "name": "andresanz.com",
+  "name": "technologyfoc.us",
   "version": "1.0.0",
-  "description": "andresanz.com — public site + admin panel",
+  "description": "technologyfoc.us — multisite platform powering andresanz.com and other sites",
   "private": true,
   "engines": {
     "node": ">=18.0.0"
