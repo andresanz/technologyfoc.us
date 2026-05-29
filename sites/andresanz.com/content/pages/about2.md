@@ -1,8 +1,8 @@
 ---
 title: About
-date: '2026-05-29T09:29'
+date: '2026-05-29T13:29'
 slug: about2
-nav: true
+nav: false
 ---
 
 NEW!
