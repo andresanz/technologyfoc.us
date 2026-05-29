@@ -5,13 +5,12 @@ slug: about
 nav: true
 ---
 
-<div id="coming-soon-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px)">
-  <div style="background:#fff;border-radius:12px;padding:2.5rem 3rem;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-    <div style="font-size:2.5rem;margin-bottom:0.5rem">🚧</div>
-    <h2 style="margin:0 0 0.75rem;font-size:1.4rem;color:#111">Coming Soon</h2>
-    <p style="margin:0 0 1.5rem;color:#555;font-size:0.95rem;line-height:1.5">This page is being updated. Check back shortly.</p>
-    <button onclick="document.getElementById('coming-soon-overlay').remove()" style="background:#111;color:#fff;border:none;border-radius:6px;padding:0.6rem 1.4rem;font-size:0.9rem;cursor:pointer">Take a peek anyway</button>
+<div id="coming-soon-overlay" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:1rem 1.25rem;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,0.1);display:flex;align-items:flex-start;gap:0.75rem">
+  <div style="flex:1">
+    <p style="margin:0 0 0.2rem;font-size:0.85rem;font-weight:600;color:#111">This page is being updated</p>
+    <p style="margin:0;font-size:0.8rem;color:#888;line-height:1.4">Check back shortly.</p>
   </div>
+  <button onclick="document.getElementById('coming-soon-overlay').remove()" style="background:none;border:none;color:#bbb;font-size:1.1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0">&times;</button>
 </div>
 
 <img class="nolb" src="/images/andre-avatar.png" alt="André Sanz" style="float:left;width:150px;margin:0 1.5rem 1rem 0;border:none;box-shadow:none;background:transparent;display:inline;cursor:default">
