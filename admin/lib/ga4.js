@@ -55,7 +55,23 @@ async function getStats(domain, days = 30) {
     metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
     dimensionFilter: hostFilter,
     orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-    limit: 15,
+    limit: 25,
+  });
+
+  const postFilter = {
+    andGroup: { expressions: [
+      hostFilter,
+      { filter: { fieldName: 'pagePath', stringFilter: { value: '/posts/', matchType: 'BEGINS_WITH' } } },
+    ]}
+  };
+  const [postPages] = await c.runReport({
+    property: `properties/${propertyId}`,
+    dateRanges: [{ startDate, endDate: 'today' }],
+    dimensions: [{ name: 'pagePath' }],
+    metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
+    dimensionFilter: postFilter,
+    orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+    limit: 20,
   });
 
   const [sources] = await c.runReport({
@@ -98,13 +114,14 @@ async function getStats(domain, days = 30) {
     newUsers:    mv(overview, 0, 5),
   };
 
-  const dailyData    = (daily.rows    || []).map(r => ({ date: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0), users: parseInt(r.metricValues[1].value||0) }));
-  const topPages     = (pages.rows    || []).map(r => ({ path: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value||0), users: parseInt(r.metricValues[1].value||0) }));
-  const topSources   = (sources.rows  || []).map(r => ({ source: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0) }));
-  const topCountries = (countries.rows|| []).map(r => ({ country: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0) }));
-  const topDevices   = (devices.rows  || []).map(r => ({ device: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0) }));
+  const dailyData    = (daily.rows     || []).map(r => ({ date: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0), users: parseInt(r.metricValues[1].value||0) }));
+  const topPages     = (pages.rows     || []).map(r => ({ path: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value||0), users: parseInt(r.metricValues[1].value||0) }));
+  const topPostPages = (postPages.rows || []).map(r => ({ path: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value||0), users: parseInt(r.metricValues[1].value||0) }));
+  const topSources   = (sources.rows   || []).map(r => ({ source: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0) }));
+  const topCountries = (countries.rows || []).map(r => ({ country: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0) }));
+  const topDevices   = (devices.rows   || []).map(r => ({ device: r.dimensionValues[0].value, sessions: parseInt(r.metricValues[0].value||0) }));
 
-  return { totals, dailyData, topPages, topSources, topCountries, topDevices, days };
+  return { totals, dailyData, topPages, topPostPages, topSources, topCountries, topDevices, days };
 }
 
 async function getPageDetail(domain, pagePath, days = 30) {
