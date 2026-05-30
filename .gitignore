@@ -12,3 +12,4 @@ analytics.db-wal
 .env
 *.env
 package-lock.json
+config/ga4-key.json
