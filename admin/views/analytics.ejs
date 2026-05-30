@@ -273,29 +273,6 @@
     </div>
   </div>
 
-  <!-- GA4 post pages -->
-  <% if (ga4.topPostPages && ga4.topPostPages.length) { %>
-  <div class="table-card" style="margin-top:1rem">
-    <h3>Posts</h3>
-    <% const ga4MaxPP = ga4.topPostPages[0].views; %>
-    <table class="ana-table">
-      <% ga4.topPostPages.forEach(function(p) { %>
-      <tr>
-        <td>
-          <div style="display:flex;align-items:baseline;gap:.5rem">
-            <a href="https://<%= site.domain %><%= p.path %>" target="_blank" style="color:var(--text);text-decoration:none" title="<%= p.path %>"><%= p.path.replace('/posts/','') %></a>
-            <a href="/analytics/ga4-detail?path=<%= encodeURIComponent(p.path) %>&days=<%= days %>" style="font-size:.7rem;color:var(--muted)">drill down →</a>
-          </div>
-          <div class="bar-bg"><div class="bar-fg" style="width:<%= Math.round(p.views/ga4MaxPP*100) %>%"></div></div>
-        </td>
-        <td><%= p.views.toLocaleString() %></td>
-        <td style="color:var(--muted);font-size:.8rem"><%= p.users.toLocaleString() %> users</td>
-      </tr>
-      <% }) %>
-    </table>
-  </div>
-  <% } %>
-
   <!-- GA4 countries + devices -->
   <div class="two-col-analytics" style="margin-top:1rem">
     <div class="table-card">
